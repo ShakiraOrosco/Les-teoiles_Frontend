@@ -9,50 +9,58 @@ export default function SobreNosotros() {
 
   const historia = [
     {
-      periodo: "2000 - Los Inicios",
-      año: "2000",
+      periodo: "2012 - Los Inicios",
+      año: "2012",
       titulo: "El Sueño Comienza",
-      descripcion: "Todo comenzó con un sueño: crear un espacio donde las familias bolivianas pudieran disfrutar de momentos inolvidables. Con mucho esfuerzo y dedicación, inauguramos nuestra primera piscina en un modesto terreno.",
+      descripcion: "La construcción de nuestra piscina, a cargo del señor Edgar Martin Orosco Linares, quería sorprender a sus hijas las cuales llegaban de La Paz a vivir a este hermoso pueblo, abriendo su funcionamiento al público desde el 2013",
       imagen: "https://images.unsplash.com/photo-1519046904884-53103b34b206?w=800",
       color: "from-cyan-400 to-teal-500"
     },
     {
-      periodo: "2005 - Crecimiento",
-      año: "2005",
-      titulo: "Expandiendo Horizontes",
-      descripcion: "La confianza de nuestros clientes nos permitió crecer. Ampliamos nuestras instalaciones con nuevas piscinas, toboganes y áreas recreativas. La familia Playa Azul comenzaba a consolidarse.",
+      periodo: "2013 - Crecimiento",
+      año: "2013",
+      titulo: "Inauguración Oficial",
+      descripcion: "En Septiembre de este año se da la gran inauguración de nuestra Piscina Playa Azul, se da una gran fiesta al lado de todos aquellos que vinieron para acompañarnos, junto a comida que compartio la casa; queda oficialmente abierto a todas las familias nuestra piscina",
       imagen: "https://images.unsplash.com/photo-1575429198097-0414ec08e8cd?w=800",
       color: "from-teal-500 to-cyan-600"
     },
     {
-      periodo: "2010 - Innovación",
-      año: "2010",
-      titulo: "Servicio de Hospedaje",
-      descripcion: "Inauguramos nuestro servicio de hospedaje, ofreciendo habitaciones cómodas y modernas para que nuestros visitantes pudieran extender su experiencia y disfrutar de varios días de relajación.",
+      periodo: "2015 - Expansión  ",
+      año: "2015",
+      titulo: "Expandiendo Horizontes",
+      descripcion: "Con gran esfuerzo, la señora Wilma Gutierrez Claure y el señor Amadeo Gutierrez Claure ponen manos a la obra y abren una segunda piscina pensada ahora más que todo para los pequeños del hogar",
       imagen: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800",
       color: "from-cyan-500 to-teal-600"
     },
     {
-      periodo: "2015 - Eventos",
-      año: "2015",
+      periodo: "2018 - Eventos",
+      año: "2018",
       titulo: "Centro de Eventos",
-      descripcion: "Nos convertimos en el lugar preferido para celebraciones. Bodas, cumpleaños, eventos corporativos y reuniones familiares encontraron en Playa Azul el escenario perfecto.",
+      descripcion: "Para que disfruten colegios, además de abrir nuestras reservas especiales a los colegios, tambien añadimos la opción de que puedan optar para una competencia, se empieza a dar los plurinacionales de natación y de este modo juntando más a todos.",
       imagen: "https://images.unsplash.com/photo-1519167758481-83f29da8681c?w=800",
       color: "from-teal-600 to-cyan-500"
     },
     {
-      periodo: "2020 - Renovación",
-      año: "2020",
-      titulo: "Modernización Total",
-      descripcion: "Renovamos completamente nuestras instalaciones, implementando tecnología de punta en filtración de agua, sistemas de seguridad y confort para nuestros huéspedes. Playa Azul se transformó en un resort moderno.",
-      imagen: "https://images.unsplash.com/photo-1540541338287-41700207dee6?w=800",
-      color: "from-cyan-600 to-teal-500"
+      periodo: "2019 - Promociones ",
+      año: "2019",
+      titulo: "Primeros retos por la competencia",
+      descripcion: "Empezamos a convivir mucho más, empezamos a abrir ahora más promociones para que disfruten todos, aun cuando todo pareciera bueno; tambien existen sus bajas, empezamos a perder clientela por el aparecimiento de otra piscina. Aun así se sigue dando un trato muy al estilo de hogar a todos aquellos que lleguen a entrar a la psicina",
+      imagen: "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=800",
+      color: "from-teal-500 to-cyan-600"
+    },
+    {
+      periodo: "2022 - La familia crece de nuevo",
+      año: "2022",
+      titulo: "Regresa la alegría a nuestra piscina",
+      descripcion: "Tras cerrar la otra piscina, vuelven a venir más personas a compartir junto a nosotros, quiza no como era antes pero el trato hacia nuestra familia no cambia",
+      imagen: "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=800",
+      color: "from-teal-500 to-cyan-600"
     },
     {
       periodo: "2025 - Presente",
       año: "2025",
       titulo: "Líderes en Recreación",
-      descripcion: "Hoy somos uno de los centros recreativos más reconocidos de Bolivia. Con más de 25 años de experiencia, seguimos comprometidos con brindar las mejores experiencias a nuestras familias bolivianas.",
+      descripcion: "Hoy somos uno de los centros recreativos más Coaticados en la Ciudad Reyes-Beni. Con más de 12 años de experiencia, seguimos comprometidos con brindar las mejores experiencias a nuestras familias bolivianas y extranjeras.",
       imagen: "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=800",
       color: "from-teal-500 to-cyan-600"
     }
@@ -251,10 +259,9 @@ export default function SobreNosotros() {
               </div>
               <h3 className="text-3xl font-bold text-teal-800 mb-4">Nuestra Misión</h3>
               <p className="text-gray-600 leading-relaxed">
-                Proporcionar experiencias de recreación, descanso y celebración de la más alta calidad, 
-                creando momentos inolvidables para familias bolivianas en un ambiente seguro, limpio y acogedor. 
-                Nos esforzamos por ser el primer destino que viene a la mente cuando nuestros clientes piensan 
-                en diversión y relajación.
+                Proporcionar experiencias de recreación, descanso y celebración de la más alta calidad,
+                Brindar felicidad y amor; relájate y disfruta bajo el sol que te abraza. 
+                Sé uno más de nuestra familia, sé parte de Playa Azul
               </p>
             </div>
 
@@ -264,10 +271,9 @@ export default function SobreNosotros() {
               </div>
               <h3 className="text-3xl font-bold text-teal-800 mb-4">Nuestra Visión</h3>
               <p className="text-gray-600 leading-relaxed">
-                Ser reconocidos como el centro recreativo líder en Bolivia, expandiendo nuestras instalaciones 
-                y servicios mientras mantenemos nuestro compromiso con la excelencia. Aspiramos a ser un referente 
-                en hospitalidad y recreación, innovando constantemente para superar las expectativas de nuestros 
-                clientes y crear recuerdos que duren toda la vida.
+                Ser reconocidos y ser el destino favorito para la recreación y el descanso, 
+                brindando una experiencia refrescante y agradable con servicios de piscina, 
+                snacks y productos de calidad en Playa Azul.
               </p>
             </div>
           </div>
@@ -283,14 +289,7 @@ export default function SobreNosotros() {
           <p className="text-xl text-cyan-100 mb-8">
             Ven y crea tus propios recuerdos en Piscina Playa Azul
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a href="/contactanos" className="bg-white text-teal-600 px-8 py-4 rounded-lg font-semibold hover:bg-gray-100 transition shadow-lg">
-              Reserva Ahora
-            </a>
-            <a href="/home" className="bg-transparent border-2 border-white text-white px-8 py-4 rounded-lg font-semibold hover:bg-white hover:text-teal-600 transition">
-              Volver al Inicio
-            </a>
-          </div>
+         
         </div>
       </section>
         {/* llamamos al Footer*/}
