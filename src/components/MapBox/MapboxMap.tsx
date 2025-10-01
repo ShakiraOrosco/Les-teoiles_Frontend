@@ -62,7 +62,8 @@ export default function MapboxMap({
         const popup = new mapboxgl.Popup({ 
           offset: 25,
           closeButton: false,
-          className: 'custom-popup'
+          className: 'custom-popup',
+          focusAfterOpen: false  // Evitar que haga focus automático
         }).setHTML(
           `<div style="padding: 15px; min-width: 250px;">
             <div style="display: flex; align-items: center; margin-bottom: 10px;">
@@ -127,7 +128,7 @@ export default function MapboxMap({
   }, [latitude, longitude, address]);
 
   return (
-    <div className="bg-white rounded-xl shadow-lg p-8 w-full">
+    <div className="bg-white rounded-xl shadow-lg p-8 w-full max-w-none">
       <div className="flex items-center mb-4">
         <div className="bg-gradient-to-br from-teal-500 to-cyan-500 w-12 h-12 rounded-full flex items-center justify-center mr-3">
           <span className="text-2xl">📍</span>

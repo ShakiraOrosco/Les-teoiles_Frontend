@@ -10,7 +10,7 @@ export default function Footer() {
           <div>
             <div className="flex items-center space-x-3 mb-4">
               <div className="w-19 h-18 bg-gradient-to-br from-white-400 to-teal-600 rounded-full flex items-center justify-center">
-                <img src="public/images/informativa/LogoPlayaAzul.png" alt="Logo" className="w-18 h-16" />
+                <img src="/images/Informativa/LogoPlayaAzul.png" alt="Logo" className="w-18 h-16" />
               </div>
               <h4 className="text-xl font-bold">Piscina Playa Azul</h4>
             </div>
@@ -25,7 +25,19 @@ export default function Footer() {
             <ul className="space-y-2 text-gray-400">
               <li><a href="/home" className="hover:text-cyan-400 transition">Inicio</a></li>
               <li><a href="/sobre-nosotros" className="hover:text-cyan-400 transition">Sobre Nosotros</a></li>
-              <li><HashLink smooth to="/home#servicios" className="hover:text-cyan-400 transition">Servicios</HashLink>
+              <li>
+                <HashLink
+                  smooth
+                  to="/home#servicios"
+                  scroll={(el) => {
+                    const yOffset = -100; // igual que en el Header
+                    const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
+                    window.scrollTo({ top: y, behavior: 'smooth' });
+                  }}
+                  className="hover:text-cyan-400 transition"
+                >
+                  Servicios
+                </HashLink>
               </li>
               <li><a href="/contactanos" className="hover:text-cyan-400 transition">Contáctanos</a></li>
             </ul>

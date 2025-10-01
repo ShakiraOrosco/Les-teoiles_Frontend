@@ -48,13 +48,6 @@ export default function Contactanos() {
       {/* Main Content */}
       <section className="max-w-7xl mx-auto px-4 py-16">
 
-           {/* Mapa */}
-            <MapboxMap 
-              latitude={-14.29522} 
-              longitude={-67.33586}
-              address="SN 73031166, Reyes, Beni, Bolivia"
-            />
-            <br /><br />
         <div className="grid lg:grid-cols-2 gap-12">
           {/* Formulario de Contacto */}
           <div className="bg-white rounded-xl shadow-lg p-8 ">
@@ -221,6 +214,17 @@ export default function Contactanos() {
             </div>
           </div>
 
+        </div>
+         <br /><br />
+            
+            
+           {/* Mapa */}
+            <MapboxMap 
+              latitude={-14.29522} 
+              longitude={-67.33586}
+              address="SN 73031166, Reyes, Beni, Bolivia"
+            />
+           <br /><br />
             {/* Preguntas Frecuentes */}
             <div className="bg-gradient-to-br from-cyan-50 to-teal-50 rounded-xl shadow-lg p-8 w-full col-span-full">
               <h3 className="text-2xl font-bold text-teal-800 mb-4">Preguntas frecuentes</h3>
@@ -239,7 +243,6 @@ export default function Contactanos() {
                 </div>
               </div>
             </div>
-        </div>
       </section>
 
       {/* llamamos al Footer */}
