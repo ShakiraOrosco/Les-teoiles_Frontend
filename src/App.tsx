@@ -18,15 +18,18 @@ import Blank from "./pages/Blank";
 import AppLayout from "./layout/AppLayout";
 import { ScrollToTop } from "./components/common/ScrollToTop";
 import Home from "./pages/Dashboard/Home";
+import { Toaster } from "sonner";
 
 // Páginas Informativas
 import Homes from "./pages/Informativa/Homes";
 import Contactanos from "./pages/Informativa/Contactanos";
 import SobreNosotros from "./pages/Informativa/SobreNosotros";
+import ProtectedRoute from "./components/routes/ProtectedRoute";
 
 export default function App() {
   return (
     <>
+      <Toaster toastOptions={{ duration: 3000 }} position="top-left" theme="light" visibleToasts={1} richColors closeButton />
       <Router>
         <ScrollToTop />
         <Routes>
@@ -37,7 +40,10 @@ export default function App() {
           <Route path="/sobre-nosotros" element={<SobreNosotros />} />
 
           {/* Dashboard Layout */}
-          <Route element={<AppLayout />}>
+          <Route element={
+            <ProtectedRoute>
+              <AppLayout />
+            </ProtectedRoute>}>
             <Route path="/dashboard" element={<Home />} />  {/* Dashboard ahora en /dashboard */}
 
             {/* Others Page */}
@@ -58,6 +64,8 @@ export default function App() {
             <Route path="/buttons" element={<Buttons />} />
             <Route path="/images" element={<Images />} />
             <Route path="/videos" element={<Videos />} />
+
+            
 
             {/* Charts */}
             <Route path="/line-chart" element={<LineChart />} />
