@@ -1,5 +1,6 @@
-import { Waves } from 'lucide-react';
+
 import { useNavigate } from 'react-router-dom';
+import { HashLink } from 'react-router-hash-link';
  
 interface HeaderProps {
   currentPage?: string;
@@ -8,12 +9,7 @@ interface HeaderProps {
 export default function Header({ currentPage = '' }: HeaderProps) {
   const navigate = useNavigate();
  
-  const scrollToSection = (id: string) => {
-    const element = document.getElementById(id);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
+
  
   const isCurrentPage = (page: string) => currentPage === page;
  
@@ -22,12 +18,12 @@ export default function Header({ currentPage = '' }: HeaderProps) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center py-4">
           <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-cyan-400 to-teal-600 rounded-full flex items-center justify-center">
-              <Waves className="w-7 h-7 text-white" />
+            <div className="w-27 h-26 bg-gradient-to-br from-white-400 to-teal-600 rounded-full flex items-center justify-center">
+               <img src="public/images/informativa/LogoPlayaAzul.png" alt="Logo" className="w-20 h-18" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-teal-700">Piscina Playa Azul</h1>
-              <p className="text-xs text-gray-500">Tu destino de relax</p>
+              <h1 className="text-3xl font-bold text-teal-900">Piscina Playa Azul</h1>
+              <p className="text-1xs text-gray-500">Tu destino de relax</p>
             </div>
           </div>
          
@@ -48,12 +44,14 @@ export default function Header({ currentPage = '' }: HeaderProps) {
             >
               Sobre Nosotros
             </a>
-            <a
-              href="/home#servicios"
+                  <HashLink
+              smooth
+              to="/home#servicios"
               className="text-gray-600 hover:text-teal-700 transition"
             >
               Servicios
-            </a>
+            </HashLink>
+
             <a
               href="/contactanos"
               className={`transition ${

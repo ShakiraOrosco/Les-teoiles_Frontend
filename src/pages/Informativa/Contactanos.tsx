@@ -2,6 +2,7 @@ import { useState, ChangeEvent, FormEvent } from 'react';
 import { MapPin, Phone, Mail, Clock, Send, CheckCircle } from 'lucide-react';
 import Footer from '../../components/FooterHeader/Footer';
 import Header from '../../components/FooterHeader/Header';
+import MapboxMap from '../../components/MapBox/MapboxMap';
 
 export default function Contactanos() {
   const [formData, setFormData] = useState({
@@ -46,6 +47,14 @@ export default function Contactanos() {
 
       {/* Main Content */}
       <section className="max-w-7xl mx-auto px-4 py-16">
+
+           {/* Mapa */}
+            <MapboxMap 
+              latitude={-14.29522} 
+              longitude={-67.33586}
+              address="SN 73031166, Reyes, Beni, Bolivia"
+            />
+            <br /><br />
         <div className="grid lg:grid-cols-2 gap-12">
           {/* Formulario de Contacto */}
           <div className="bg-white rounded-xl shadow-lg p-8 ">
@@ -211,25 +220,6 @@ export default function Contactanos() {
               </div>
             </div>
           </div>
-           {/* Mapa */}
-            <div className="bg-white rounded-xl shadow-lg p-8 w-full col-span-full">
-              <h3 className="text-2xl font-bold text-teal-800 mb-4">Encuéntranos</h3>
-              <div className="relative h-80 bg-gray-200 rounded-lg overflow-hidden">
-                <iframe
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d30689.19469364768!2d-68.13169!3d-16.49959!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x915f2062a18f965b%3A0x14d8d1a0f12cf282!2sLa%20Paz%2C%20Bolivia!5e0!3m2!1ses!2sbo!4v1234567890"
-                  width="100%"
-                  height="100%"
-                  style={{ border: 0 }}
-                  allowFullScreen={true}
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                  className="absolute inset-0"
-                />
-              </div>
-              <p className="text-sm text-gray-500 mt-4 text-center">
-                📍 Estamos ubicados en la Zona Sur de La Paz, de fácil acceso
-              </p>
-            </div>
 
             {/* Preguntas Frecuentes */}
             <div className="bg-gradient-to-br from-cyan-50 to-teal-50 rounded-xl shadow-lg p-8 w-full col-span-full">

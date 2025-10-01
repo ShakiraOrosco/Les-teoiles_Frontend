@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Hotel, Calendar, CheckCircle,Sparkles } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Hotel, CheckCircle,Sparkles } from 'lucide-react';
 import Footer from '../../components/FooterHeader/Footer';
 import Header from '../../components/FooterHeader/Header';
 
@@ -239,7 +239,7 @@ La pasión por lo que hacemos y la dedicación de nuestro equipo han sido pilare
 
   </div>
 </section>
-
+<br />
 {/* Servicios Adicionales */}
  <section className="bg-gradient-to-br from-lavender-100 to-cyan-50 py-16" id="servicios">
   <div className="max-w-7xl mx-auto px-4">
