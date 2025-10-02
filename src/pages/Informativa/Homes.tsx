@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Hotel, Calendar, CheckCircle,Sparkles } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CheckCircle,Sparkles } from 'lucide-react';
 import Footer from '../../components/FooterHeader/Footer';
 import Header from '../../components/FooterHeader/Header';
 
@@ -194,7 +194,7 @@ La pasión por lo que hacemos y la dedicación de nuestro equipo han sido pilare
           </div>
         </div>
         <div className="bg-gradient-to-br from-teal-500 to-cyan-600 h-80 md:h-auto flex items-center justify-center p-8 order-1 md:order-2">
-          <Hotel className="h-40 w-40 text-white opacity-90" />
+          <img src="public/images/Informativa/Hospedaje.jpg" alt="Hotel" className="w-full h-full" />
         </div>
       </div>
     </div>
@@ -239,7 +239,7 @@ La pasión por lo que hacemos y la dedicación de nuestro equipo han sido pilare
 
   </div>
 </section>
-
+<br />
 {/* Servicios Adicionales */}
  <section className="bg-gradient-to-br from-lavender-100 to-cyan-50 py-16" id="servicios">
   <div className="max-w-7xl mx-auto px-4">
@@ -303,9 +303,9 @@ La pasión por lo que hacemos y la dedicación de nuestro equipo han sido pilare
             <a href="/contactanos" className="bg-white text-teal-600 px-8 py-4 rounded-lg font-semibold hover:bg-gray-100 transition shadow-lg">
               Contáctanos
             </a>
-            <a href="#servicios" className="bg-transparent border-2 border-white text-white px-8 py-4 rounded-lg font-semibold hover:bg-white hover:text-teal-600 transition">
+           { /*<a href="#servicios" className="bg-transparent border-2 border-white text-white px-8 py-4 rounded-lg font-semibold hover:bg-white hover:text-teal-600 transition">
               Ver Servicios
-            </a>
+            </a>*/}
           </div>
         </div>
       </section>

@@ -19,6 +19,8 @@ import AppLayout from "./layout/AppLayout";
 import { ScrollToTop } from "./components/common/ScrollToTop";
 import Home from "./pages/Dashboard/Home";
 import { Toaster } from "sonner";
+import ServiciosAdicionalesPage from "./pages/Bienes/Servicios/ServiciosAdicionales";
+
 
 // Páginas Informativas
 import Homes from "./pages/Informativa/Homes";
@@ -70,6 +72,12 @@ export default function App() {
             {/* Charts */}
             <Route path="/line-chart" element={<LineChart />} />
             <Route path="/bar-chart" element={<BarChart />} />
+
+
+
+            {/*Crud Servicios Adicionales */}
+            <Route path="/Bienes/Servicios" element={<ServiciosAdicionalesPage />} />
+
           </Route>
 
           {/* Auth Pages */}
