@@ -1,9 +1,9 @@
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHeader,
-    TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHeader,
+  TableRow,
 } from "../../../ui/table";
 import Button from "../../../ui/button/Button";
 import Badge from "../../../ui/badge/Badge";
@@ -12,23 +12,24 @@ import { ServicioAdicional } from "../../../../types/Bienes/Servicios/servicio";
 interface ServiciosTableProps {
   servicios: ServicioAdicional[];
   onEdit: (servicio: ServicioAdicional) => void;
-  onToggleEstado: (servicio: ServicioAdicional) => void; // Cambia el estado A/I
+  onToggleEstado: (servicio: ServicioAdicional) => void;
 }
 
 export default function ServiciosTable({ servicios, onEdit, onToggleEstado }: ServiciosTableProps) {
 
-  const getEstadoLabel = (estado: ServicioAdicional["estado"]) => {
-    switch (estado) {
+  // ✅ Para mostrar el TIPO (E, A, X)
+  const getTipoLabel = (tipo: ServicioAdicional["tipo"]) => {
+    switch (tipo) {
       case "E": return "Establecimiento";
       case "A": return "Alimentación";
-      case "X": return "Extras";
-      case "I": return "Inactivo";
+      case "X": return "Extra";
       default: return "-";
     }
   };
 
-  const getEstadoColor = (estado: ServicioAdicional["estado"]) => {
-    return estado === "I" ? "warning" : "success";
+  // ✅ Para mostrar el ESTADO (A, I)
+  const getEstadoLabel = (estado: ServicioAdicional["estado"]) => {
+    return estado === "A" ? "Activo" : "Inactivo";
   };
 
   return (
@@ -39,16 +40,17 @@ export default function ServiciosTable({ servicios, onEdit, onToggleEstado }: Se
             <TableRow>
               <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">ID</TableCell>
               <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Nombre</TableCell>
+              <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Tipo</TableCell>
               <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Descripción</TableCell>
               <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Precio</TableCell>
-              <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Tipo</TableCell>
+              <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Estado</TableCell>
               <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Acciones</TableCell>
             </TableRow>
           </TableHeader>
 
           <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
             {servicios.map((servicio) => {
-              const isActivo = servicio.estado !== "I";
+              const isActivo = servicio.estado === "A";
 
               return (
                 <TableRow
@@ -65,20 +67,30 @@ export default function ServiciosTable({ servicios, onEdit, onToggleEstado }: Se
                     {servicio.nombre}
                   </TableCell>
 
+                  {/* ✅ COLUMNA TIPO - Usa servicio.tipo */}
                   <TableCell className="px-5 py-4 sm:px-6 text-start">
-                    <div className="max-w-xs truncate" title={servicio.descripcion || '-'}>
+                    <Badge
+                      size="sm"
+                    >
+                      {getTipoLabel(servicio.tipo)}
+                    </Badge>
+                  </TableCell>
+
+                  <TableCell className="px-5 py-4 sm:px-6 text-start">
+                    <div className="max-w-xs truncate text-gray-900 dark:text-white" title={servicio.descripcion || '-'}>
                       {servicio.descripcion || <span className="text-gray-400 dark:text-gray-500 italic">Sin descripción</span>}
                     </div>
                   </TableCell>
 
-                  <TableCell className="px-5 py-4 sm:px-6 text-start font-bold text-[#26a5b9] dark:text-[#99d8cd]">
+                  <TableCell className="px-5 py-4 sm:px-3 text-start font-bold text-[#26a5b9] dark:text-[#99d8cd] text-sm">
                     $ {servicio.precio.toFixed(2)}
                   </TableCell>
 
+                  {/* ✅ COLUMNA ESTADO - Usa servicio.estado */}
                   <TableCell className="px-5 py-4 sm:px-6 text-start">
                     <Badge
                       size="sm"
-                      color={getEstadoColor(servicio.estado)}
+                      color={isActivo ? "success" : "warning"}
                     >
                       {getEstadoLabel(servicio.estado)}
                     </Badge>
