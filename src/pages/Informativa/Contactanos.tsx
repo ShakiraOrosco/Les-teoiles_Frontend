@@ -122,9 +122,36 @@ export default function Contactanos() {
     const hayErrores = Object.values(erroresValidacion).some(error => error !== null);
     
     if (!hayErrores) {
-      // Formulario válido, proceder con el envío
-      console.log('Formulario válido, datos:', formData);
+      // Formulario válido, construir mensaje para WhatsApp
+      const asuntoTexto = {
+        'reserva': 'Reserva de instalaciones',
+        'hospedaje': 'Información de hospedaje',
+        'eventos': 'Organización de eventos',
+        'tarifas': 'Consulta de tarifas',
+        'otro': 'Otro'
+      }[formData.asunto] || formData.asunto;
+
+     const mensaje = `Estimados administradores de Piscina Playa Azul,\n\n` +
+        `Mi nombre es *${formData.nombre}*.\n` +
+        `Correo electrónico: ${formData.email}\n` +
+        `Teléfono: ${formData.telefono || 'No proporcionado'}\n` +
+        `Asunto: ${asuntoTexto}\n\n` +
+        `Deseo realizar la siguiente consulta:\n${formData.mensaje}`;
+
+
+      // Codificar el mensaje para URL
+      const mensajeCodificado = encodeURIComponent(mensaje);
       
+      // Número de WhatsApp (formato internacional sin + ni espacios)
+      const numeroWhatsApp = '59171143449';
+      
+      // Crear URL de WhatsApp con api.whatsapp.com
+      const urlWhatsApp = `https://api.whatsapp.com/send?phone=${numeroWhatsApp}&text=${mensajeCodificado}`;
+      
+      // Abrir WhatsApp en NUEVA PESTAÑA
+      window.open(urlWhatsApp, '_blank');
+      
+      // Mostrar mensaje de éxito
       setSubmitted(true);
       setTimeout(() => {
         setSubmitted(false);
