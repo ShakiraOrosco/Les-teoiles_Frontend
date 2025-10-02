@@ -5,6 +5,13 @@ import { Modal } from "../../../ui/modal";
 import { useUpdateServicio } from "../../../../hooks/Bienes/Servicios/useUpdateServicio";
 import { ServicioDTO, ServicioAdicional } from "../../../../types/Bienes/Servicios/servicio";
 
+// Importa validaciones
+import {
+    validarLongitud,
+    validarDescripcion,
+    validarPrecio,
+} from "../../../utils/validaciones";
+
 interface EditServicioModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -24,6 +31,7 @@ export default function EditServicioModal({
         nombre: "",
         descripcion: "",
         precio: 0,
+        tipo: "E",   // 👈 importante: inicializar tipo
         estado: "A",
     });
 
@@ -31,24 +39,27 @@ export default function EditServicioModal({
         nombre: "",
         descripcion: "",
         precio: "",
+        tipo: "",
         estado: "",
     });
 
-    // Inicializa el formulario cuando cambia el servicio
+    // Cargar datos cuando llega el servicio
     useEffect(() => {
         if (servicio && isOpen) {
             setForm({
                 nombre: servicio.nombre,
                 descripcion: servicio.descripcion || "",
                 precio: servicio.precio,
+                tipo: servicio.tipo,     // 👈 también incluimos el tipo
                 estado: servicio.estado,
             });
-            setErrors({ nombre: "", descripcion: "", precio: "", estado: "" });
+            setErrors({ nombre: "", descripcion: "", precio: "", tipo: "", estado: "" });
         }
     }, [servicio, isOpen]);
 
     if (!isOpen || !servicio) return null;
 
+    // Manejo de inputs
     const handleChange = (field: keyof ServicioDTO) => (
         e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
     ) => {
@@ -59,26 +70,31 @@ export default function EditServicioModal({
         setForm(prev => ({ ...prev, [field]: value }));
     };
 
+    // Validaciones
     const validateForm = () => {
-        const newErrors: typeof errors = { nombre: "", descripcion: "", precio: "", estado: "" };
+        const newErrors: typeof errors = { nombre: "", descripcion: "", precio: "", tipo: "", estado: "" };
 
-        // Nombre obligatorio
-        if (!form.nombre.trim()) newErrors.nombre = "El nombre es obligatorio";
+        // Nombre
+        const errorNombre = validarLongitud(form.nombre, 1, 20, "El nombre");
+        if (errorNombre) newErrors.nombre = errorNombre;
 
-        // Precio mínimo 1 y máximo 999,99
-        const precioNum = parseFloat(form.precio.toString().replace(",", "."));
-        if (!form.precio && form.precio !== 0) newErrors.precio = "El precio es obligatorio";
-        else if (isNaN(precioNum)) newErrors.precio = "Debe ser un número válido";
-        else if (precioNum < 1) newErrors.precio = "El precio no puede ser menor a 1";
-        else if (precioNum > 999.99) newErrors.precio = "El precio no puede ser mayor a 999,99";
+        // Descripción
+        const errorDescripcion = validarDescripcion(form.descripcion, 250, "La descripción");
+        if (errorDescripcion) newErrors.descripcion = errorDescripcion;
 
-        // Estado obligatorio
+        // Precio
+        const errorPrecio = validarPrecio(form.precio.toString(), "El precio", 999.99);
+        if (errorPrecio) newErrors.precio = errorPrecio;
+
+        // Tipo
+        if (!form.tipo) newErrors.tipo = "Debe seleccionar un tipo";
+
+        // Estado
         if (!form.estado) newErrors.estado = "Debe seleccionar un estado";
 
         setErrors(newErrors);
         return !Object.values(newErrors).some(e => e);
     };
-
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -109,8 +125,11 @@ export default function EditServicioModal({
 
                 {/* Formulario */}
                 <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+                    {/* Nombre */}
                     <div>
-                        <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Nombre</label>
+                        <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Nombre <span className="text-red-500">*</span>
+                        </label>
                         <input
                             type="text"
                             value={form.nombre}
@@ -120,44 +139,78 @@ export default function EditServicioModal({
                         {errors.nombre && <p className="text-xs text-red-500 mt-1">{errors.nombre}</p>}
                     </div>
 
+                    {/* Tipo */}
                     <div>
-                        <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Descripción</label>
-                        <textarea
-                            value={form.descripcion}
-                            onChange={handleChange("descripcion")}
-                            className="w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-[#26a5b9]/20 focus:border-[#26a5b9] dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Precio (Bs.)</label>
-                        <input
-                            type="number"
-                            min={0}
-                            step={0.01}
-                            value={form.precio}
-                            onChange={handleChange("precio")}
-                            className="w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-[#26a5b9]/20 focus:border-[#26a5b9] dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700"
-                        />
-                        {errors.precio && <p className="text-xs text-red-500 mt-1">{errors.precio}</p>}
-                    </div>
-
-                    <div>
-                        <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Estado</label>
+                        <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Tipo <span className="text-red-500">*</span>
+                        </label>
                         <select
-                            value={form.estado}
-                            onChange={handleChange("estado")}
+                            value={form.tipo}
+                            onChange={handleChange("tipo")}
                             className="w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-[#26a5b9]/20 focus:border-[#26a5b9] dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700"
                             disabled={isPending}
                         >
                             <option value="E">Establecimiento</option>
                             <option value="A">Alimentación</option>
                             <option value="X">Extras</option>
+                        </select>
+                        {errors.tipo && <p className="text-xs text-red-500 mt-1">{errors.tipo}</p>}
+                    </div>
+
+                    {/* Descripción */}
+                    <div>
+                        <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Descripción <span className="text-gray-400 text-xs">(opcional)</span>
+                        </label>
+                        <textarea
+                            value={form.descripcion}
+                            onChange={handleChange("descripcion")}
+                            rows={3}
+                            maxLength={250}
+                            className="w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-[#26a5b9]/20 focus:border-[#26a5b9] dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700"
+                        />
+                        <div className="flex justify-between items-center mt-1">
+                            {errors.descripcion && <p className="text-xs text-red-500">{errors.descripcion}</p>}
+                            <p className="text-xs text-gray-400 ml-auto">{form.descripcion.length}/250</p>
+                        </div>
+                    </div>
+
+                    {/* Precio */}
+                    <div>
+                        <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Precio (Bs.) <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                            type="number"
+                            min={1}
+                            max={999.99}
+                            step={0.01}
+                            value={form.precio}
+                            onChange={handleChange("precio")}
+                            className="w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-[#26a5b9]/20 focus:border-[#26a5b9] dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700"
+                        />
+                        {errors.precio && <p className="text-xs text-red-500 mt-1">{errors.precio}</p>}
+                        <p className="text-xs text-gray-400 mt-1">Rango permitido: 1.00 - 999.99 Bs.</p>
+                    </div>
+
+                    {/* Estado */}
+                    <div>
+                        <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Estado <span className="text-red-500">*</span>
+                        </label>
+                        <select
+                            value={form.estado}
+                            onChange={handleChange("estado")}
+                            className="w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-[#26a5b9]/20 focus:border-[#26a5b9] dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700"
+                            disabled={isPending}
+                        >
+                            <option value="A">Activo</option>
                             <option value="I">Inactivo</option>
                         </select>
                         {errors.estado && <p className="text-xs text-red-500 mt-1">{errors.estado}</p>}
                     </div>
 
+                    {/* Botones */}
                     <div className="flex justify-end gap-3 pt-4">
                         <button
                             type="button"
