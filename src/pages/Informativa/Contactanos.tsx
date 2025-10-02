@@ -368,6 +368,7 @@ export default function Contactanos() {
                     <p className="text-gray-600">Ciudad Reyes, Beni</p>
                     <p className="text-gray-600">Calle Comercio esquina Calle Libertad N°500</p>
                   </div>
+                  <br /><br /><br />
                 </div>
 
                 <div className="flex items-start">
@@ -378,6 +379,7 @@ export default function Contactanos() {
                     <h4 className="font-semibold text-gray-800 mb-1">Teléfonos</h4>
                     <p className="text-gray-600">(+591) 73031166 (WhatsApp)</p>
                   </div>
+                   <br /><br /><br />
                 </div>
 
                 <div className="flex items-start">
@@ -388,6 +390,7 @@ export default function Contactanos() {
                     <h4 className="font-semibold text-gray-800 mb-1">Correo electrónico</h4>
                     <p className="text-gray-600">edgaroroscolinares@gmail.com</p>
                   </div>
+                   <br /><br /><br />
                 </div>
 
                 <div className="flex items-start">
@@ -399,7 +402,9 @@ export default function Contactanos() {
                     <p className="text-gray-600">Lunes a Viernes: 9:00 AM - 21:00 PM</p>
                     <p className="text-gray-600">Sábados y Domingos: 9:00 AM - 21:00 PM</p>
                   </div>
+                   <br /><br /><br />
                 </div>
+
               </div>
 
               <div className="mt-8 pt-6 border-t border-gray-200">
@@ -437,6 +442,7 @@ export default function Contactanos() {
                     </svg>
                   </a>
                 </div>
+                 <br />
               </div>
             </div>
           </div>

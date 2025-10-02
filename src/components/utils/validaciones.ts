@@ -299,7 +299,7 @@ export const validarMensajeContacto = (mensaje: string): string | null => {
   return null;
 };
 
-/**
+/*
  * Validar todo el formulario de contacto
  * Retorna un objeto con los errores de cada campo
  */
