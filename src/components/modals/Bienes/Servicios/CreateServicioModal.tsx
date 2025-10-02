@@ -5,8 +5,15 @@ import { Modal } from "../../../ui/modal";
 import { useCreateServicio } from "../../../../hooks/Bienes/Servicios/useCreateServicio";
 import { ServicioDTO } from "../../../../types/Bienes/Servicios/servicio";
 import Button from "../../../ui/button/Button";
-import { ESTADOS_LABEL } from "../../../../types/Bienes/Servicios/estados";
+import { TIPOS_LABEL } from "../../../../types/Bienes/Servicios/estados";
 import Alert from "../../../ui/alert/Alert";
+
+// Importa tus validaciones
+import { 
+    validarLongitud, 
+    validarDescripcion, 
+    validarPrecio 
+} from "../../../utils/validaciones";
 
 interface CreateServicioModalProps {
     isOpen: boolean;
@@ -21,6 +28,7 @@ export default function CreateServicioModal({ isOpen, onClose, onCreated }: Crea
         nombre: "",
         descripcion: "",
         precio: 0,
+        tipo: "E",
         estado: "A",
     });
 
@@ -28,6 +36,7 @@ export default function CreateServicioModal({ isOpen, onClose, onCreated }: Crea
         nombre: "",
         descripcion: "",
         precio: "",
+        tipo: "",
         estado: "",
     });
 
@@ -46,31 +55,28 @@ export default function CreateServicioModal({ isOpen, onClose, onCreated }: Crea
         setForm(prev => ({ ...prev, [field]: value }));
     };
 
-    // Validación
-    // Validación dentro del modal
+    // Validación usando tus funciones
     const validateForm = () => {
-        const newErrors: typeof errors = { nombre: "", descripcion: "", precio: "", estado: "" };
+        const newErrors: typeof errors = { nombre: "", descripcion: "", precio: "", tipo: "", estado: "" };
 
-        // Nombre obligatorio
-        if (!form.nombre.trim()) newErrors.nombre = "El nombre es obligatorio";
+        // Nombre → obligatorio, entre 1 y 20 caracteres
+        const errorNombre = validarLongitud(form.nombre, 1, 20, "El nombre");
+        if (errorNombre) newErrors.nombre = errorNombre;
 
-        // Precio obligatorio, mínimo 1, máximo 999.99, hasta 2 decimales
-        if (form.precio < 1) newErrors.precio = "El precio no puede ser menor a 1";
-        else if (form.precio > 999.99) newErrors.precio = "El precio no puede ser mayor a 999.99";
-        else if (!/^\d+(\.\d{1,2})?$/.test(form.precio.toString()))
-            newErrors.precio = "El precio solo puede tener 2 decimales";
+        // Precio → mínimo 1, máximo 999.99, hasta 2 decimales
+        const errorPrecio = validarPrecio(form.precio.toString(), "El precio", 999.99);
+        if (errorPrecio) newErrors.precio = errorPrecio;
 
-        // Estado obligatorio
-        if (!form.estado) newErrors.estado = "Debe seleccionar un estado";
+        // Tipo obligatorio
+        if (!form.tipo) newErrors.tipo = "Debe seleccionar un tipo";
 
-        // Descripción opcional
-        if (form.descripcion && form.descripcion.length > 250)
-            newErrors.descripcion = "La descripción no puede superar 250 caracteres";
+        // Descripción opcional, máximo 250 caracteres
+        const errorDescripcion = validarDescripcion(form.descripcion, 250, "La descripción");
+        if (errorDescripcion) newErrors.descripcion = errorDescripcion;
 
         setErrors(newErrors);
         return !Object.values(newErrors).some(e => e);
     };
-
 
     // Submit
     const handleSubmit = async (e: React.FormEvent) => {
@@ -80,8 +86,8 @@ export default function CreateServicioModal({ isOpen, onClose, onCreated }: Crea
         try {
             await createServicio(form, () => {
                 onCreated?.();
-                setForm({ nombre: "", descripcion: "", precio: 0, estado: "A" });
-                setErrors({ nombre: "", descripcion: "", precio: "", estado: "" });
+                setForm({ nombre: "", descripcion: "", precio: 0, tipo: "E", estado: "A" });
+                setErrors({ nombre: "", descripcion: "", precio: "", tipo: "", estado: "" });
                 setAlert({ variant: "success", message: "Servicio creado correctamente" });
                 onClose();
             });
@@ -111,56 +117,73 @@ export default function CreateServicioModal({ isOpen, onClose, onCreated }: Crea
                 <form onSubmit={handleSubmit} className="space-y-4 mt-4">
                     {/* Nombre */}
                     <div>
-                        <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Nombre</label>
+                        <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Nombre <span className="text-red-500">*</span>
+                        </label>
                         <input
                             type="text"
                             value={form.nombre}
                             onChange={handleChange("nombre")}
+                            placeholder="Ej: Limpieza Premium"
                             className="w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-[#26a5b9]/20 focus:border-[#26a5b9] dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700"
                         />
                         {errors.nombre && <p className="text-xs text-red-500 mt-1">{errors.nombre}</p>}
                     </div>
 
+                    {/* Tipo */}
+                    <div>
+                        <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Tipo <span className="text-red-500">*</span>
+                        </label>
+                        <select
+                            value={form.tipo}
+                            onChange={handleChange("tipo")}
+                            className="w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-[#26a5b9]/20 focus:border-[#26a5b9] dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700"
+                            disabled={isPending}
+                        >
+                            {Object.entries(TIPOS_LABEL).map(([key, label]) => (
+                                <option key={key} value={key}>{label}</option>
+                            ))}
+                        </select>
+                        {errors.tipo && <p className="text-xs text-red-500 mt-1">{errors.tipo}</p>}
+                    </div>
+
                     {/* Descripción */}
                     <div>
-                        <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Descripción</label>
+                        <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Descripción <span className="text-gray-400 text-xs">(opcional)</span>
+                        </label>
                         <textarea
                             value={form.descripcion}
                             onChange={handleChange("descripcion")}
+                            placeholder="Describe el servicio..."
+                            rows={3}
+                            maxLength={250}
                             className="w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-[#26a5b9]/20 focus:border-[#26a5b9] dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700"
                         />
-                        {errors.descripcion && <p className="text-xs text-red-500 mt-1">{errors.descripcion}</p>}
+                        <div className="flex justify-between items-center mt-1">
+                            {errors.descripcion && <p className="text-xs text-red-500">{errors.descripcion}</p>}
+                            <p className="text-xs text-gray-400 ml-auto">{form.descripcion.length}/250</p>
+                        </div>
                     </div>
 
                     {/* Precio */}
                     <div>
-                        <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Precio (Bs.)</label>
+                        <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Precio (Bs.) <span className="text-red-500">*</span>
+                        </label>
                         <input
                             type="number"
-                            min={0}
+                            min={1}
                             max={999.99}
                             step={0.01}
-                            value={form.precio}
+                            value={form.precio || ""}
                             onChange={handleChange("precio")}
+                            placeholder="Ej: 150.50"
                             className="w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-[#26a5b9]/20 focus:border-[#26a5b9] dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700"
                         />
                         {errors.precio && <p className="text-xs text-red-500 mt-1">{errors.precio}</p>}
-                    </div>
-
-                    {/* Estado */}
-                    <div>
-                        <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Estado</label>
-                        <select
-                            value={form.estado}
-                            onChange={handleChange("estado")}
-                            className="w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-[#26a5b9]/20 focus:border-[#26a5b9] dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700"
-                            disabled={isPending}
-                        >
-                            {Object.entries(ESTADOS_LABEL).map(([key, label]) => (
-                                <option key={key} value={key}>{label}</option>
-                            ))}
-                        </select>
-                        {errors.estado && <p className="text-xs text-red-500 mt-1">{errors.estado}</p>}
+                        <p className="text-xs text-gray-400 mt-1">Rango permitido: 1.00 - 999.99 Bs.</p>
                     </div>
 
                     {/* Botones */}
