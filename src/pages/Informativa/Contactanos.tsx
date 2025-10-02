@@ -122,9 +122,36 @@ export default function Contactanos() {
     const hayErrores = Object.values(erroresValidacion).some(error => error !== null);
     
     if (!hayErrores) {
-      // Formulario válido, proceder con el envío
-      console.log('Formulario válido, datos:', formData);
+      // Formulario válido, construir mensaje para WhatsApp
+      const asuntoTexto = {
+        'reserva': 'Reserva de instalaciones',
+        'hospedaje': 'Información de hospedaje',
+        'eventos': 'Organización de eventos',
+        'tarifas': 'Consulta de tarifas',
+        'otro': 'Otro'
+      }[formData.asunto] || formData.asunto;
+
+     const mensaje = `Estimados administradores de Piscina Playa Azul,\n\n` +
+        `Mi nombre es *${formData.nombre}*.\n` +
+        `Correo electrónico: ${formData.email}\n` +
+        `Teléfono: ${formData.telefono || 'No proporcionado'}\n` +
+        `Asunto: ${asuntoTexto}\n\n` +
+        `Deseo realizar la siguiente consulta:\n${formData.mensaje}`;
+
+
+      // Codificar el mensaje para URL
+      const mensajeCodificado = encodeURIComponent(mensaje);
       
+      // Número de WhatsApp (formato internacional sin + ni espacios)
+      const numeroWhatsApp = '59171143449';
+      
+      // Crear URL de WhatsApp con api.whatsapp.com
+      const urlWhatsApp = `https://api.whatsapp.com/send?phone=${numeroWhatsApp}&text=${mensajeCodificado}`;
+      
+      // Abrir WhatsApp en NUEVA PESTAÑA
+      window.open(urlWhatsApp, '_blank');
+      
+      // Mostrar mensaje de éxito
       setSubmitted(true);
       setTimeout(() => {
         setSubmitted(false);
@@ -341,6 +368,7 @@ export default function Contactanos() {
                     <p className="text-gray-600">Ciudad Reyes, Beni</p>
                     <p className="text-gray-600">Calle Comercio esquina Calle Libertad N°500</p>
                   </div>
+                  <br /><br /><br />
                 </div>
 
                 <div className="flex items-start">
@@ -351,6 +379,7 @@ export default function Contactanos() {
                     <h4 className="font-semibold text-gray-800 mb-1">Teléfonos</h4>
                     <p className="text-gray-600">(+591) 73031166 (WhatsApp)</p>
                   </div>
+                   <br /><br /><br />
                 </div>
 
                 <div className="flex items-start">
@@ -361,6 +390,7 @@ export default function Contactanos() {
                     <h4 className="font-semibold text-gray-800 mb-1">Correo electrónico</h4>
                     <p className="text-gray-600">edgaroroscolinares@gmail.com</p>
                   </div>
+                   <br /><br /><br />
                 </div>
 
                 <div className="flex items-start">
@@ -372,7 +402,9 @@ export default function Contactanos() {
                     <p className="text-gray-600">Lunes a Viernes: 9:00 AM - 21:00 PM</p>
                     <p className="text-gray-600">Sábados y Domingos: 9:00 AM - 21:00 PM</p>
                   </div>
+                   <br /><br /><br />
                 </div>
+
               </div>
 
               <div className="mt-8 pt-6 border-t border-gray-200">
@@ -410,6 +442,7 @@ export default function Contactanos() {
                     </svg>
                   </a>
                 </div>
+                 <br />
               </div>
             </div>
           </div>
