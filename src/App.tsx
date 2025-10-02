@@ -2,7 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router";
 import SignIn from "./pages/AuthPages/SignIn";
 import SignUp from "./pages/AuthPages/SignUp";
 import NotFound from "./pages/OtherPage/NotFound";
-import UserProfiles from "./pages/UserProfiles";
+import Usuarios from "./pages/usuarios/Usuarios";
 import Videos from "./pages/UiElements/Videos";
 import Images from "./pages/UiElements/Images";
 import Alerts from "./pages/UiElements/Alerts";
@@ -49,7 +49,10 @@ export default function App() {
             <Route path="/dashboard" element={<Home />} />  {/* Dashboard ahora en /dashboard */}
 
             {/* Others Page */}
-            <Route path="/profile" element={<UserProfiles />} />
+             {/*Crud de Usuarios */}
+            <Route path="/profile" element={<Usuarios/>} />
+
+            
             <Route path="/calendar" element={<Calendar />} />
             <Route path="/blank" element={<Blank />} />
 
