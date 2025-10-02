@@ -47,7 +47,6 @@ export const validarPrecio = (
   return null;
 };
 
-
 // Validar teléfono boliviano (8 dígitos, comienza en 6 o 7)
 export const validarTelefono = (telefono: string, nombreCampo = "El teléfono"): string | null => {
   if (telefono.trim() === "") return `${nombreCampo} es obligatorio`;
@@ -87,4 +86,235 @@ export const validarPassword = (password: string, nombreCampo = "La contraseña"
   if (password.trim() === "") return `${nombreCampo} es obligatoria`;
   if (password.length < 6 || password.length > 20) return `${nombreCampo} debe tener entre 6 y 20 caracteres`;
   return null;
+};
+
+// ---------------------- VALIDACIONES FORMULARIO CONTACTO ----------------------
+
+/**
+ * Validar nombre completo para formulario de contacto
+ * - Obligatorio (no vacío, no solo espacios)
+ * - Solo letras, espacios y acentos
+ * - Sin números ni símbolos
+ * - Mínimo 3 caracteres
+ * - Máximo 60 caracteres
+ * - No permite caracteres repetitivos excesivos
+ */
+export const validarNombreContacto = (nombre: string): string | null => {
+  const valorTrim = nombre.trim();
+  
+  // No vacío
+  if (valorTrim === "") {
+    return "El nombre es obligatorio";
+  }
+  
+  // No solo espacios
+  if (nombre.length > 0 && valorTrim === "") {
+    return "El nombre no puede contener solo espacios";
+  }
+  
+  // Mínimo 3 caracteres
+  if (valorTrim.length < 3) {
+    return "El nombre debe tener al menos 3 caracteres";
+  }
+  
+  // Máximo 60 caracteres
+  if (valorTrim.length > 60) {
+    return "El nombre no puede superar 60 caracteres";
+  }
+  
+  // Solo letras, espacios y acentos (sin números ni símbolos)
+  if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(valorTrim)) {
+    return "El nombre solo puede contener letras y espacios";
+  }
+  
+  // No permitir más de 3 caracteres iguales consecutivos
+  if (/(.)\1{3,}/.test(valorTrim)) {
+    return "El nombre no puede tener caracteres repetidos excesivamente";
+  }
+  
+  // Debe tener al menos 2 letras diferentes
+  const letrasUnicas = new Set(valorTrim.replace(/\s/g, '').toLowerCase());
+  if (letrasUnicas.size < 2) {
+    return "El nombre debe contener al menos 2 letras diferentes";
+  }
+  
+  return null;
+};
+
+/**
+ * Validar email para formulario de contacto
+ * - Obligatorio
+ * - Debe tener @
+ * - Debe tener dominio (algo después del @)
+ * - Debe tener extensión (.com, .edu, etc.)
+ * - No acepta espacios
+ * - Formato válido con símbolos permitidos (. _ -)
+ * - Máximo 100 caracteres
+ */
+export const validarEmailContacto = (email: string): string | null => {
+  const valorTrim = email.trim();
+  
+  // No vacío
+  if (valorTrim === "") {
+    return "El email es obligatorio";
+  }
+  
+  // No acepta espacios dentro del email
+  if (/\s/.test(email)) {
+    return "El email no puede contener espacios";
+  }
+  
+  // Longitud máxima
+  if (valorTrim.length > 100) {
+    return "El email no puede superar 100 caracteres";
+  }
+  
+  // Debe tener @
+  if (!valorTrim.includes("@")) {
+    return "El email debe contener @";
+  }
+  
+  // Validar formato completo: usuario@dominio.extensión
+  // Permite letras, números, puntos, guiones y guiones bajos
+  // No permite símbolos especiales al inicio o final
+  const emailRegex = /^[a-zA-Z0-9][a-zA-Z0-9._-]*[a-zA-Z0-9]@[a-zA-Z0-9][a-zA-Z0-9.-]*\.[a-zA-Z]{2,}$/;
+  
+  if (!emailRegex.test(valorTrim)) {
+    const partes = valorTrim.split("@");
+    
+    // Sin dominio
+    if (partes.length < 2 || !partes[1] || partes[1].trim() === "") {
+      return "El email debe tener un dominio después del @";
+    }
+    
+    // Sin extensión
+    if (!partes[1].includes(".") || partes[1].endsWith(".")) {
+      return "El email debe tener una extensión válida (.com, .edu, etc.)";
+    }
+    
+    return "El formato del email no es válido";
+  }
+  
+  return null;
+};
+
+/**
+ * Validar teléfono OPCIONAL para formulario de contacto
+ * - Opcional (puede estar vacío)
+ * - Si se llena: solo números
+ * - No letras (ni letra 'e')
+ * - No símbolos especiales
+ * - Debe ser teléfono boliviano: 8 dígitos
+ * - Debe comenzar con 6 o 7
+ * - Rango: 60000000 - 79999999
+ */
+export const validarTelefonoContacto = (telefono: string): string | null => {
+  const valorTrim = telefono.trim();
+  
+  // Si está vacío, es válido (campo opcional)
+  if (valorTrim === "") {
+    return null;
+  }
+  
+  // Solo números (rechaza letras, incluyendo 'e')
+  if (!/^\d+$/.test(valorTrim)) {
+    return "El teléfono solo puede contener números";
+  }
+  
+  // Debe tener exactamente 8 dígitos
+  if (valorTrim.length !== 8) {
+    return "El teléfono debe tener 8 dígitos";
+  }
+  
+  // Validar rango boliviano (60000000 - 79999999)
+  const num = Number(valorTrim);
+  if (num < 60000000 || num > 79999999) {
+    return "El teléfono debe ser un número boliviano válido (comenzar con 6 o 7)";
+  }
+  
+  return null;
+};
+
+/**
+ * Validar asunto del formulario de contacto
+ * - Obligatorio
+ * - Debe ser una opción válida del desplegable
+ */
+export const validarAsuntoContacto = (asunto: string): string | null => {
+  const opcionesValidas = ["reserva", "hospedaje", "eventos", "tarifas", "otro"];
+  
+  if (!asunto || asunto.trim() === "") {
+    return "Debe seleccionar un asunto";
+  }
+  
+  if (!opcionesValidas.includes(asunto)) {
+    return "El asunto seleccionado no es válido";
+  }
+  
+  return null;
+};
+
+/**
+ * Validar mensaje del formulario de contacto
+ * - Obligatorio (no vacío, no solo espacios)
+ * - Mínimo 10 caracteres
+ * - Máximo 500 caracteres
+ * - Acepta caracteres especiales, números y letras
+ * - No permite caracteres repetitivos excesivos
+ */
+export const validarMensajeContacto = (mensaje: string): string | null => {
+  const valorTrim = mensaje.trim();
+  
+  // No vacío
+  if (valorTrim === "") {
+    return "El mensaje es obligatorio";
+  }
+  
+  // No solo espacios
+  if (mensaje.length > 0 && valorTrim === "") {
+    return "El mensaje no puede contener solo espacios";
+  }
+  
+  // Mínimo 10 caracteres
+  if (valorTrim.length < 10) {
+    return "El mensaje debe tener al menos 10 caracteres";
+  }
+  
+  // Máximo 500 caracteres
+  if (valorTrim.length > 500) {
+    return "El mensaje no puede superar 500 caracteres";
+  }
+  
+  // No permitir más de 5 caracteres iguales consecutivos
+  if (/(.)\1{5,}/.test(valorTrim)) {
+    return "El mensaje no puede tener caracteres repetidos excesivamente";
+  }
+  
+  // Debe tener al menos 3 caracteres diferentes (sin contar espacios)
+  const caracteresUnicos = new Set(valorTrim.replace(/\s/g, '').toLowerCase());
+  if (caracteresUnicos.size < 3) {
+    return "El mensaje debe contener al menos 3 caracteres diferentes";
+  }
+  
+  return null;
+};
+
+/**
+ * Validar todo el formulario de contacto
+ * Retorna un objeto con los errores de cada campo
+ */
+export const validarFormularioContacto = (formData: {
+  nombre: string;
+  email: string;
+  telefono: string;
+  asunto: string;
+  mensaje: string;
+}) => {
+  return {
+    nombre: validarNombreContacto(formData.nombre),
+    email: validarEmailContacto(formData.email),
+    telefono: validarTelefonoContacto(formData.telefono),
+    asunto: validarAsuntoContacto(formData.asunto),
+    mensaje: validarMensajeContacto(formData.mensaje)
+  };
 };

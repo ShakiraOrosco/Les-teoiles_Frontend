@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { HashLink } from 'react-router-hash-link';
+//import { HashLink } from 'react-router-hash-link';
 import { Menu, X } from 'lucide-react';
 
 interface HeaderProps {
@@ -55,7 +55,7 @@ export default function Header({ currentPage = '' }: HeaderProps) {
             >
               Sobre Nosotros
             </a>
-            <HashLink
+            {/*<HashLink
               smooth
               to="/home#servicios"
               scroll={(el) => {
@@ -66,7 +66,7 @@ export default function Header({ currentPage = '' }: HeaderProps) {
               className="text-gray-600 hover:text-teal-700 transition"
             >
               Servicios
-            </HashLink>
+            </HashLink>*/}
             <a
               href="/contactanos"
               className={`transition ${
@@ -127,7 +127,7 @@ export default function Header({ currentPage = '' }: HeaderProps) {
                 <span>Sobre Nosotros</span>
               </a>
               
-              <HashLink
+              {/*<HashLink
                 smooth
                 to="/home#servicios"
                 onClick={() => setMenuOpen(false)}
@@ -135,7 +135,7 @@ export default function Header({ currentPage = '' }: HeaderProps) {
               >
                 <span className="mr-3 text-xl">🏊</span>
                 <span>Servicios</span>
-              </HashLink>
+              </HashLink>**/}
               
               <a
                 href="/contactanos"
