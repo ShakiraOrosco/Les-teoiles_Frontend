@@ -1,7 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
-import { getUsuarios } from "../../services/usuario/usuarioService";
+import { getUsuarios, createUsuario } from "../../services/usuario/usuarioService";
 import { Usuario } from "../../types/Usuarios/usuario";
-
 export const useUsuarios = () => {
     const [usuarios, setUsuarios] = useState<Usuario[]>([]);
     const [loading, setLoading] = useState(true);
@@ -26,5 +25,15 @@ export const useUsuarios = () => {
         fetchUsuarios();
     }, [fetchUsuarios]);
 
-    return { usuarios, loading, error, refetch: fetchUsuarios };
-}   
+    // === Nuevo: crear usuario ===
+    const addUsuario = async (nuevo: Usuario) => {
+        try {
+            const creado = await createUsuario(nuevo);
+            setUsuarios((prev) => [...prev, creado]);
+        } catch (err) {
+            throw new Error("Error al crear usuario");
+        }
+    };
+
+    return { usuarios, loading, error, refetch: fetchUsuarios, addUsuario };
+};

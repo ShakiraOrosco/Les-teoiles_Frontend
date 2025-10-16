@@ -10,7 +10,7 @@ import Alert from "../../../ui/alert/Alert";
 
 // Importa tus validaciones
 import { 
-    validarLongitud, 
+    validarLongitud,    
     validarDescripcion, 
     validarPrecio 
 } from "../../../utils/validaciones";

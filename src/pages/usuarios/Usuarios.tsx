@@ -9,11 +9,11 @@ import { FaPlus } from "react-icons/fa";
 import { useModal } from "../../hooks/useModal";
 import { Usuario } from "../../types/Usuarios/usuario";
 import UsuariosFilter from "../../components/filters/Usuarios/UsuariosFilter";
-
+import UsuarioModal from "../../components/modals/Usuarios/UsuarioModal";
 
 export default function Usuarios() {
-    const { openModal } = useModal();
-    const { usuarios, loading, error } = useUsuarios();
+    const { openModal, isOpen, closeModal } = useModal();
+    const { usuarios, loading, error, addUsuario } = useUsuarios();
 
     // Estado para edición
 
@@ -39,17 +39,27 @@ export default function Usuarios() {
     const elementosPorPagina = 6;
 
     // -------------- Filtrado -------------
-    const usuariosFiltrados = (usuarios ?? []).filter((usuario) =>
-        `${usuario.nombre} ${usuario.app_paterno} ${usuario.app_materno} ${usuario.ci} ${usuario.telefono} ${usuario.email}`
-            .toLowerCase()
-            .includes(filtro.toLowerCase())
-    )
-        .filter((usuario) =>
-            estado === "A" ? usuario.estado : estado === "I" ? !usuario.estado : true
-        )
-        .filter((usuario) =>
-            rol === "administrador" ? usuario.rol === "administrador" : rol === "empleado" ? usuario.rol === "empleado" : true
-        );
+   const usuariosFiltrados = (usuarios ?? [])
+  .filter((usuario) =>
+    `${usuario.nombre} ${usuario.app_paterno} ${usuario.app_materno} ${usuario.ci} ${usuario.telefono} ${usuario.email}`
+      .toLowerCase()
+      .includes(filtro.toLowerCase())
+  )
+  .filter((usuario) =>
+    estado === "A"
+      ? usuario.estado === "A"
+      : estado === "I"
+      ? usuario.estado === "I"
+      : true
+  )
+  .filter((usuario) =>
+    rol === "administrador"
+      ? usuario.rol === "administrador"
+      : rol === "empleado"
+      ? usuario.rol === "empleado"
+      : true
+  );
+
 
     // ------------- Paginación -----------
     const indiceInicio = (paginaActual - 1) * elementosPorPagina;
@@ -69,14 +79,10 @@ export default function Usuarios() {
 
     return (
         <div>
-            <PageMeta
-                title="Usuarios"
-                description="Página de gestión de usuarios"
-            />
+            <PageMeta title="Usuarios" description="Página de gestión de usuarios" />
             <PageBreadcrumb pageTitle="Usuarios" />
 
             <div className="rounded-2xl border border-gray-200 bg-white px-5 py-7 dark:border-gray-800 dark:bg-white/[0.03] xl:px-10 xl:py-12 space-y-10">
-                {/* === Filtros === */}
                 <UsuariosFilter
                     filtro={filtro}
                     setFiltro={setFiltro}
@@ -85,33 +91,20 @@ export default function Usuarios() {
                     rol={rol}
                     setRol={setRol}
                 >
-                    <Button
-                        size="md"
-                        variant="primary"
-                        onClick={openModal}
-                    >
+                    <Button size="md" variant="primary" onClick={openModal}>
                         <FaPlus className="size-3" />
                         Nuevo Usuario
                     </Button>
                 </UsuariosFilter>
 
-
-                {/* === Tabla / estados === */}
+                {/* === Tabla === */}
                 <div className="max-w-full space-y-6">
                     {loading ? (
-                        <div className="flex flex-col items-center justify-center py-8">
-                            <p className="text-center text-gray-500 dark:text-gray-400">
-                                Cargando
-                            </p>
-                        </div>
+                        <p className="text-center text-gray-500">Cargando...</p>
                     ) : error ? (
-                        <p className="text-center text-red-500 dark:text-red-400">
-                            Error al cargar usuarios.
-                        </p>
+                        <p className="text-center text-red-500">{error}</p>
                     ) : usuariosFiltrados.length === 0 ? (
-                        <p className="text-center text-gray-500 dark:text-gray-400">
-                            No hay clientes que coincidan con el filtro.
-                        </p>
+                        <p className="text-center text-gray-500">No hay usuarios.</p>
                     ) : (
                         <>
                             <UsuarioTable usuarios={usuariosPaginados} onEdit={handleEdit} />
@@ -125,6 +118,13 @@ export default function Usuarios() {
                     )}
                 </div>
             </div>
+
+            {/* === Modal para nuevo usuario === */}
+            <UsuarioModal
+                isOpen={isOpen}
+                onClose={closeModal}
+                onSubmit={addUsuario}
+            />
         </div>
     );
 }
