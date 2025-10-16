@@ -6,6 +6,7 @@ export interface Usuario {
   ci: string;
   telefono: string;
   email: string;
-  estado: "A" | "I";  // Solo Activo o Inactivo
+  password: string;
+  estado: "A" | "I"; // Activo o Inactivo
   rol: "administrador" | "empleado";
 }

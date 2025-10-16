@@ -1,17 +1,16 @@
-// src/components/filters/Usuarios/UsuariosFilter.tsx
-import { FaSearch } from "react-icons/fa";
+import React from "react";
 
 interface UsuariosFilterProps {
   filtro: string;
-  setFiltro: (value: string) => void;
+  setFiltro: (v: string) => void;
   estado: "" | "A" | "I";
-  setEstado: (value: "" | "A" | "I") => void;
+  setEstado: (v: "" | "A" | "I") => void;
   rol: "" | "administrador" | "empleado";
-  setRol: (value: "" | "administrador" | "empleado") => void;
+  setRol: (v: "" | "administrador" | "empleado") => void;
   children?: React.ReactNode;
 }
 
-export default function UsuariosFilter({
+const UsuariosFilter: React.FC<UsuariosFilterProps> = ({
   filtro,
   setFiltro,
   estado,
@@ -19,48 +18,44 @@ export default function UsuariosFilter({
   rol,
   setRol,
   children,
-}: UsuariosFilterProps) {
+}) => {
   return (
-    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-      {/* Contenedor filtros */}
-      <div className="flex flex-1 flex-col gap-4 md:flex-row">
-        {/* Buscador por nombre, CI o código */}
-        <div className="relative flex-1">
-          <FaSearch className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
-          <input
-            type="text"
-            placeholder="Buscar por nombre, CI o código..."
-            value={filtro}
-            onChange={(e) => setFiltro(e.target.value)}
-            className="w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-10 pr-4 text-sm text-gray-700 placeholder-gray-400 transition-all duration-200 focus:border-[#3b82f6] focus:outline-none focus:ring-2 focus:ring-[#3b82f6]/20 dark:border-gray-700 dark:bg-gray-800/50 dark:text-gray-300 dark:placeholder-gray-500 dark:focus:border-[#3b82f6]"
-          />
-        </div>
+    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div className="flex items-center gap-3">
+        <input
+          value={filtro}
+          onChange={(e) => setFiltro(e.target.value)}
+          placeholder="Buscar por nombre, CI, email..."
+          className="input input-bordered"
+        />
 
-        {/* Filtro de Rol */}
+        <select
+          value={estado}
+          onChange={(e) => setEstado(e.target.value as "" | "A" | "I")}
+          className="select select-bordered"
+        >
+          <option value="">Todos</option>
+          <option value="A">Activo</option>
+          <option value="I">Inactivo</option>
+        </select>
+
         <select
           value={rol}
-          onChange={(e) => setRol(e.target.value as "" | "administrador" | "empleado")}
-          className="rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-700 transition-all duration-200 focus:border-[#3b82f6] focus:outline-none focus:ring-2 focus:ring-[#3b82f6]/20 dark:border-gray-700 dark:bg-gray-800/50 dark:text-gray-300 dark:focus:border-[#3b82f6] md:w-48"
+          onChange={(e) =>
+            setRol(e.target.value as "" | "administrador" | "empleado")
+          }
+          className="select select-bordered"
         >
           <option value="">Todos los roles</option>
           <option value="administrador">Administrador</option>
           <option value="empleado">Empleado</option>
         </select>
-
-        {/* Filtro de Estado */}
-        <select
-          value={estado}
-          onChange={(e) => setEstado(e.target.value as "" | "A" | "I")}
-          className="rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-700 transition-all duration-200 focus:border-[#3b82f6] focus:outline-none focus:ring-2 focus:ring-[#3b82f6]/20 dark:border-gray-700 dark:bg-gray-800/50 dark:text-gray-300 dark:focus:border-[#3b82f6] md:w-48"
-        >
-          <option value="">Todos los estados</option>
-          <option value="A">Activo</option>
-          <option value="I">Inactivo</option>
-        </select>
       </div>
 
-      {/* Espacio para botones u otros children */}
-      {children && <div className="flex gap-2">{children}</div>}
+      {/* Zona para botones / children */}
+      <div className="flex items-center gap-2">{children}</div>
     </div>
   );
-}
+};
+
+export default UsuariosFilter;
