@@ -8,12 +8,20 @@ export const getHabitaciones = async (): Promise<Habitacion[]> => {
   return response.data;
 };
 
-// Crear una nueva habitación
-export const createHabitacion = async (data: HabitacionDTO): Promise<Habitacion> => {
-  const response = await api.post<Habitacion>("/habitacion/crear/", data);
+
+
+// * === SERVICIO PARA CREAR UN NUEVO HABITACION === * //
+export const createHabitacion = async (nuevaHabitacion: Partial<Habitacion>) => {
+  const response = await api.post("/habitaciones/crear/", nuevaHabitacion);
   return response.data;
 };
 
+// Crear una nueva habitación
+/*export const createHabitacion = async (data: HabitacionDTO): Promise<Habitacion> => {
+  const response = await api.post<Habitacion>("/habitaciones/crear/", data);
+  return response.data;
+};
+*/
 // Editar una habitación
 export const editHabitacion = async (id: number, data: HabitacionDTO): Promise<Habitacion> => {
   const response = await api.put<Habitacion>(`/habitaciones/${id}/`, data);
