@@ -27,6 +27,11 @@ import Homes from "./pages/Informativa/Homes";
 import Contactanos from "./pages/Informativa/Contactanos";
 import SobreNosotros from "./pages/Informativa/SobreNosotros";
 import ProtectedRoute from "./components/routes/ProtectedRoute";
+import Reserva from "./pages/Reservas/Reservas";
+import ReservaHospedaje from "./pages/Reservas/Reserva_Hospedaje";
+import ReservaEventos from "./pages/Reservas/Reserva_Eventos";
+
+
 
 export default function App() {
   return (
@@ -40,6 +45,9 @@ export default function App() {
           <Route path="/home" element={<Homes />} />
           <Route path="/contactanos" element={<Contactanos />} />
           <Route path="/sobre-nosotros" element={<SobreNosotros />} />
+          <Route path="/reservas" element={<Reserva />} />
+          <Route path="/reservas/hospedaje" element={<ReservaHospedaje />} />
+          <Route path="/reservas/eventos" element={<ReservaEventos />} />
 
           {/* Dashboard Layout */}
           <Route element={

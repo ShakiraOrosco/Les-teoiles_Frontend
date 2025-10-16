@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-//import { HashLink } from 'react-router-hash-link';
 import { Menu, X } from 'lucide-react';
 
 interface HeaderProps {
@@ -55,18 +54,14 @@ export default function Header({ currentPage = '' }: HeaderProps) {
             >
               Sobre Nosotros
             </a>
-            {/*<HashLink
-              smooth
-              to="/home#servicios"
-              scroll={(el) => {
-                const yOffset = -100; // Ajusta este valor según la altura de tu header
-                const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
-                window.scrollTo({ top: y, behavior: 'smooth' });
-              }}
-              className="text-gray-600 hover:text-teal-700 transition"
+            <a
+              href="/reservas"
+              className={`transition ${
+                isCurrentPage('reservas') ? 'text-teal-700 font-semibold' : 'text-gray-600 hover:text-teal-700'
+              }`}
             >
-              Servicios
-            </HashLink>*/}
+              Reservas
+            </a>
             <a
               href="/contactanos"
               className={`transition ${
@@ -126,16 +121,6 @@ export default function Header({ currentPage = '' }: HeaderProps) {
                 <span className="mr-3 text-xl">ℹ️</span>
                 <span>Sobre Nosotros</span>
               </a>
-              
-              {/*<HashLink
-                smooth
-                to="/home#servicios"
-                onClick={() => setMenuOpen(false)}
-                className="px-4 py-3 rounded-lg text-gray-600 hover:bg-teal-50 hover:text-teal-700 transition flex items-center"
-              >
-                <span className="mr-3 text-xl">🏊</span>
-                <span>Servicios</span>
-              </HashLink>**/}
               
               <a
                 href="/contactanos"
