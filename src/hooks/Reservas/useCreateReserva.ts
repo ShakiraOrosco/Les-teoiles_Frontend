@@ -28,7 +28,7 @@ export const useCreateReserva = (): UseCreateReservaReturn => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  const API_URL = import.meta.env.VITE_API_URL || 'https://proyecto-iii-les-toiles-de-l-eau.vercel.app';
+  const API_URL = import.meta.env.VITE_API_URL;
 
   const crearReserva = async (formData: FormData): Promise<void> => {
     setIsLoading(true);

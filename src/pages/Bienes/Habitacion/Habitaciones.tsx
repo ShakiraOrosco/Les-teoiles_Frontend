@@ -34,7 +34,7 @@ export default function HabitacionesPage() {
 
   const habitacionesFiltradas = (habitaciones ?? [])
     .filter((h) =>
-      `${h.numero} ${h.tipo} ${h.tarifa_hotel.nombre}`.toLowerCase().includes(filtro.toLowerCase())
+      `${h.numero} ${h.tarifa_hotel.nombre}`.toLowerCase().includes(filtro.toLowerCase())
     )
     .filter((h) => (estado === "" ? true : h.estado === estado))
     .filter((h) => (piso === "" ? true : h.piso === piso));
@@ -123,7 +123,10 @@ export default function HabitacionesPage() {
         </div>
       </div>
 
-      <CreateHabitacionModal isOpen={isCreateOpen} onClose={closeCreateModal} onCreated={handleCreated} />
+<CreateHabitacionModal isOpen={isCreateOpen} onClose={() => {
+  refetch();
+  closeCreateModal();
+}} />
     </div>
   );
 }

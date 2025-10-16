@@ -81,6 +81,43 @@ export function validarNumeroDel1Al9(value: string | number, fieldName: string):
     return ""; // válido
 }
 
+
+//Validar mas de tres caracteres repetidos
+export const validarRepeticionCaracteres = (valor: string, nombreCampo = "El campo"): string | null => {
+  const valorTrim = valor.trim();
+  if (/(.)\1{3,}/.test(valorTrim)) {
+    return `${nombreCampo} no puede tener más de 3 caracteres iguales consecutivos`;
+  }
+  return null;
+};
+
+//Validacion de solo digitos
+export const validarNumeroEntero = (value: string): string => {
+  if (!/^\d+$/.test(value)) return "El número debe contener solo dígitos";
+  return "";
+};
+
+// Validar que un número no esté duplicado en un listado existente
+// "listaExistente" es un array de strings con los números existentes
+export const validarNoDuplicado = (
+  valor: string,
+  listaExistente: string[],
+  nombreCampo = "El campo"
+): string | null => {
+  if (listaExistente.includes(valor)) {
+    return `${nombreCampo} ya está registrado, no puede ser duplicado`;
+  }
+  return null;
+};
+
+// Función para extraer el piso a partir del primer dígito del número de habitación
+export const obtenerPisoDesdeNumero = (numero: string): number | null => {
+  if (!numero || numero.length === 0) return null;
+  const primerDigito = numero.charAt(0);
+  if (!/^\d$/.test(primerDigito)) return null;
+  return Number(primerDigito);
+};
+
 // ---------------------- ESPECÍFICOS USUARIO ----------------------
 
 // Validar CI (solo números positivos, longitud 6 a 12 dígitos)
@@ -328,3 +365,16 @@ export const validarFormularioContacto = (formData: {
     mensaje: validarMensajeContacto(formData.mensaje)
   };
 };
+
+
+/* -------- Validacion de haitacion ----------- */
+export function validarNumeroHabitacion(num: string): string {
+  const n = Number(num);
+  if (isNaN(n) || !Number.isInteger(n)) {
+    return "El número debe ser un valor entero";
+  }
+  if (n < 100 || n > 999) {
+    return "El número debe estar entre 100 y 999";
+  }
+  return "";
+}

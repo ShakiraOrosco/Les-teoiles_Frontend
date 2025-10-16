@@ -19,7 +19,6 @@ export interface Habitacion {
   id_habitacion: number;
   numero: string;
   piso: number;
-  tipo: string;
   amoblado: OpcionSiNo;
   baño_priv: OpcionSiNo;
   estado: EstadoHabitacion;
@@ -35,10 +34,7 @@ export interface Habitacion {
 export interface HabitacionDTO {
   numero: string;
   piso: number;
-  tipo: string;
   amoblado: "S" | "N";
   baño_priv: "S" | "N";
-  estado: EstadoHabitacion;
-  tarifa_hotel: number; // FK
 }
 
