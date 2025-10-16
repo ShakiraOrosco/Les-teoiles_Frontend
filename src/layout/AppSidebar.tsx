@@ -52,6 +52,7 @@ const navItems: NavItem[] = [
     subItems: [
       { name: "Basic Tables", path: "/basic-tables" },
       { name: "Servicios Adicionales", path: "/Bienes/Servicios" },
+      { name: "Habitaciones", path: "/Bienes/Habitacion" },
     ],
   },
   {

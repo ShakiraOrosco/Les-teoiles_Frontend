@@ -1,5 +1,4 @@
 import { MapPin, Phone, Mail } from 'lucide-react';
-//import { HashLink } from 'react-router-hash-link';
 
 export default function Footer() {
   return (
@@ -25,20 +24,7 @@ export default function Footer() {
             <ul className="space-y-2 text-gray-400">
               <li><a href="/home" className="hover:text-cyan-400 transition">Inicio</a></li>
               <li><a href="/sobre-nosotros" className="hover:text-cyan-400 transition">Sobre Nosotros</a></li>
-              {/*<li>
-                <HashLink
-                  smooth
-                  to="/home#servicios"
-                  scroll={(el) => {
-                    const yOffset = -100; // igual que en el Header
-                    const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
-                    window.scrollTo({ top: y, behavior: 'smooth' });
-                  }}
-                  className="hover:text-cyan-400 transition"
-                >
-                  Servicios
-                </HashLink>
-              </li>*/}
+              <li><a href="/reservas" className="hover:text-cyan-400 transition">Reservas</a></li>
               <li><a href="/contactanos" className="hover:text-cyan-400 transition">Contáctanos</a></li>
             </ul>
           </div>

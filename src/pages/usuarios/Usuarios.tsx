@@ -12,11 +12,13 @@ import UsuariosFilter from "../../components/filters/Usuarios/UsuariosFilter";
 import UsuarioModal from "../../components/modals/Usuarios/UsuarioModal";
 
 export default function Usuarios() {
+
     const { openModal, isOpen, closeModal } = useModal();
     const { usuarios, loading, error, addUsuario } = useUsuarios();
 
-    // Estado para edición
 
+    // Estado para edición
+    const [usuarioEdit, setUsuarioEdit] = useState<any>(null);
     const [isEditOpen, setIsEditOpen] = useState(false);
 
     // Función para abrir el modal de edición con el usuario seleccionado
