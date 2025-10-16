@@ -71,6 +71,16 @@ export const validarEstado = (estado: string, opciones: string[], nombreCampo = 
   return null;
 };
 
+export function validarNumeroDel1Al9(value: string | number, fieldName: string): string {
+    const num = typeof value === "string" ? parseInt(value, 10) : value;
+    
+    if (isNaN(num)) return `${fieldName} debe ser un número`;
+    if (!Number.isInteger(num)) return `${fieldName} debe ser un número entero`;
+    if (num < 1 || num > 9) return `${fieldName} debe estar entre 1 y 9`;
+
+    return ""; // válido
+}
+
 // ---------------------- ESPECÍFICOS USUARIO ----------------------
 
 // Validar CI (solo números positivos, longitud 6 a 12 dígitos)

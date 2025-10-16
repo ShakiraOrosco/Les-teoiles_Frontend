@@ -20,6 +20,7 @@ import { ScrollToTop } from "./components/common/ScrollToTop";
 import Home from "./pages/Dashboard/Home";
 import { Toaster } from "sonner";
 import ServiciosAdicionalesPage from "./pages/Bienes/Servicios/ServiciosAdicionales";
+import HabitacionPage from "./pages/Bienes/Habitacion/Habitaciones";
 
 
 // Páginas Informativas
@@ -80,6 +81,7 @@ export default function App() {
 
             {/*Crud Servicios Adicionales */}
             <Route path="/Bienes/Servicios" element={<ServiciosAdicionalesPage />} />
+            <Route path="/Bienes/Habitacion" element={<HabitacionPage />} />
 
           </Route>
 
