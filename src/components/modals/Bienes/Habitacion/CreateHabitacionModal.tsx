@@ -8,7 +8,7 @@ import { HabitacionDTO, OpcionSiNo } from "../../../../types/Bienes/Habitacion/h
 import {
   validarNumeroEntero,
   obtenerPisoDesdeNumero,
-  validarNumeroHabitacion,
+  validarNumeroHabitacion
 } from "../../../utils/validaciones";
 import { useHabitaciones } from "../../../../hooks/Bienes/Habitacion/useCreateHabitacion";
 
@@ -22,7 +22,7 @@ export default function CreateHabitacionModal({ isOpen, onClose }: Props) {
 
   const [form, setForm] = useState<HabitacionDTO>({
     numero: "",
-    piso: 1,
+    piso: 1, // Se actualizará automáticamente
     amoblado: "S",
     baño_priv: "S",
   });
@@ -40,30 +40,42 @@ export default function CreateHabitacionModal({ isOpen, onClose }: Props) {
 
   if (!isOpen) return null;
 
-  const handleChange = <K extends keyof HabitacionDTO>(field: K, value: HabitacionDTO[K]) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
+  // Actualiza el form; el piso se obtiene automáticamente del primer dígito
+  const handleChange = (field: keyof HabitacionDTO, value: any) => {
+    let newForm = { ...form, [field]: value };
+
+    if (field === "numero") {
+      const piso = obtenerPisoDesdeNumero(value);
+      newForm.piso = piso || 1; // Piso mínimo 1
+    }
+
+    setForm(newForm);
   };
 
   const validateForm = () => {
     const newErrors: typeof errors = { numero: "", piso: "", amoblado: "", baño_priv: "" };
 
-    // 1️⃣ Validar número de habitación
-    let error = validarNumeroHabitacion(form.numero);
-    if (error) newErrors.numero = error;
+    // 1️⃣ Validar que el número sea obligatorio y solo dígitos
+    if (!form.numero) newErrors.numero = "El número de habitación es obligatorio";
+    else {
+      const errorNumero = validarNumeroEntero(form.numero);
+      if (errorNumero) newErrors.numero = errorNumero;
+    }
 
-    // 2️⃣ Validar que solo tenga dígitos
-    error = validarNumeroEntero(form.numero);
-    if (error) newErrors.numero = error;
-
-    // 3️⃣ Validar que el primer dígito coincida con el piso
+    // 2️⃣ Validar que el primer dígito coincida con el piso (seguridad)
     const pisoDesdeNumero = obtenerPisoDesdeNumero(form.numero);
     if (pisoDesdeNumero !== form.piso) {
       newErrors.numero = "El primer dígito del número debe coincidir con el piso";
       newErrors.piso = "El piso debe coincidir con el primer dígito del número";
     }
 
-    // 4️⃣ Validar rango del piso
-    if (form.piso < 1 || form.piso > 9) newErrors.piso = "El piso debe estar entre 1 y 9";
+    // 🟩 Validar número entre 100 y 999
+    if (!form.numero) {
+      newErrors.numero = "El número de habitación es obligatorio";
+    } else {
+      const errorNumero = validarNumeroHabitacion(form.numero);
+      if (errorNumero) newErrors.numero = errorNumero;
+    }
 
     setErrors(newErrors);
     return !Object.values(newErrors).some((e) => e);
@@ -73,24 +85,27 @@ export default function CreateHabitacionModal({ isOpen, onClose }: Props) {
     e.preventDefault();
     if (!validateForm()) return;
 
+    const payload = {
+      numero: form.numero.trim(),
+      piso: form.piso,
+      amoblado: form.amoblado,
+      baño_priv: form.baño_priv,
+    };
+
     try {
-      await addHabitacion(form);
+      await addHabitacion(payload);
       setAlert({ variant: "success", message: "Habitación creada correctamente" });
 
       // Reiniciar formulario
-      setForm({
-        numero: "",
-        piso: 1,
-        amoblado: "S",
-        baño_priv: "S",
-      });
+      setForm({ numero: "", piso: 1, amoblado: "S", baño_priv: "S" });
 
       setTimeout(() => {
         setAlert(null);
         onClose();
       }, 1200);
-    } catch {
-      setAlert({ variant: "error", message: "Error al crear la habitación" });
+    } catch (error: any) {
+      const message = error.response?.data?.error || "Error al crear la habitación";
+      setAlert({ variant: "error", message });
     }
   };
 
@@ -141,23 +156,17 @@ export default function CreateHabitacionModal({ isOpen, onClose }: Props) {
             {errors.numero && <p className="text-xs text-red-500 mt-1">{errors.numero}</p>}
           </div>
 
-          {/* Piso */}
+          {/* Piso (solo lectura) */}
           <div>
             <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
-              Piso <span className="text-red-500">*</span>
+              Piso
             </label>
-            <select
+            <input
+              type="number"
               value={form.piso}
-              onChange={(e) => handleChange("piso", Number(e.target.value))}
-              className="w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-[#26a5b9]/20 focus:border-[#26a5b9] dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700"
-            >
-              {[...Array(9)].map((_, i) => (
-                <option key={i + 1} value={i + 1}>
-                  {i + 1}
-                </option>
-              ))}
-            </select>
-            {errors.piso && <p className="text-xs text-red-500 mt-1">{errors.piso}</p>}
+              readOnly
+              className="w-full rounded-lg border px-3 py-2 text-sm bg-gray-100 dark:bg-gray-700 dark:text-gray-300"
+            />
           </div>
 
           {/* Amoblado */}

@@ -1,6 +1,6 @@
 // src/services/Habitacion/habitacionService.ts
 import api from "../../axios";
-import { Habitacion, HabitacionDTO } from "../../../types/Bienes/Habitacion/habitacion";
+import { Habitacion } from "../../../types/Bienes/Habitacion/habitacion";
 
 // Obtener todas las habitaciones
 export const getHabitaciones = async (): Promise<Habitacion[]> => {
@@ -8,23 +8,21 @@ export const getHabitaciones = async (): Promise<Habitacion[]> => {
   return response.data;
 };
 
-
-
 // * === SERVICIO PARA CREAR UN NUEVO HABITACION === * //
 export const createHabitacion = async (nuevaHabitacion: Partial<Habitacion>) => {
   const response = await api.post("/habitaciones/crear/", nuevaHabitacion);
   return response.data;
 };
 
-// Crear una nueva habitación
-/*export const createHabitacion = async (data: HabitacionDTO): Promise<Habitacion> => {
-  const response = await api.post<Habitacion>("/habitaciones/crear/", data);
+// Obtener detalle de una habitación
+export const getHabitacionById = async (id: number): Promise<Habitacion> => {
+  const response = await api.get<Habitacion>(`/habitaciones/${id}/`);
   return response.data;
 };
-*/
+
 // Editar una habitación
-export const editHabitacion = async (id: number, data: HabitacionDTO): Promise<Habitacion> => {
-  const response = await api.put<Habitacion>(`/habitaciones/${id}/`, data);
+export const editHabitacion = async (id: number, data: Partial<Habitacion>): Promise<Habitacion> => {
+  const response = await api.put<Habitacion>(`/habitaciones/${id}/update/`, data);
   return response.data;
 };
 
