@@ -1,13 +1,13 @@
 // src/hooks/Bienes/Habitacion/useHabitaciones.ts
 import { useEffect, useState, useCallback } from "react";
-import { HabitacionDTO } from "../../../types/Bienes/Habitacion/habitacion";
+import { Habitacion } from "../../../types/Bienes/Habitacion/habitacion";
 import {
   getHabitaciones,
   createHabitacion,
 } from "../../../services/Bienes/Habitacion/habitacionService";
 
 export const useHabitaciones = () => {
-  const [habitaciones, setHabitaciones] = useState<HabitacionDTO[]>([]);
+  const [habitaciones, setHabitaciones] = useState<Habitacion[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -32,12 +32,17 @@ export const useHabitaciones = () => {
   }, [fetchHabitaciones]);
 
   // === Crear habitación ===
-  const addHabitacion = async (nueva: HabitacionDTO) => {
+  const addHabitacion = async (nueva: Partial<Habitacion>) => {
+    // Verificar duplicado en el front
+    const existe = habitaciones.some(h => h.numero === nueva.numero);
+    if (existe) throw new Error("Ya existe una habitación con ese número");
+
     try {
       const creada = await createHabitacion(nueva);
-      setHabitaciones((prev) => [...prev, creada]);
-    } catch (err) {
-      throw new Error("Error al crear habitación");
+      setHabitaciones(prev => [...prev, creada]);
+      return creada;
+    } catch (err: any) {
+      throw err;
     }
   };
 

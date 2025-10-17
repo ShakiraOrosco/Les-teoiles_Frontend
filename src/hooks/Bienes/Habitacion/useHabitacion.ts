@@ -1,4 +1,4 @@
-// src/hooks/Bienes/Habitacion/useHabitaciones.ts
+// src/hooks/Bienes/Habitacion/useHabitacion.ts
 import { useState, useEffect } from "react";
 import { Habitacion } from "../../../types/Bienes/Habitacion/habitacion";
 import * as habitacionService from "../../../services/Bienes/Habitacion/habitacionService";

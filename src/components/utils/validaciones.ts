@@ -92,8 +92,11 @@ export const validarRepeticionCaracteres = (valor: string, nombreCampo = "El cam
 };
 
 //Validacion de solo digitos
+// Valida que el número sea solo dígitos y tenga al menos 3 caracteres
 export const validarNumeroEntero = (value: string): string => {
+  if (!value) return "El número de habitación es obligatorio";
   if (!/^\d+$/.test(value)) return "El número debe contener solo dígitos";
+  if (value.length < 3) return "El número debe tener al menos 3 dígitos";
   return "";
 };
 
@@ -108,14 +111,6 @@ export const validarNoDuplicado = (
     return `${nombreCampo} ya está registrado, no puede ser duplicado`;
   }
   return null;
-};
-
-// Función para extraer el piso a partir del primer dígito del número de habitación
-export const obtenerPisoDesdeNumero = (numero: string): number | null => {
-  if (!numero || numero.length === 0) return null;
-  const primerDigito = numero.charAt(0);
-  if (!/^\d$/.test(primerDigito)) return null;
-  return Number(primerDigito);
 };
 
 // ---------------------- ESPECÍFICOS USUARIO ----------------------
@@ -368,6 +363,22 @@ export const validarFormularioContacto = (formData: {
 
 
 /* -------- Validacion de haitacion ----------- */
+
+// Obtiene el piso del primer dígito del número
+export const obtenerPisoDesdeNumero = (numero: string): number => {
+  return Number(numero[0] || 0);
+};
+
+// Validación completa para el formulario
+export const validarFormularioHabitacion = (numero: string): Record<string, string> => {
+  const errors: Record<string, string> = {};
+
+  const errorNumero = validarNumeroEntero(numero);
+  if (errorNumero) errors.numero = errorNumero;
+
+  return errors;
+}; 
+
 export function validarNumeroHabitacion(num: string): string {
   const n = Number(num);
   if (isNaN(n) || !Number.isInteger(n)) {
@@ -378,3 +389,4 @@ export function validarNumeroHabitacion(num: string): string {
   }
   return "";
 }
+
