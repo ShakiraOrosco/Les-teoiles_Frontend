@@ -1,94 +1,62 @@
 import { useState } from 'react';
 
-interface ReservaData {
-  nombre: string;
-  apellidoPaterno: string;
-  apellidoMaterno: string;
-  telefono: string;
-  carnet: string;
-  email: string;
-  cantidadPersonas: string;
-  amoblado: string;
-  banoPrivado: string;
-  fechaInicio: string;
-  fechaFin: string;
-}
-
-interface ReservaResponse {
-  mensaje: string;
-  reserva: any;
-  cliente_id: number;
-  habitacion_id: number;
-  reserva_gen_id: number;
-}
-
-interface UseCreateReservaReturn {
-  crearReserva: (data: ReservaData) => Promise<ReservaResponse | null>;
+interface UseUploadComprobanteReturn {
+  subirComprobante: (id_reserva_gen: number, archivo: File) => Promise<any>;
   isLoading: boolean;
   error: string | null;
   success: boolean;
   resetState: () => void;
 }
 
-export const useCreateReserva = (): UseCreateReservaReturn => {
+export const useUploadComprobante = (): UseUploadComprobanteReturn => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  const API_URL = import.meta.env.VITE_API_URL || 'https://proyecto-iii-les-toiles-de-l-eau.vercel.app/api';
+  const API_URL = import.meta.env.VITE_API_URL;
 
-  const crearReserva = async (data: ReservaData): Promise<ReservaResponse | null> => {
+  const subirComprobante = async (id_reserva_gen: number, archivo: File): Promise<any> => {
     setIsLoading(true);
     setError(null);
     setSuccess(false);
 
     try {
-      const reservaData = {
-        nombre: data.nombre,
-        app_paterno: data.apellidoPaterno,
-        app_materno: data.apellidoMaterno,
-        telefono: data.telefono,
-        ci: data.carnet,
-        email: data.email,
-        cant_personas: data.cantidadPersonas,
-        amoblado: data.amoblado === 'si' ? 'S' : 'N',
-        baño_priv: data.banoPrivado === 'si' ? 'S' : 'N',
-        fecha_ini: data.fechaInicio,
-        fecha_fin: data.fechaFin,
-        estado: 'A'
-      };
+      const formData = new FormData();
+      formData.append('pago', archivo);
 
-      console.log('Enviando datos al backend:', reservaData);
-      console.log('URL de la API:', `${API_URL}/reservas-hotel/`);
+      console.log('Subiendo comprobante para reserva_gen_id:', id_reserva_gen);
+      console.log('Archivo:', archivo.name, archivo.type, archivo.size);
 
-      const response = await fetch(`${API_URL}/reservas-hotel/`, {
+      const response = await fetch(`${API_URL}/reservaHotel/subir_comprobante/${id_reserva_gen}/`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(reservaData),
+        body: formData,
+        // No incluir Content-Type, el navegador lo configura automáticamente
       });
 
-      const text = await response.text();
-
-      let responseData;
-      try {
-        responseData = JSON.parse(text);
-      } catch {
-        throw new Error(`Respuesta inválida del servidor: ${text.slice(0, 200)}...`);
-      }
-
       if (!response.ok) {
-        throw new Error(responseData?.error || `Error ${response.status}: ${response.statusText}`);
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('text/html')) {
+          throw new Error(`Error del servidor: ${response.status} ${response.statusText}`);
+        }
+
+        try {
+          const errorData = await response.json();
+          throw new Error(errorData.error || errorData.message || `Error ${response.status}`);
+        } catch (jsonError) {
+          throw new Error(`Error ${response.status}: ${response.statusText}`);
+        }
       }
 
-      console.log('Respuesta del backend:', responseData);
+      const result = await response.json();
       setSuccess(true);
-      return responseData;
+      console.log('Comprobante subido exitosamente:', result);
+      return result;
 
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Error desconocido al crear la reserva';
+      const errorMessage = err instanceof Error ? err.message : 'Error desconocido al subir el comprobante';
       setError(errorMessage);
-      console.error('Error creating reservation:', err);
-      return null;
+      console.error('Error uploading comprobante:', err);
+      throw err;
     } finally {
       setIsLoading(false);
     }
@@ -100,5 +68,11 @@ export const useCreateReserva = (): UseCreateReservaReturn => {
     setSuccess(false);
   };
 
-  return { crearReserva, isLoading, error, success, resetState };
+  return {
+    subirComprobante,
+    isLoading,
+    error,
+    success,
+    resetState
+  };
 };

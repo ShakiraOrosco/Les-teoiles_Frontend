@@ -16,7 +16,7 @@ interface FormData {
 }
 
 interface UseCreateReservaReturn {
-  crearReserva: (formData: FormData) => Promise<void>;
+  crearReserva: (formData: FormData) => Promise<any>;
   isLoading: boolean;
   error: string | null;
   success: boolean;
@@ -30,7 +30,7 @@ export const useCreateReserva = (): UseCreateReservaReturn => {
 
   const API_URL = import.meta.env.VITE_API_URL;
 
-  const crearReserva = async (formData: FormData): Promise<void> => {
+  const crearReserva = async (formData: FormData): Promise<any> => {
     setIsLoading(true);
     setError(null);
     setSuccess(false);
@@ -46,16 +46,16 @@ export const useCreateReserva = (): UseCreateReservaReturn => {
       // 🔹 MAPEAR CAMPOS: Frontend → Backend
       const datosParaBackend = {
         nombre: formData.nombre,
-        app_paterno: formData.apellidoPaterno, // Cambio de nombre
-        app_materno: formData.apellidoMaterno, // Cambio de nombre
+        app_paterno: formData.apellidoPaterno,
+        app_materno: formData.apellidoMaterno,
         telefono: formData.telefono,
-        ci: formData.carnet, // Cambio de nombre
+        ci: formData.carnet,
         email: formData.email,
-        cant_personas: formData.cantidadPersonas, // Cambio de nombre
-        fecha_ini: formData.fechaInicio, // Cambio de nombre
-        fecha_fin: formData.fechaFin, // Cambio de nombre
-        amoblado: formData.amoblado === 'si' ? 'S' : 'N', // Transformar valores
-        baño_priv: formData.banoPrivado === 'si' ? 'S' : 'N' // Cambio de nombre y valores
+        cant_personas: formData.cantidadPersonas,
+        fecha_ini: formData.fechaInicio,
+        fecha_fin: formData.fechaFin,
+        amoblado: formData.amoblado === 'si' ? 'S' : 'N',
+        baño_priv: formData.banoPrivado === 'si' ? 'S' : 'N'
       };
 
       console.log('Enviando datos al backend:', datosParaBackend);
@@ -68,15 +68,12 @@ export const useCreateReserva = (): UseCreateReservaReturn => {
         body: JSON.stringify(datosParaBackend),
       });
 
-      // Mejor manejo de errores
       if (!response.ok) {
-        // Si la respuesta es HTML (error 404, 500, etc.)
         const contentType = response.headers.get('content-type');
         if (contentType && contentType.includes('text/html')) {
           throw new Error(`Error del servidor: ${response.status} ${response.statusText}`);
         }
         
-        // Intentar parsear como JSON
         try {
           const errorData = await response.json();
           throw new Error(errorData.error || errorData.message || `Error ${response.status}`);
@@ -88,11 +85,13 @@ export const useCreateReserva = (): UseCreateReservaReturn => {
       const result = await response.json();
       setSuccess(true);
       console.log('Reserva creada exitosamente:', result);
+      return result;
 
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido al crear la reserva';
       setError(errorMessage);
       console.error('Error creating reservation:', err);
+      throw err;
     } finally {
       setIsLoading(false);
     }
