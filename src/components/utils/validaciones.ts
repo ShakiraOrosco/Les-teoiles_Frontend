@@ -390,3 +390,276 @@ export function validarNumeroHabitacion(num: string): string {
   return "";
 }
 
+
+
+/**
+ * Validaciones para Formulario de Hospedaje
+ * Adaptadas de las validaciones existentes de contacto
+ */
+
+// ---------------------- VALIDACIÓN DE NOMBRE ----------------------
+export const validarNombreHospedaje = (nombre: string): string | null => {
+  const valorTrim = nombre.trim();
+  
+  if (valorTrim === "") {
+    return "El nombre es obligatorio";
+  }
+  
+  if (nombre.length > 0 && valorTrim === "") {
+    return "El nombre no puede contener solo espacios";
+  }
+  
+  if (valorTrim.length < 3) {
+    return "El nombre debe tener al menos 3 caracteres";
+  }
+  
+  if (valorTrim.length > 60) {
+    return "El nombre no puede superar 60 caracteres";
+  }
+  
+  if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(valorTrim)) {
+    return "El nombre solo puede contener letras y espacios";
+  }
+  
+  if (/(.)\1{3,}/.test(valorTrim)) {
+    return "El nombre no puede tener caracteres repetidos excesivamente";
+  }
+  
+  const letrasUnicas = new Set(valorTrim.replace(/\s/g, '').toLowerCase());
+  if (letrasUnicas.size < 2) {
+    return "El nombre debe contener al menos 2 letras diferentes";
+  }
+  
+  return null;
+};
+
+// ---------------------- VALIDACIÓN DE APELLIDOS ----------------------
+export const validarApellidos = (apellidoPaterno: string, apellidoMaterno: string): { paterno: string | null; materno: string | null } => {
+  const paternoTrim = apellidoPaterno.trim();
+  const maternoTrim = apellidoMaterno.trim();
+  
+  const errores = { paterno: null as string | null, materno: null as string | null };
+  
+  // Al menos uno debe estar lleno
+  if (paternoTrim === "" && maternoTrim === "") {
+    return { paterno: "Debe llenar al menos un apellido", materno: null };
+  }
+  
+  // Validar apellido paterno si está lleno
+  if (paternoTrim !== "") {
+    if (paternoTrim.length < 3) {
+      errores.paterno = "Apellido paterno debe tener al menos 3 caracteres";
+    } else if (paternoTrim.length > 60) {
+      errores.paterno = "Apellido paterno no puede superar 60 caracteres";
+    } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(paternoTrim)) {
+      errores.paterno = "Solo puede contener letras y espacios";
+    } else if (/(.)\1{3,}/.test(paternoTrim)) {
+      errores.paterno = "No puede tener caracteres repetidos excesivamente";
+    } else {
+      const letrasUnicas = new Set(paternoTrim.replace(/\s/g, '').toLowerCase());
+      if (letrasUnicas.size < 2) {
+        errores.paterno = "Debe contener al menos 2 letras diferentes";
+      }
+    }
+  }
+  
+  // Validar apellido materno si está lleno
+  if (maternoTrim !== "") {
+    if (maternoTrim.length < 3) {
+      errores.materno = "Apellido materno debe tener al menos 3 caracteres";
+    } else if (maternoTrim.length > 60) {
+      errores.materno = "Apellido materno no puede superar 60 caracteres";
+    } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(maternoTrim)) {
+      errores.materno = "Solo puede contener letras y espacios";
+    } else if (/(.)\1{3,}/.test(maternoTrim)) {
+      errores.materno = "No puede tener caracteres repetidos excesivamente";
+    } else {
+      const letrasUnicas = new Set(maternoTrim.replace(/\s/g, '').toLowerCase());
+      if (letrasUnicas.size < 2) {
+        errores.materno = "Debe contener al menos 2 letras diferentes";
+      }
+    }
+  }
+  
+  return errores;
+};
+
+// ---------------------- VALIDACIÓN DE EMAIL ----------------------
+export const validarEmailHospedaje = (email: string): string | null => {
+  const valorTrim = email.trim();
+  
+  if (valorTrim === "") {
+    return "El email es obligatorio";
+  }
+  
+  if (/\s/.test(email)) {
+    return "El email no puede contener espacios";
+  }
+  
+  if (valorTrim.length > 100) {
+    return "El email no puede superar 100 caracteres";
+  }
+  
+  if (!valorTrim.includes("@")) {
+    return "El email debe contener @";
+  }
+  
+  const emailRegex = /^[a-zA-Z0-9][a-zA-Z0-9._-]*[a-zA-Z0-9]@[a-zA-Z0-9][a-zA-Z0-9.-]*\.[a-zA-Z]{2,}$/;
+  
+  if (!emailRegex.test(valorTrim)) {
+    const partes = valorTrim.split("@");
+    
+    if (partes.length < 2 || !partes[1] || partes[1].trim() === "") {
+      return "El email debe tener un dominio después del @";
+    }
+    
+    if (!partes[1].includes(".") || partes[1].endsWith(".")) {
+      return "El email debe tener una extensión válida (.com, .edu, etc.)";
+    }
+    
+    return "El formato del email no es válido";
+  }
+  
+  return null;
+};
+
+// ---------------------- VALIDACIÓN DE TELÉFONO ----------------------
+export const validarTelefonoHospedaje = (telefono: string): string | null => {
+  const valorTrim = telefono.trim();
+  
+  if (valorTrim === "") return "El teléfono es obligatorio";
+  
+  if (!/^\d+$/.test(valorTrim)) {
+    return "El teléfono solo puede contener números";
+  }
+  
+  if (valorTrim.length !== 8) {
+    return "El teléfono debe tener 8 dígitos";
+  }
+  
+  const num = Number(valorTrim);
+  if (num < 60000000 || num > 79999999) {
+    return "El teléfono debe ser un número boliviano válido (comenzar con 6 o 7)";
+  }
+  
+  return null;
+};
+
+// ---------------------- VALIDACIÓN DE CARNET ----------------------
+export const validarCarnetHospedaje = (carnet: string): string | null => {
+  const valorTrim = carnet.trim();
+  
+  if (valorTrim === "") return "El carnet es obligatorio";
+  
+  if (!/^\d+$/.test(valorTrim)) {
+    return "El carnet solo puede contener números";
+  }
+  
+  if (valorTrim.length < 5 || valorTrim.length > 12) {
+    return "El carnet debe tener entre 5 y 12 dígitos";
+  }
+  
+  if (/(.)\1{4,}/.test(valorTrim)) {
+    return "El carnet no puede tener más de 4 dígitos iguales consecutivos";
+  }
+  
+  if (/^(.)\1+$/.test(valorTrim)) {
+    return "El carnet no puede contener solo dígitos repetidos";
+  }
+  
+  return null;
+};
+
+// ---------------------- VALIDACIÓN DE CANTIDAD DE PERSONAS ----------------------
+export const validarCantidadPersonas = (cantidad: string): string | null => {
+  if (cantidad === "") return "La cantidad de personas es obligatoria";
+  
+  const num = Number(cantidad);
+  if (isNaN(num)) return "Debe ser un número válido";
+  if (!Number.isInteger(num)) return "Debe ser un número entero";
+  if (num < 1) return "Debe ser al menos 1 persona";
+  if (num > 50) return "No pueden ser más de 50 personas";
+  
+  return null;
+};
+
+// ---------------------- VALIDACIÓN DE FECHAS ----------------------
+export const validarFechas = (fechaInicio: string, fechaFin: string): { inicio: string | null; fin: string | null } => {
+  const errores = { inicio: null as string | null, fin: null as string | null };
+  
+  if (!fechaInicio) errores.inicio = "La fecha de inicio es obligatoria";
+  if (!fechaFin) errores.fin = "La fecha de fin es obligatoria";
+  
+  if (fechaInicio && fechaFin) {
+    const inicio = new Date(fechaInicio);
+    const fin = new Date(fechaFin);
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    
+    if (inicio < hoy) errores.inicio = "No puedes seleccionar una fecha pasada";
+    if (fin <= inicio) errores.fin = "La fecha de fin debe ser después de la fecha de inicio";
+  }
+  
+  return errores;
+};
+
+// ---------------------- VALIDAR TODO EL FORMULARIO ----------------------
+export const validarFormularioHospedaje = (formData: {
+  nombre: string;
+  apellidoPaterno: string;
+  apellidoMaterno: string;
+  telefono: string;
+  email: string;
+  carnet: string;
+  fechaInicio: string;
+  fechaFin: string;
+  cantidadPersonas: string;
+}): Record<string, string | null> => {
+  const erroresApellidos = validarApellidos(formData.apellidoPaterno, formData.apellidoMaterno);
+  const erroresFechas = validarFechas(formData.fechaInicio, formData.fechaFin);
+  
+  return {
+    nombre: validarNombreHospedaje(formData.nombre),
+    apellidoPaterno: erroresApellidos.paterno,
+    apellidoMaterno: erroresApellidos.materno,
+    telefono: validarTelefonoHospedaje(formData.telefono),
+    email: validarEmailHospedaje(formData.email),
+    carnet: validarCarnetHospedaje(formData.carnet),
+    fechaInicio: erroresFechas.inicio,
+    fechaFin: erroresFechas.fin,
+    cantidadPersonas: validarCantidadPersonas(formData.cantidadPersonas),
+  };
+};
+
+// ---------------------- UTILIDADES PARA INPUTS ----------------------
+
+// Permitir solo números y bloquear letras
+export const soloNumeros = (e: React.KeyboardEvent<HTMLInputElement>): void => {
+  const tecla = e.key;
+  if (
+    !/[0-9]/.test(tecla) &&
+    !['Backspace', 'Delete', 'Tab', 'Home', 'End', 'ArrowLeft', 'ArrowRight'].includes(tecla) &&
+    !(e.ctrlKey && ['a', 'c', 'v', 'x'].includes(tecla.toLowerCase()))
+  ) {
+    e.preventDefault();
+  }
+};
+
+// Permitir solo letras y espacios
+export const soloLetras = (e: React.KeyboardEvent<HTMLInputElement>): void => {
+  const tecla = e.key;
+  const esLetra = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]$/.test(tecla);
+  const esTeclaEspecial = ['Backspace', 'Delete', 'Tab', 'Home', 'End', 'ArrowLeft', 'ArrowRight'].includes(tecla);
+  const esControl = e.ctrlKey && ['a', 'c', 'v', 'x'].includes(tecla.toLowerCase());
+  
+  if (!esLetra && !esTeclaEspecial && !esControl) {
+    e.preventDefault();
+  }
+};
+
+// Bloquear notación científica y caracteres especiales en números
+export const bloquearEscrituraDirecta = (e: React.KeyboardEvent<HTMLInputElement>): void => {
+  if (e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-' || e.key === '.') {
+    e.preventDefault();
+  }
+};
