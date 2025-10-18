@@ -1,20 +1,46 @@
 import { useState, useEffect } from "react";
+import { FaTimes } from "react-icons/fa";
+import { Modal } from "../../ui/modal";
+import Button from "../../ui/button/Button";
 import { Usuario } from "../../../types/Usuarios/usuario";
-import Button  from "../../ui/button/Button";
+import Alert from "../../ui/alert/Alert";
+
+// Importa tus validaciones
+import { 
+    validarLongitud,    
+    validarTelefono,
+    validarCorreo, 
+    validarRepeticionCaracteres,
+    validarCI,
+} from "../../utils/validaciones";
 
 interface EditUsuarioModalProps {
   isOpen: boolean;
   onClose: () => void;
   usuario: Usuario;
-  onSubmit: (updatedData: Partial<Usuario>) => void;
+  onSubmit: (updatedData: Partial<Usuario>) => Promise<void>;
 }
 
 export default function EditUsuarioModal({ isOpen, onClose, usuario, onSubmit }: EditUsuarioModalProps) {
   const [formData, setFormData] = useState<Partial<Usuario>>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isPending, setIsPending] = useState(false);
+  const [alert, setAlert] = useState<{ variant: "success" | "error"; message: string } | null>(null);
 
   useEffect(() => {
     if (usuario) {
-      setFormData(usuario);
+      setFormData({
+        nombre: usuario.nombre,
+        app_paterno: usuario.app_paterno,
+        app_materno: usuario.app_materno,
+        ci: usuario.ci,
+        telefono: usuario.telefono,
+        email: usuario.email,
+        rol: usuario.rol,
+        estado: usuario.estado,
+      });
+      setErrors({});
+      setAlert(null);
     }
   }, [usuario]);
 
@@ -22,49 +48,304 @@ export default function EditUsuarioModal({ isOpen, onClose, usuario, onSubmit }:
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    
+    // Limpiar error del campo cuando el usuario empieza a escribir
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: "" }));
+    }
   };
 
-  const handleSubmit = () => {
-    onSubmit(formData);
+  const validarFormulario = () => {
+    const errores: Record<string, string> = {};
+    
+    // Nombre
+    const errorNombre = validarLongitud(formData.nombre || "", 3, 60, "El nombre") || 
+                        validarRepeticionCaracteres(formData.nombre || "", "El nombre");
+    if (errorNombre) errores.nombre = errorNombre;
+    
+    // Apellido Paterno
+    const errorApPaterno = validarLongitud(formData.app_paterno || "", 3, 60, "El apellido paterno") || 
+                           validarRepeticionCaracteres(formData.app_paterno || "", "El apellido paterno");
+    if (errorApPaterno) errores.app_paterno = errorApPaterno;
+    
+    // Apellido Materno (opcional)
+    if (formData.app_materno) {
+      const errorApMaterno = validarLongitud(formData.app_materno, 3, 60, "El apellido materno") || 
+                             validarRepeticionCaracteres(formData.app_materno, "El apellido materno");
+      if (errorApMaterno) errores.app_materno = errorApMaterno;
+    }
+    
+    // CI
+    const errorCI = validarCI(formData.ci || "");
+    if (errorCI) errores.ci = errorCI;
+    
+    // Teléfono
+    const errorTelefono = validarTelefono(formData.telefono || "");
+    if (errorTelefono) errores.telefono = errorTelefono;
+    
+    // Email
+    const errorEmail = validarCorreo(formData.email || "");
+    if (errorEmail) errores.email = errorEmail;
+    
+    // Estado
+    if (!["A", "I"].includes(formData.estado || "")) {
+      errores.estado = "Estado no válido";
+    }
+    
+    // Rol
+    if (!["administrador", "empleado"].includes(formData.rol || "")) {
+      errores.rol = "Rol no válido";
+    }
+
+    return errores;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validar formulario
+    const erroresForm = validarFormulario();
+    
+    if (Object.keys(erroresForm).length > 0) {
+      setErrors(erroresForm);
+      setAlert({ 
+        variant: "error", 
+        message: "Por favor corrige los errores en el formulario" 
+      });
+      return;
+    }
+
+    setIsPending(true);
+    setAlert(null);
+
+    try {
+      console.log("📤 Datos actualizados:", formData);
+      
+      await onSubmit(formData);
+      
+      setAlert({ variant: "success", message: "Usuario actualizado correctamente" });
+      
+      setTimeout(() => {
+        onClose();
+      }, 1500);
+    } catch (error: any) {
+      console.error("❌ Error al actualizar usuario:", error);
+      setAlert({ 
+        variant: "error", 
+        message: error?.message || "Error al actualizar el usuario" 
+      });
+    } finally {
+      setIsPending(false);
+    }
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center">
-      <div className="bg-white p-6 rounded-lg shadow-lg w-96">
-        <h2 className="text-lg font-semibold mb-4">Editar Usuario</h2>
-
-        <input
-          className="w-full border p-2 mb-2 rounded"
-          name="nombre"
-          value={formData.nombre || ""}
-          onChange={handleChange}
-          placeholder="Nombre"
-        />
-
-        <input
-          className="w-full border p-2 mb-2 rounded"
-          name="email"
-          value={formData.email || ""}
-          onChange={handleChange}
-          placeholder="Correo"
-        />
-
-        <select
-          className="w-full border p-2 mb-2 rounded"
-          name="rol"
-          value={formData.rol || ""}
-          onChange={handleChange}
-        >
-          <option value="empleado">Empleado</option>
-          <option value="administrador">Administrador</option>
-        </select>
-
-        <div className="flex justify-end gap-2 mt-4">
-          <Button variant="outline" onClick={onClose}>Cancelar</Button>
-          <Button onClick={handleSubmit}>Guardar Cambios</Button>
+    <Modal isOpen={isOpen} onClose={onClose} className="max-w-2xl m-4">
+      <div className="relative w-full p-6 bg-white rounded-2xl dark:bg-gray-900">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-gray-200 bg-[#e2e8f6] dark:bg-[#458890] px-4 py-3 rounded-t-2xl">
+          <h2 className="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
+            <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#26a5b9] text-white">✏️</span>
+            Editar Usuario
+          </h2>
+          <button 
+            onClick={onClose} 
+            disabled={isPending} 
+            className="p-1 text-gray-600 hover:bg-white/20 rounded-lg dark:text-gray-300"
+          >
+            <FaTimes className="size-5" />
+          </button>
         </div>
+
+        {/* Alerta */}
+        {alert && (
+          <div className="mt-4">
+            <Alert 
+              variant={alert.variant} 
+              title={alert.variant === "success" ? "Éxito" : "Error"} 
+              message={alert.message} 
+            />
+          </div>
+        )}
+
+        {/* Formulario */}
+        <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+          {/* ID del usuario (solo lectura) */}
+          <div className="bg-gray-50 dark:bg-gray-800/30 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">ID Usuario</p>
+            <p className="font-semibold text-gray-900 dark:text-white">#{usuario.id_usuario}</p>
+          </div>
+
+          {/* Grid de 2 columnas */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Nombre */}
+            <div>
+              <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+                Nombre <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                name="nombre"
+                value={formData.nombre || ""}
+                onChange={handleChange}
+                placeholder="Ej: Juan"
+                className={`w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-[#26a5b9]/20 focus:border-[#26a5b9] dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700 ${
+                  errors.nombre ? "border-red-500 focus:border-red-500 focus:ring-red-500/20" : ""
+                }`}
+              />
+              {errors.nombre && <p className="text-xs text-red-500 mt-1">{errors.nombre}</p>}
+            </div>
+
+            {/* Apellido Paterno */}
+            <div>
+              <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+                Apellido Paterno <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                name="app_paterno"
+                value={formData.app_paterno || ""}
+                onChange={handleChange}
+                placeholder="Ej: Pérez"
+                className={`w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-[#26a5b9]/20 focus:border-[#26a5b9] dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700 ${
+                  errors.app_paterno ? "border-red-500 focus:border-red-500 focus:ring-red-500/20" : ""
+                }`}
+              />
+              {errors.app_paterno && <p className="text-xs text-red-500 mt-1">{errors.app_paterno}</p>}
+            </div>
+
+            {/* Apellido Materno */}
+            <div>
+              <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+                Apellido Materno <span className="text-gray-400 text-xs">(opcional)</span>
+              </label>
+              <input
+                type="text"
+                name="app_materno"
+                value={formData.app_materno || ""}
+                onChange={handleChange}
+                placeholder="Ej: García"
+                className={`w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-[#26a5b9]/20 focus:border-[#26a5b9] dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700 ${
+                  errors.app_materno ? "border-red-500 focus:border-red-500 focus:ring-red-500/20" : ""
+                }`}
+              />
+              {errors.app_materno && <p className="text-xs text-red-500 mt-1">{errors.app_materno}</p>}
+            </div>
+
+            {/* CI */}
+            <div>
+              <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+                CI <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                name="ci"
+                value={formData.ci || ""}
+                onChange={handleChange}
+                placeholder="Ej: 12345678"
+                className={`w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-[#26a5b9]/20 focus:border-[#26a5b9] dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700 ${
+                  errors.ci ? "border-red-500 focus:border-red-500 focus:ring-red-500/20" : ""
+                }`}
+              />
+              {errors.ci && <p className="text-xs text-red-500 mt-1">{errors.ci}</p>}
+            </div>
+
+            {/* Teléfono */}
+            <div>
+              <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+                Teléfono <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="tel"
+                name="telefono"
+                value={formData.telefono || ""}
+                onChange={handleChange}
+                placeholder="Ej: 70123456"
+                className={`w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-[#26a5b9]/20 focus:border-[#26a5b9] dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700 ${
+                  errors.telefono ? "border-red-500 focus:border-red-500 focus:ring-red-500/20" : ""
+                }`}
+              />
+              {errors.telefono && <p className="text-xs text-red-500 mt-1">{errors.telefono}</p>}
+            </div>
+
+            {/* Email */}
+            <div>
+              <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+                Correo Electrónico <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="email"
+                name="email"
+                value={formData.email || ""}
+                onChange={handleChange}
+                placeholder="Ej: usuario@correo.com"
+                className={`w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-[#26a5b9]/20 focus:border-[#26a5b9] dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700 ${
+                  errors.email ? "border-red-500 focus:border-red-500 focus:ring-red-500/20" : ""
+                }`}
+              />
+              {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email}</p>}
+            </div>
+
+            {/* Rol */}
+            <div>
+              <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+                Rol <span className="text-red-500">*</span>
+              </label>
+              <select
+                name="rol"
+                value={formData.rol || ""}
+                onChange={handleChange}
+                className="w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-[#26a5b9]/20 focus:border-[#26a5b9] dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700"
+                disabled={isPending}
+              >
+                <option value="administrador">Administrador</option>
+                <option value="empleado">Empleado</option>
+              </select>
+              {errors.rol && <p className="text-xs text-red-500 mt-1">{errors.rol}</p>}
+            </div>
+
+            {/* Estado */}
+            <div>
+              <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+                Estado <span className="text-red-500">*</span>
+              </label>
+              <select
+                name="estado"
+                value={formData.estado || ""}
+                onChange={handleChange}
+                className="w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-[#26a5b9]/20 focus:border-[#26a5b9] dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700"
+                disabled={isPending}
+              >
+                <option value="A">Activo</option>
+                <option value="I">Inactivo</option>
+              </select>
+              {errors.estado && <p className="text-xs text-red-500 mt-1">{errors.estado}</p>}
+            </div>
+          </div>
+
+          {/* Nota informativa */}
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+            <p className="text-xs text-blue-700 dark:text-blue-300">
+              💡 <strong>Nota:</strong> La contraseña no se puede editar desde aquí. Para cambiar la contraseña, use la opción de "Restablecer contraseña".
+            </p>
+          </div>
+
+          {/* Botones */}
+          <div className="flex justify-end gap-3 pt-4">
+            <Button variant="outline" onClick={onClose} disabled={isPending}>
+              Cancelar
+            </Button>
+            <button 
+              type="submit" 
+              disabled={isPending} 
+              className="px-4 py-2 rounded-lg bg-[#26a5b9] text-white hover:bg-[#26a5b9]/90 disabled:opacity-50 transition-colors"
+            >
+              {isPending ? "Guardando..." : "Guardar Cambios"}
+            </button>
+          </div>
+        </form>
       </div>
-    </div>
+    </Modal>
   );
 }

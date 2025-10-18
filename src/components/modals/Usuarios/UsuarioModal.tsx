@@ -5,6 +5,18 @@ import Button from "../../ui/button/Button";
 import { Usuario } from "../../../types/Usuarios/usuario";
 import Alert from "../../ui/alert/Alert";
 
+// Importa tus validaciones
+import { 
+    validarLongitud,    
+    validarDescripcion, 
+    validarTelefono,
+    validarCorreo, 
+    validarRepeticionCaracteres,
+    validarNumeroEntero,
+    validarNoDuplicado,
+    validarCI,
+} from "../../utils/validaciones";
+
 interface UsuarioModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -13,18 +25,18 @@ interface UsuarioModalProps {
 
 export default function UsuarioModal({ isOpen, onClose, onSubmit }: UsuarioModalProps) {
   const [formData, setFormData] = useState<Partial<Usuario>>({
-  nombre: "",
-  app_paterno: "",
-  app_materno: "",
-  ci: "",
-  telefono: "",
-  email: "",
-  password: "12345678", // 👈 por defecto algo válido (8 dígitos)
-  rol: "empleado",
-  estado: "A",
-});
+    nombre: "",
+    app_paterno: "",
+    app_materno: "",
+    ci: "",
+    telefono: "",
+    email: "",
+    password: "12345678",
+    rol: "empleado",
+    estado: "A",
+  });
 
-
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [isPending, setIsPending] = useState(false);
   const [alert, setAlert] = useState<{ variant: "success" | "error"; message: string } | null>(null);
 
@@ -33,15 +45,89 @@ export default function UsuarioModal({ isOpen, onClose, onSubmit }: UsuarioModal
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    
+    // Limpiar error del campo cuando el usuario empieza a escribir
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: "" }));
+    }
+  };
+
+  const validarFormulario = () => {
+    const errores: Record<string, string> = {};
+    
+    // Nombre
+    const errorNombre = validarLongitud(formData.nombre || "", 3, 60, "El nombre") || 
+                        validarRepeticionCaracteres(formData.nombre || "", "El nombre");
+    if (errorNombre) errores.nombre = errorNombre;
+    
+    // Apellido Paterno
+    const errorApPaterno = validarLongitud(formData.app_paterno || "", 3, 60, "El apellido paterno") || 
+                           validarRepeticionCaracteres(formData.app_paterno || "", "El apellido paterno");
+    if (errorApPaterno) errores.app_paterno = errorApPaterno;
+    
+    // Apellido Materno (opcional)
+    if (formData.app_materno) {
+      const errorApMaterno = validarLongitud(formData.app_materno, 3, 60, "El apellido materno") || 
+                             validarRepeticionCaracteres(formData.app_materno, "El apellido materno");
+      if (errorApMaterno) errores.app_materno = errorApMaterno;
+    }
+    
+    // CI
+    const errorCI = validarCI(formData.ci || "");
+    if (errorCI) errores.ci = errorCI;
+    
+    // Teléfono
+    const errorTelefono = validarTelefono(formData.telefono || "");
+    if (errorTelefono) errores.telefono = errorTelefono;
+    
+    // Email
+    const errorEmail = validarCorreo(formData.email || "");
+    if (errorEmail) errores.email = errorEmail;
+    
+    // Password
+    const errorPassword = validarLongitud(formData.password || "", 6, 20, "La contraseña");
+    if (errorPassword) errores.password = errorPassword;
+    
+    // Estado
+    if (!["A", "I"].includes(formData.estado || "")) {
+      errores.estado = "Estado no válido";
+    }
+    
+    // Rol
+    if (!["administrador", "empleado"].includes(formData.rol || "")) {
+      errores.rol = "Rol no válido";
+    }
+
+    return errores;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsPending(true);
     
+    // Validar formulario
+    const erroresForm = validarFormulario();
+    
+    if (Object.keys(erroresForm).length > 0) {
+      setErrors(erroresForm);
+      setAlert({ 
+        variant: "error", 
+        message: "Por favor corrige los errores en el formulario" 
+      });
+      return;
+    }
+
+    setIsPending(true);
+    setAlert(null);
+
     try {
+      // 🔍 DEBUG: Ver qué se está enviando
+      console.log("📤 Datos a enviar:", formData);
+      
       await onSubmit(formData as Usuario);
+      
       setAlert({ variant: "success", message: "Usuario creado correctamente" });
+      
+      // Resetear formulario
       setFormData({
         nombre: "",
         app_paterno: "",
@@ -49,12 +135,19 @@ export default function UsuarioModal({ isOpen, onClose, onSubmit }: UsuarioModal
         ci: "",
         telefono: "",
         email: "",
+        password: "12345678",
         rol: "empleado",
         estado: "A",
       });
-      setTimeout(() => onClose(), 1000);
-    } catch (error) {
-      setAlert({ variant: "error", message: "Error al crear el usuario" });
+      setErrors({});
+      
+      setTimeout(() => onClose(), 1500);
+    } catch (error: any) {
+      console.error("❌ Error al crear usuario:", error);
+      setAlert({ 
+        variant: "error", 
+        message: error?.message || "Error al crear el usuario" 
+      });
     } finally {
       setIsPending(false);
     }
@@ -104,9 +197,11 @@ export default function UsuarioModal({ isOpen, onClose, onSubmit }: UsuarioModal
                 value={formData.nombre}
                 onChange={handleChange}
                 placeholder="Ej: Juan"
-                required
-                className="w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-[#26a5b9]/20 focus:border-[#26a5b9] dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700"
+                className={`w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-[#26a5b9]/20 focus:border-[#26a5b9] dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700 ${
+                  errors.nombre ? "border-red-500 focus:border-red-500 focus:ring-red-500/20" : ""
+                }`}
               />
+              {errors.nombre && <p className="text-xs text-red-500 mt-1">{errors.nombre}</p>}
             </div>
 
             {/* Apellido Paterno */}
@@ -120,9 +215,11 @@ export default function UsuarioModal({ isOpen, onClose, onSubmit }: UsuarioModal
                 value={formData.app_paterno}
                 onChange={handleChange}
                 placeholder="Ej: Pérez"
-                required
-                className="w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-[#26a5b9]/20 focus:border-[#26a5b9] dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700"
+                className={`w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-[#26a5b9]/20 focus:border-[#26a5b9] dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700 ${
+                  errors.app_paterno ? "border-red-500 focus:border-red-500 focus:ring-red-500/20" : ""
+                }`}
               />
+              {errors.app_paterno && <p className="text-xs text-red-500 mt-1">{errors.app_paterno}</p>}
             </div>
 
             {/* Apellido Materno */}
@@ -136,8 +233,11 @@ export default function UsuarioModal({ isOpen, onClose, onSubmit }: UsuarioModal
                 value={formData.app_materno}
                 onChange={handleChange}
                 placeholder="Ej: García"
-                className="w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-[#26a5b9]/20 focus:border-[#26a5b9] dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700"
+                className={`w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-[#26a5b9]/20 focus:border-[#26a5b9] dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700 ${
+                  errors.app_materno ? "border-red-500 focus:border-red-500 focus:ring-red-500/20" : ""
+                }`}
               />
+              {errors.app_materno && <p className="text-xs text-red-500 mt-1">{errors.app_materno}</p>}
             </div>
 
             {/* CI */}
@@ -151,9 +251,11 @@ export default function UsuarioModal({ isOpen, onClose, onSubmit }: UsuarioModal
                 value={formData.ci}
                 onChange={handleChange}
                 placeholder="Ej: 12345678"
-                required
-                className="w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-[#26a5b9]/20 focus:border-[#26a5b9] dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700"
+                className={`w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-[#26a5b9]/20 focus:border-[#26a5b9] dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700 ${
+                  errors.ci ? "border-red-500 focus:border-red-500 focus:ring-red-500/20" : ""
+                }`}
               />
+              {errors.ci && <p className="text-xs text-red-500 mt-1">{errors.ci}</p>}
             </div>
 
             {/* Teléfono */}
@@ -167,9 +269,11 @@ export default function UsuarioModal({ isOpen, onClose, onSubmit }: UsuarioModal
                 value={formData.telefono}
                 onChange={handleChange}
                 placeholder="Ej: 70123456"
-                required
-                className="w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-[#26a5b9]/20 focus:border-[#26a5b9] dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700"
+                className={`w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-[#26a5b9]/20 focus:border-[#26a5b9] dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700 ${
+                  errors.telefono ? "border-red-500 focus:border-red-500 focus:ring-red-500/20" : ""
+                }`}
               />
+              {errors.telefono && <p className="text-xs text-red-500 mt-1">{errors.telefono}</p>}
             </div>
 
             {/* Email */}
@@ -183,9 +287,11 @@ export default function UsuarioModal({ isOpen, onClose, onSubmit }: UsuarioModal
                 value={formData.email}
                 onChange={handleChange}
                 placeholder="Ej: usuario@correo.com"
-                required
-                className="w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-[#26a5b9]/20 focus:border-[#26a5b9] dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700"
+                className={`w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-[#26a5b9]/20 focus:border-[#26a5b9] dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700 ${
+                  errors.email ? "border-red-500 focus:border-red-500 focus:ring-red-500/20" : ""
+                }`}
               />
+              {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email}</p>}
             </div>
 
             {/* Rol */}
@@ -203,6 +309,7 @@ export default function UsuarioModal({ isOpen, onClose, onSubmit }: UsuarioModal
                 <option value="administrador">Administrador</option>
                 <option value="empleado">Empleado</option>
               </select>
+              {errors.rol && <p className="text-xs text-red-500 mt-1">{errors.rol}</p>}
             </div>
 
             {/* Estado */}
@@ -220,6 +327,7 @@ export default function UsuarioModal({ isOpen, onClose, onSubmit }: UsuarioModal
                 <option value="A">Activo</option>
                 <option value="I">Inactivo</option>
               </select>
+              {errors.estado && <p className="text-xs text-red-500 mt-1">{errors.estado}</p>}
             </div>
           </div>
 
@@ -231,7 +339,7 @@ export default function UsuarioModal({ isOpen, onClose, onSubmit }: UsuarioModal
             <button 
               type="submit" 
               disabled={isPending} 
-              className="px-4 py-2 rounded-lg bg-[#26a5b9] text-white hover:bg-[#26a5b9]/90 disabled:opacity-50"
+              className="px-4 py-2 rounded-lg bg-[#26a5b9] text-white hover:bg-[#26a5b9]/90 disabled:opacity-50 transition-colors"
             >
               {isPending ? "Guardando..." : "Guardar Usuario"}
             </button>
