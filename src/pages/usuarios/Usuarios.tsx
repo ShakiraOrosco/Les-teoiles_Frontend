@@ -10,24 +10,31 @@ import { useModal } from "../../hooks/useModal";
 import { Usuario } from "../../types/Usuarios/usuario";
 import UsuariosFilter from "../../components/filters/Usuarios/UsuariosFilter";
 import UsuarioModal from "../../components/modals/Usuarios/UsuarioModal";
+import EditUsuarioModal from "../../components/modals/Usuarios/EditUsuarioModal";
+
 
 export default function Usuarios() {
 
     const { openModal, isOpen, closeModal } = useModal();
-    const { usuarios, loading, error, addUsuario } = useUsuarios();
+    const { usuarios, loading, error, addUsuario, editarUsuario } = useUsuarios();
 
 
     // Estado para edición
-    const [usuarioEdit, setUsuarioEdit] = useState<any>(null);
-    const [isEditOpen, setIsEditOpen] = useState(false);
+   const [usuarioEdit, setUsuarioEdit] = useState<Usuario | null>(null);
+      const [isEditOpen, setIsEditOpen] = useState(false);
 
     // Función para abrir el modal de edición con el usuario seleccionado
-    const handleEdit = (usuario: Usuario) => {
-        setIsEditOpen(true);
-        console.log("Editando usuario:", usuario);
-        // Aquí podrías guardar el usuario en un estado para pasarlo al modal
-        // setUsuarioSeleccionado(usuario);
-    };
+     const handleEdit = (usuario: Usuario) => {
+    setUsuarioEdit(usuario);
+    setIsEditOpen(true);
+  };
+    const handleUpdate = async (updatedData: Partial<Usuario>) => {
+    if (usuarioEdit) {
+      await editarUsuario(usuarioEdit.id_usuario, updatedData);
+      setIsEditOpen(false);
+      setUsuarioEdit(null);
+    }
+  };
 
 
     // ---------- Filtro de texto y estado ----------
@@ -127,6 +134,17 @@ export default function Usuarios() {
                 onClose={closeModal}
                 onSubmit={addUsuario}
             />
+
+              {/* Modal de Editar */}
+       {isEditOpen && usuarioEdit && (
+         <EditUsuarioModal
+                isOpen={isEditOpen}
+                onClose={() => setIsEditOpen(false)}
+                onSubmit={(data) => editarUsuario(usuarioEdit.id_usuario, data)}
+                usuario={usuarioEdit}
+            />
+        )}
+
         </div>
     );
 }

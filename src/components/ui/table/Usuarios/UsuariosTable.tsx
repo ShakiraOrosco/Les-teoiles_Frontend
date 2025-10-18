@@ -55,16 +55,25 @@ export default function UsuarioTable({ usuarios, onEdit }: Props) {
                     {usuario.estado ? "Activo" : "Inactivo"}
                   </Badge>
                 </TableCell>
-                <TableCell className="px-4 py-3">
-                  <Button
-                    variant="outline"
-                    size="md"
-                    endIcon={<MoreDotIcon className="size-5" />}
-                    onClick={() => onEdit(usuario)}
-                  >
-                    {" "}
-                  </Button>
-                </TableCell>
+            <TableCell className="px-4 py-3">
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="md"
+                onClick={() => onEdit(usuario)}
+              >
+                Editar
+              </Button>
+
+              <Button
+                variant="outline"
+                size="md"
+              >
+                Eliminar
+              </Button>
+            </div>
+          </TableCell>
+
               </TableRow>
             ))}
           </TableBody>
