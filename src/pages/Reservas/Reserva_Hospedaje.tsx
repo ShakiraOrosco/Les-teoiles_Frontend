@@ -14,6 +14,7 @@ import {
   soloNumeros,
   soloLetras,
   bloquearEscrituraDirecta,
+  validarEstructuraTexto,
 } from '../../components/utils/validaciones';
 
 export default function Hospedaje() {
@@ -44,6 +45,7 @@ export default function Hospedaje() {
   const [comprobante, setComprobante] = useState<File | null>(null);
   const [copiado, setCopiado] = useState(false);
   const [errores, setErrores] = useState<Record<string, string | null>>({});
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (step === 'waiting' && waitingTime > 0) {
@@ -54,11 +56,71 @@ export default function Hospedaje() {
     }
   }, [step, waitingTime]);
 
-
+  // Validar campo individual
+  const validarCampo = (nombre: string, valor: string) => {
+    let error: string | null = null;
+    
+    switch (nombre) {
+      case 'nombre':
+        error = validarNombreHospedaje(valor);
+        break;
+      case 'apellidoPaterno':
+      case 'apellidoMaterno':
+        const erroresApellidos = validarApellidos(formData.apellidoPaterno, formData.apellidoMaterno);
+        error = nombre === 'apellidoPaterno' ? erroresApellidos.paterno : erroresApellidos.materno;
+        break;
+      case 'telefono':
+        error = validarTelefonoHospedaje(valor);
+        break;
+      case 'email':
+        error = validarEmailHospedaje(valor);
+        break;
+      case 'carnet':
+        error = validarCarnetHospedaje(valor);
+        break;
+      case 'cantidadPersonas':
+        error = validarCantidadPersonas(valor);
+        break;
+    }
+    
+    return error;
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    let valorFinal = value;
+    
+    // Para teléfono y carnet, limitar dígitos
+    if (name === 'telefono' && value.length > 8) {
+      valorFinal = value.slice(0, 8);
+    }
+    if (name === 'carnet' && value.length > 12) {
+      valorFinal = value.slice(0, 12);
+    }
+    
+    setFormData(prev => ({ ...prev, [name]: valorFinal }));
+    
+    // Validar en tiempo real si el campo ya fue tocado
+    if (touched[name]) {
+      const error = validarCampo(name, valorFinal);
+      setErrores(prev => ({ ...prev, [name]: error }));
+    }
+  };
+
+  const handleBlur = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    
+    setTouched(prev => ({ ...prev, [name]: true }));
+    let error = validarCampo(name, value);
+    
+    // Validar estructura para nombre y apellidos
+    if ((name === 'nombre' || name === 'apellidoPaterno' || name === 'apellidoMaterno') && value.trim() && !error) {
+      if (!validarEstructuraTexto(value)) {
+        error = `El ${name === 'nombre' ? 'nombre' : 'apellido'} no parece ser válido. Verifica que contenga letras reales.`;
+      }
+    }
+    
+    setErrores(prev => ({ ...prev, [name]: error }));
   };
 
   const handleCheckboxChange = (name: string, value: string) => {
@@ -173,6 +235,20 @@ export default function Hospedaje() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Marcar todos los campos como tocados
+    const allTouched = {
+      nombre: true,
+      apellidoPaterno: true,
+      apellidoMaterno: true,
+      telefono: true,
+      email: true,
+      carnet: true,
+      fechaInicio: true,
+      fechaFin: true,
+      cantidadPersonas: true,
+    };
+    setTouched(allTouched);
+    
     // Validar todo el formulario
     const erroresValidacion = validarFormularioHospedaje(formData);
     setErrores(erroresValidacion);
@@ -245,6 +321,8 @@ export default function Hospedaje() {
     setReservaGenId(null);
     setCodigoReserva('');
     setCopiado(false);
+    setErrores({});
+    setTouched({});
     resetState();
   };
 
@@ -413,17 +491,17 @@ export default function Hospedaje() {
           <div className="grid md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Nombre *</label>
-              <input type="text" name="nombre" value={formData.nombre} onChange={handleChange} onKeyDown={soloLetras} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent" placeholder="Ej: Juan" />
+              <input type="text" name="nombre" value={formData.nombre} onChange={handleChange} onBlur={handleBlur} onKeyDown={soloLetras} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent" placeholder="Ej: Juan" />
               {errores.nombre && <p className="text-xs text-red-600 mt-1">{errores.nombre}</p>}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Apellido Paterno</label>
-              <input type="text" name="apellidoPaterno" value={formData.apellidoPaterno} onChange={handleChange} onKeyDown={soloLetras} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent" placeholder="Ej: Pérez" />
+              <input type="text" name="apellidoPaterno" value={formData.apellidoPaterno} onChange={handleChange} onBlur={handleBlur} onKeyDown={soloLetras} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent" placeholder="Ej: Pérez" />
               {errores.apellidoPaterno && <p className="text-xs text-red-600 mt-1">{errores.apellidoPaterno}</p>}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Apellido Materno</label>
-              <input type="text" name="apellidoMaterno" value={formData.apellidoMaterno} onChange={handleChange} onKeyDown={soloLetras} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent" placeholder="Ej: García" />
+              <input type="text" name="apellidoMaterno" value={formData.apellidoMaterno} onChange={handleChange} onBlur={handleBlur} onKeyDown={soloLetras} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent" placeholder="Ej: García" />
               {errores.apellidoMaterno && <p className="text-xs text-red-600 mt-1">{errores.apellidoMaterno}</p>}
             </div>
           </div>
@@ -431,19 +509,19 @@ export default function Hospedaje() {
           <div className="grid md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono *</label>
-              <input type="tel" name="telefono" value={formData.telefono} onChange={handleChange} onKeyDown={soloNumeros} maxLength={8} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent" placeholder="7XXXXXXX" />
+              <input type="tel" name="telefono" value={formData.telefono} onChange={handleChange} onBlur={handleBlur} onKeyDown={soloNumeros} maxLength={8} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent" placeholder="7XXXXXXX" />
               {errores.telefono && <p className="text-xs text-red-600 mt-1">{errores.telefono}</p>}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Carnet de Identidad *</label>
-              <input type="text" name="carnet" value={formData.carnet} onChange={handleChange} onKeyDown={soloNumeros} maxLength={12} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent" placeholder="XXXXXXXX" />
+              <input type="text" name="carnet" value={formData.carnet} onChange={handleChange} onBlur={handleBlur} onKeyDown={soloNumeros} maxLength={12} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent" placeholder="XXXXXXXX" />
               {errores.carnet && <p className="text-xs text-red-600 mt-1">{errores.carnet}</p>}
             </div>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
-            <input type="email" name="email" value={formData.email} onChange={handleChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent" placeholder="ejemplo@correo.com" />
+            <input type="email" name="email" value={formData.email} onChange={handleChange} onBlur={handleBlur} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent" placeholder="ejemplo@correo.com" />
             {errores.email && <p className="text-xs text-red-600 mt-1">{errores.email}</p>}
           </div>
         </div>
@@ -469,7 +547,7 @@ export default function Hospedaje() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Cantidad de Personas *</label>
-            <input type="number" name="cantidadPersonas" value={formData.cantidadPersonas} onChange={handleChange} onKeyDown={(e) => { soloNumeros(e); bloquearEscrituraDirecta(e); }} min="1" max="50" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent [appearance:textfield] [&::-webkit-inner-spin-button]:hidden [&::-webkit-outer-spin-button]:hidden" placeholder="Ej: 4" />
+            <input type="number" name="cantidadPersonas" value={formData.cantidadPersonas} onChange={handleChange} onBlur={handleBlur} onKeyDown={(e) => { soloNumeros(e); bloquearEscrituraDirecta(e); }} min="1" max="5" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent [appearance:textfield] [&::-webkit-inner-spin-button]:hidden [&::-webkit-outer-spin-button]:hidden" placeholder="Ej: 1" />
             {errores.cantidadPersonas && <p className="text-xs text-red-600 mt-1">{errores.cantidadPersonas}</p>}
           </div>
 

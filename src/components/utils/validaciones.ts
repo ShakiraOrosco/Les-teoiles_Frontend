@@ -578,7 +578,7 @@ export const validarCantidadPersonas = (cantidad: string): string | null => {
   if (isNaN(num)) return "Debe ser un número válido";
   if (!Number.isInteger(num)) return "Debe ser un número entero";
   if (num < 1) return "Debe ser al menos 1 persona";
-  if (num > 50) return "No pueden ser más de 50 personas";
+  if (num > 5) return "El máximo permitido es 5 personas";
   
   return null;
 };
@@ -645,7 +645,7 @@ export const soloNumeros = (e: React.KeyboardEvent<HTMLInputElement>): void => {
   }
 };
 
-// Permitir solo letras y espacios
+// Permitir solo letras y espacios (muy restrictivo, bloquea caracteres especiales)
 export const soloLetras = (e: React.KeyboardEvent<HTMLInputElement>): void => {
   const tecla = e.key;
   const esLetra = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]$/.test(tecla);
@@ -655,6 +655,22 @@ export const soloLetras = (e: React.KeyboardEvent<HTMLInputElement>): void => {
   if (!esLetra && !esTeclaEspecial && !esControl) {
     e.preventDefault();
   }
+};
+
+// Validar que el texto tenga estructura real (no solo consonantes o caracteres aleatorios)
+export const validarEstructuraTexto = (texto: string): boolean => {
+  const textoLimpio = texto.toLowerCase().replace(/\s/g, '');
+  
+  // Si es muy corto, permitir
+  if (textoLimpio.length < 3) return true;
+  
+  // Contar vocales
+  const vocales = (textoLimpio.match(/[aeiouáéíóú]/g) || []).length;
+  
+  // Debe tener al menos 20% de vocales (nombres reales tienen vocales)
+  const porcentajeVocales = (vocales / textoLimpio.length) * 100;
+  
+  return porcentajeVocales >= 15;
 };
 
 // Bloquear notación científica y caracteres especiales en números
