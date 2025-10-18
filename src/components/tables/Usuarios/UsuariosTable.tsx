@@ -61,87 +61,100 @@ export default function UsuariosTable({ usuarios, onEdit, onToggleEstado, onDele
           </TableHeader>
 
           <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
-            {usuarios.map((usuario) => {
-              const isActivo = usuario.estado === "A";
+  {usuarios.map((usuario) => {
+    const isActivo = usuario.estado === "A";
 
-              return (
-                <TableRow
-                  key={usuario.id_usuario}
-                  className={`transition-colors duration-150 hover:bg-[#dbeafe]/30 dark:hover:bg-white/[0.05] ${!isActivo ? "opacity-60" : ""}`}
-                >
-                  <TableCell className="px-5 py-4 sm:px-6 text-start">
-                    <span className="block font-medium text-gray-800 text-theme-sm dark:text-white/90">
-                      #{usuario.id_usuario}
-                    </span>
-                  </TableCell>
+    return (
+      <TableRow
+        key={usuario.id_usuario}
+        className={`transition-colors duration-150 hover:bg-[#dbeafe]/30 dark:hover:bg-white/[0.05] ${!isActivo ? "opacity-60" : ""}`}
+      >
+        <TableCell className="px-5 py-4 sm:px-6 text-start">
+          <span className="block font-medium text-gray-800 text-theme-sm dark:text-white/90">
+            #{usuario.id_usuario}
+          </span>
+        </TableCell>
 
-                  <TableCell className="px-5 py-4 sm:px-6 text-start font-semibold text-gray-900 dark:text-white">
-                    {usuario.nombre} {usuario.app_paterno} {usuario.app_materno}
-                  </TableCell>
+        <TableCell className="px-5 py-4 sm:px-6 text-start font-semibold text-gray-900 dark:text-white">
+          {usuario.nombre} {usuario.app_paterno} {usuario.app_materno}
+        </TableCell>
 
-                  <TableCell className="px-5 py-4 sm:px-6 text-start">
-                    <span className="font-medium text-gray-700 dark:text-gray-300">
-                      {usuario.ci}
-                    </span>
-                  </TableCell>
+        <TableCell className="px-5 py-4 sm:px-6 text-start">
+          <span className="font-medium text-gray-700 dark:text-gray-300">
+            {usuario.ci}
+          </span>
+        </TableCell>
 
-                  <TableCell className="px-5 py-4 sm:px-6 text-start">
-                    <div className="max-w-xs truncate text-gray-600 dark:text-gray-400" title={usuario.email}>
-                      {usuario.email}
-                    </div>
-                  </TableCell>
+        <TableCell className="px-5 py-4 sm:px-6 text-start">
+          <div
+            className="max-w-xs truncate text-gray-600 dark:text-gray-400"
+            title={usuario.email}
+          >
+            {usuario.email}
+          </div>
+        </TableCell>
 
-                  <TableCell className="px-5 py-4 sm:px-6 text-start">
-                    <span className="text-gray-600 dark:text-gray-400">
-                      {usuario.telefono || <span className="text-gray-400 dark:text-gray-500 italic">-</span>}
-                    </span>
-                  </TableCell>
+        <TableCell className="px-5 py-4 sm:px-6 text-start">
+          <span className="text-gray-600 dark:text-gray-400">
+            {usuario.telefono || (
+              <span className="text-gray-400 dark:text-gray-500 italic">-</span>
+            )}
+          </span>
+        </TableCell>
 
-                  <TableCell className="px-5 py-4 sm:px-6 text-start">
-                    <Badge
-                      size="sm"
-                      color={getRolColor(usuario.rol)}
-                    >
-                      {getRolLabel(usuario.rol)}
-                    </Badge>
-                  </TableCell>
+        <TableCell className="px-5 py-4 sm:px-6 text-start">
+          <Badge size="sm" color={getRolColor(usuario.rol)}>
+            {getRolLabel(usuario.rol)}
+          </Badge>
+        </TableCell>
 
-         
+        {/* ✅ NUEVA COLUMNA ESTADO */}
+        <TableCell className="px-5 py-4 sm:px-6 text-start">
+          <span
+            className={`font-semibold ${
+              isActivo ? "text-green-600" : "text-red-600"
+            }`}
+          >
+            {isActivo ? "Activo" : "Inactivo"}
+          </span>
+        </TableCell>
 
-                  <TableCell className="px-5 py-4 sm:px-6 text-start">
-                    <div className="flex items-center gap-2">
-                      {isActivo && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => onEdit(usuario)}
-                          className="text-[#3b82f6]"
-                        >
-                          Editar
-                        </Button>
-                      )}
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => onToggleEstado(usuario)}
-                        className={isActivo ? "text-red-600" : "text-green-600"}
-                      >
-                        {isActivo ? "Desactivar" : "Activar"}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => onDelete(usuario)}
-                        className="text-red-600 hover:bg-red-50"
-                      >
-                        Eliminar
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
+        {/* BOTONES */}
+        <TableCell className="px-5 py-4 sm:px-6 text-start">
+          <div className="flex items-center gap-2">
+            {isActivo && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onEdit(usuario)}
+                className="text-[#3b82f6]"
+              >
+                Editar
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onToggleEstado(usuario)}
+              className={isActivo ? "text-red-600" : "text-green-600"}
+            >
+              {isActivo ? "Desactivar" : "Activar"}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onDelete(usuario)}
+              className="text-red-600 hover:bg-red-50"
+            >
+              Eliminar
+            </Button>
+          </div>
+        </TableCell>
+      </TableRow>
+    );
+  })}
+</TableBody>
+
         </Table>
       </div>
     </div>

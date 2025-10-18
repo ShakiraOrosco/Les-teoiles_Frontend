@@ -7,17 +7,17 @@ export const useUsuarios = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchUsuarios = async () => {
-    try {
-      setLoading(true);
-      const data = await getUsuarios();
-      setUsuarios(data);
-    } catch (err) {
-      setError("Error al cargar usuarios");
-    } finally {
-      setLoading(false);
-    }
-  };
+const fetchUsuarios = useCallback(async () => {
+  try {
+    setLoading(true);
+    const data = await getUsuarios();
+    setUsuarios(data);
+  } catch (err) {
+    setError("Error al cargar usuarios");
+  } finally {
+    setLoading(false);
+  }
+}, []);
    useEffect(() => {
     fetchUsuarios();
   }, [fetchUsuarios]);
