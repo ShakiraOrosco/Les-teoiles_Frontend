@@ -399,7 +399,7 @@ export default function Hospedaje() {
                       <label htmlFor="comprobante" className="cursor-pointer">
                         <span className="text-teal-600 hover:text-teal-700 font-semibold">Seleccionar archivo</span>
                       </label>
-                      <p className="text-xs text-gray-500 mt-1">PNG, JPG o PDF (máx. 5MB)</p>
+                      <p className="text-xs text-gray-500 mt-1">PNG oJPG(máx. 5MB)</p>
                       {comprobante && (
                         <div className="flex items-center justify-center gap-2 mt-2 text-teal-600 font-medium">
                           <Check className="w-5 h-5" />
@@ -461,7 +461,7 @@ export default function Hospedaje() {
           </div>
 
           <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6 text-left">
-            <p className="text-sm text-yellow-800"><strong>Importante:</strong> Guarda este código. El personal de administración verificará tu pago dentro de 24 horas.</p>
+            <p className="text-sm text-yellow-800"><strong>Importante:</strong> Guarda este código.</p>
           </div>
 
           <button onClick={resetearFormulario} className="w-full bg-gradient-to-r from-cyan-500 to-teal-600 text-white py-3 rounded-lg hover:shadow-lg transition font-semibold">

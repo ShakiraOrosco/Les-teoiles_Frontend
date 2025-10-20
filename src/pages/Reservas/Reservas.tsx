@@ -78,7 +78,6 @@ export default function Reservas() {
             <ul className="text-gray-700 space-y-2">
               <li>• Se requiere un adelanto del 50% para confirmar la reserva</li>
               <li>• Recibirás un código único que deberás presentar en las instalaciones</li>
-              <li>• El personal de administración verificará tu reserva dentro de las 24 horas</li>
               <li>• Las reservas están sujetas a disponibilidad</li>
             </ul>
           </div>
