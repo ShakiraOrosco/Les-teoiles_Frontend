@@ -38,7 +38,6 @@ export default function ServiciosTable({ servicios, onEdit, onToggleEstado }: Se
         <Table>
           <TableHeader className="border-b border-gray-100 dark:border-white/[0.05] bg-[#e2e8f6] dark:bg-[#458890]">
             <TableRow>
-              <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">ID</TableCell>
               <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Nombre</TableCell>
               <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Tipo</TableCell>
               <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">Descripción</TableCell>
@@ -57,12 +56,6 @@ export default function ServiciosTable({ servicios, onEdit, onToggleEstado }: Se
                   key={servicio.id_servicios_adicionales}
                   className={`transition-colors duration-150 hover:bg-[#fff3ef]/30 dark:hover:bg-white/[0.05] ${!isActivo ? "opacity-60" : ""}`}
                 >
-                  <TableCell className="px-5 py-4 sm:px-6 text-start">
-                    <span className="block font-medium text-gray-800 text-theme-sm dark:text-white/90">
-                      #{servicio.id_servicios_adicionales}
-                    </span>
-                  </TableCell>
-
                   <TableCell className="px-5 py-4 sm:px-6 text-start font-semibold text-gray-900 dark:text-white">
                     {servicio.nombre}
                   </TableCell>
@@ -83,8 +76,9 @@ export default function ServiciosTable({ servicios, onEdit, onToggleEstado }: Se
                   </TableCell>
 
                   <TableCell className="px-5 py-4 sm:px-3 text-start font-bold text-[#26a5b9] dark:text-[#99d8cd] text-sm">
-                    $ {servicio.precio.toFixed(2)}
+                    $ {Number(servicio.precio).toFixed(2)}
                   </TableCell>
+
 
                   {/* ✅ COLUMNA ESTADO - Usa servicio.estado */}
                   <TableCell className="px-5 py-4 sm:px-6 text-start">
