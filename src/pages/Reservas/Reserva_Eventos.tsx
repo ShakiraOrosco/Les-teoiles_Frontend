@@ -3,6 +3,21 @@ import { Sparkles, CheckCircle, Copy, X, Upload, Check, ChevronLeft, ChevronRigh
 import { useCreateReservaEvento } from '../../hooks/ReservaEvento/useCreateReservaEvento';
 import { useUploadComprobanteEvento } from '../../hooks/ReservaEvento/useUploadComprobanteEvento';
 import { useServiciosAdicionales } from '../../hooks/ReservaEvento/useServiciosAdicionales';
+import {
+  validarFormularioEvento,
+  validarNombreEvento,
+  validarApellidosEvento,
+  validarTelefonoEvento,
+  validarCIEvento,
+  validarEmailEvento,
+  validarFechaEvento,
+  validarHoraInicio,
+  validarHoraFin,
+  validarCantidadPersonasEvento,
+  soloNumerosEvento,
+  soloLetrasEvento,
+  bloquearCaracteresEspecialesEvento
+} from '../../components/utils/validaciones';
 
 export default function Eventos() {
   const { crearReservaEvento, isLoading, error, resetState } = useCreateReservaEvento();
@@ -24,6 +39,8 @@ export default function Eventos() {
     serviciosAdicionales: [] as number[],
   });
 
+  const [errores, setErrores] = useState<Record<string, string | null>>({});
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [step, setStep] = useState<'form' | 'waiting' | 'payment' | 'success'>('form');
   const [segundos, setSegundos] = useState(30);
   const [reservaGenId, setReservaGenId] = useState<number | null>(null);
@@ -34,26 +51,81 @@ export default function Eventos() {
   const [mesActual, setMesActual] = useState(new Date());
   const [fechaSeleccionada, setFechaSeleccionada] = useState<Date | null>(null);
 
+  // Validación en tiempo real para cada campo
+  const validarCampo = (nombre: string, valor: string) => {
+    let error: string | null = null;
+
+    switch (nombre) {
+      case 'nombre':
+        error = validarNombreEvento(valor);
+        break;
+      case 'apellidoPaterno':
+      case 'apellidoMaterno':
+        const erroresApellidos = validarApellidosEvento(
+          nombre === 'apellidoPaterno' ? valor : formData.apellidoPaterno,
+          nombre === 'apellidoMaterno' ? valor : formData.apellidoMaterno
+        );
+        error = nombre === 'apellidoPaterno' ? erroresApellidos.paterno : erroresApellidos.materno;
+        break;
+      case 'telefono':
+        error = validarTelefonoEvento(valor);
+        break;
+      case 'email':
+        error = validarEmailEvento(valor);
+        break;
+      case 'carnet':
+        error = validarCIEvento(valor);
+        break;
+      case 'fechaEvento':
+        error = validarFechaEvento(valor);
+        break;
+      case 'cantidadPersonas':
+        error = validarCantidadPersonasEvento(valor);
+        break;
+      case 'tipoReserva':
+        error = valor ? null : "Debe seleccionar un tipo de evento";
+        break;
+      case 'horaInicio':
+        error = validarHoraInicio(valor);
+        break;
+      case 'horaFin':
+        error = validarHoraFin(formData.horaInicio, valor, formData.fechaEvento);
+        break;
+      default:
+        error = null;
+    }
+
+    return error;
+  };
+
+  // Actualizar errores cuando cambia formData
+  useEffect(() => {
+    const nuevosErrores: Record<string, string | null> = {};
+    
+    Object.keys(touched).forEach(field => {
+      if (touched[field]) {
+        nuevosErrores[field] = validarCampo(field, formData[field as keyof typeof formData] as string);
+      }
+    });
+    
+    setErrores(nuevosErrores);
+  }, [formData, touched]);
+
   // Calcular el precio total en tiempo real
   const precioTotal = useMemo(() => {
     let total = 0;
     
-    // Primero obtenemos los servicios seleccionados
     const serviciosSeleccionados = servicios.filter(servicio => 
       formData.serviciosAdicionales.includes(servicio.id_servicios_adicionales)
     );
 
-    // Calculamos el total según el tipo de cada servicio
     serviciosSeleccionados.forEach(servicio => {
       if (servicio.tipo === 'A') {
-        // Tipo A: se multiplica por la cantidad de personas
         const cantidadPersonas = parseInt(formData.cantidadPersonas) || 1;
         total += servicio.precio * cantidadPersonas;
       } else if (servicio.tipo === 'E') {
-        // Tipo E: precio fijo
         total += servicio.precio;
       } else {
-        // Por defecto, precio fijo
         total += servicio.precio;
       }
     });
@@ -61,12 +133,10 @@ export default function Eventos() {
     return total;
   }, [formData.serviciosAdicionales, formData.cantidadPersonas, servicios]);
 
-  // Calcular el 50% para el adelanto
   const precioAdelanto = useMemo(() => {
     return precioTotal / 2;
   }, [precioTotal]);
 
-  // Obtener servicios seleccionados para mostrar detalles
   const serviciosSeleccionados = useMemo(() => {
     return servicios.filter(servicio => 
       formData.serviciosAdicionales.includes(servicio.id_servicios_adicionales)
@@ -82,9 +152,23 @@ export default function Eventos() {
     }
   }, [step, segundos]);
 
+  const handleBlur = (field: string) => {
+    setTouched(prev => ({ ...prev, [field]: true }));
+    
+    // Validar el campo específico cuando pierde el foco
+    const error = validarCampo(field, formData[field as keyof typeof formData] as string);
+    setErrores(prev => ({ ...prev, [field]: error }));
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+
+    // Si el campo ya ha sido tocado, validar en tiempo real mientras escribe
+    if (touched[name]) {
+      const error = validarCampo(name, value);
+      setErrores(prev => ({ ...prev, [name]: error }));
+    }
   };
 
   const handleCheckboxChange = (servicioId: number) => {
@@ -105,6 +189,40 @@ export default function Eventos() {
   const handleContinuarPago = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Marcar todos los campos como tocados para mostrar todos los errores
+    const todosLosCampos = {
+      nombre: true,
+      apellidoPaterno: true,
+      apellidoMaterno: true,
+      telefono: true,
+      email: true,
+      carnet: true,
+      fechaEvento: true,
+      cantidadPersonas: true,
+      tipoReserva: true,
+      horaInicio: true,
+      horaFin: true,
+    };
+    setTouched(todosLosCampos);
+
+    // Validar todo el formulario
+    const erroresValidacion = validarFormularioEvento(formData);
+    setErrores(erroresValidacion);
+
+    // Verificar si hay errores
+    const hayErrores = Object.values(erroresValidacion).some(error => error !== null);
+    
+    if (hayErrores) {
+      // Enfocar el primer campo con error
+      const primerCampoConError = Object.keys(erroresValidacion).find(key => erroresValidacion[key]);
+      if (primerCampoConError) {
+        const elemento = document.querySelector(`[name="${primerCampoConError}"]`) as HTMLElement;
+        if (elemento) elemento.focus();
+      }
+      return;
+    }
+
+    // Si no hay errores, continuar con el pago
     setStep('waiting');
     setSegundos(30);
 
@@ -157,6 +275,8 @@ export default function Eventos() {
       horaFin: '',
       serviciosAdicionales: [],
     });
+    setErrores({});
+    setTouched({});
     setStep('form');
     setComprobante(null);
     setReservaGenId(null);
@@ -178,12 +298,10 @@ export default function Eventos() {
     
     const dias: (number | null)[] = [];
     
-    // Llenar días vacíos al inicio
     for (let i = 0; i < primerDiaSemana; i++) {
       dias.push(null);
     }
     
-    // Llenar días del mes
     for (let dia = 1; dia <= diasDelMes; dia++) {
       dias.push(dia);
     }
@@ -201,10 +319,10 @@ export default function Eventos() {
     const nuevaFecha = new Date(mesActual.getFullYear(), mesActual.getMonth(), dia);
     setFechaSeleccionada(nuevaFecha);
     
-    // Formatear fecha para el input (YYYY-MM-DD)
     const fechaFormateada = nuevaFecha.toISOString().split('T')[0];
     setFormData(prev => ({ ...prev, fechaEvento: fechaFormateada }));
     setMostrarCalendario(false);
+    handleBlur('fechaEvento');
   };
 
   const esFechaPasada = (dia: number) => {
@@ -328,13 +446,7 @@ export default function Eventos() {
               <div className="flex flex-col justify-between">
                 {/* Resumen de precios */}
                 <div className="space-y-4 mb-6">
-                  <div className="bg-gradient-to-br from-teal-50 to-cyan-50 rounded-2xl p-6 border border-teal-200/50">
-                    <p className="text-sm text-gray-600 mb-2">Total de servicios:</p>
-                    <div className="flex items-baseline gap-2 mb-2 justify-center">
-                      <span className="text-3xl font-bold text-teal-700">{precioTotal.toFixed(2)}</span>
-                      <span className="text-lg font-semibold text-teal-600">Bs.</span>
-                    </div>
-                  </div>
+                
 
                   <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-6 border border-amber-200/50">
                     <p className="text-sm text-gray-600 mb-2">Monto a pagar (50%):</p>
@@ -349,96 +461,87 @@ export default function Eventos() {
                 <div className="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-lg mb-6">
                   <p className="text-sm text-amber-900"><strong>Importante:</strong> El restante 50% ({precioAdelanto.toFixed(2)} Bs.) se pagará en recepción</p>
                 </div>
-
-                <div className="mb-6">
-                  <label className="block text-sm font-semibold text-gray-700 mb-3">
-                    📎 Comprobante de Pago
-                  </label>
-                  
-                  <div className="relative group">
-                    <input 
-                      type="file" 
-                      onChange={handleFileChange} 
-                      accept="image/*,.pdf" 
-                      className="hidden" 
-                      id="comprobante" 
-                    />
-                    
-                    {!comprobante ? (
-                      <label 
-                        htmlFor="comprobante" 
-                        className="block cursor-pointer"
-                      >
-                        <div className="relative border-3 border-dashed border-gray-300 group-hover:border-teal-400 rounded-2xl p-8 text-center transition-all duration-300 bg-gradient-to-br from-white to-gray-50 group-hover:from-teal-50 group-hover:to-cyan-50">
-                          <div className="absolute inset-0 bg-gradient-to-r from-teal-400/0 to-cyan-400/0 group-hover:from-teal-400/10 group-hover:to-cyan-400/10 rounded-2xl transition-all duration-300"></div>
-                          
-                          <div className="relative">
-                            <div className="w-16 h-16 bg-gradient-to-br from-teal-100 to-cyan-100 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
-                              <Upload className="w-8 h-8 text-teal-600" />
-                            </div>
-                            
-                            <p className="text-lg font-semibold text-gray-700 mb-2">
-                              Arrastra tu archivo aquí
-                            </p>
-                            <p className="text-sm text-gray-500 mb-3">
-                              o haz clic para seleccionar
-                            </p>
-                            
-                            <div className="inline-block px-6 py-2 bg-gradient-to-r from-teal-500 to-cyan-500 text-white rounded-lg font-medium group-hover:shadow-lg transition-all duration-300">
-                              Seleccionar archivo
-                            </div>
-                            
-                            <p className="text-xs text-gray-400 mt-4">
-                              PNG, JPG o PDF (máx. 5MB)
-                            </p>
-                          </div>
-                        </div>
-                      </label>
-                    ) : (
-                      <div className="border-3 border-teal-400 rounded-2xl p-6 bg-gradient-to-br from-teal-50 to-cyan-50">
-                        <div className="flex items-center gap-4">
-                          <div className="w-14 h-14 bg-gradient-to-br from-teal-500 to-cyan-500 rounded-xl flex items-center justify-center flex-shrink-0">
-                            <Check className="w-8 h-8 text-white" />
-                          </div>
-                          
-                          <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-gray-800 mb-1">Archivo cargado</p>
-                            <p className="text-sm text-gray-600 truncate">{comprobante.name}</p>
-                            <p className="text-xs text-teal-600 mt-1">
-                              ✓ Listo para enviar
-                            </p>
-                          </div>
-                          
-                          <label 
-                            htmlFor="comprobante"
-                            className="px-4 py-2 bg-white border-2 border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition cursor-pointer"
-                          >
-                            Cambiar
-                          </label>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="mt-3 flex items-start gap-2 text-sm text-gray-500">
-                    <div className="w-1 h-1 bg-gray-400 rounded-full mt-2"></div>
-                    <p>Asegúrate de que el comprobante sea legible y contenga todos los datos del pago</p>
-                  </div>
-                </div>
+<div className="mb-6">
+  <label className="block text-sm font-semibold text-gray-700 mb-3">
+    📎 Comprobante de Pago
+  </label>
+  
+  <div className="relative group">
+    <input 
+      type="file" 
+      onChange={handleFileChange} 
+      accept="image/*,.pdf" 
+      className="hidden" 
+      id="comprobante" 
+    />
+    
+    {!comprobante ? (
+      <label 
+        htmlFor="comprobante" 
+        className="block cursor-pointer"
+      >
+        <div className="relative border-3 border-dashed border-gray-300 group-hover:border-teal-400 rounded-2xl p-8 text-center transition-all duration-300 bg-gradient-to-br from-white to-gray-50 group-hover:from-teal-50 group-hover:to-cyan-50">
+          <div className="absolute inset-0 bg-gradient-to-r from-teal-400/0 to-cyan-400/0 group-hover:from-teal-400/10 group-hover:to-cyan-400/10 rounded-2xl transition-all duration-300"></div>
+          
+          <div className="relative">
+            <div className="w-16 h-16 bg-gradient-to-br from-teal-100 to-cyan-100 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+              <Upload className="w-8 h-8 text-teal-600" />
+            </div>
+            
+            <p className="text-lg font-semibold text-gray-700 mb-2">
+              Arrastra tu archivo aquí
+            </p>
+            <p className="text-sm text-gray-500 mb-3">
+              o haz clic para seleccionar
+            </p>
+            
+            <div className="inline-block px-6 py-2 bg-gradient-to-r from-teal-500 to-cyan-500 text-white rounded-lg font-medium group-hover:shadow-lg transition-all duration-300">
+              Seleccionar archivo
+            </div>
+            
+            <p className="text-xs text-gray-400 mt-4">
+              PNG, JPG o PDF (máx. 5MB)
+            </p>
+          </div>
+        </div>
+      </label>
+    ) : (
+      <div className="border-3 border-teal-400 rounded-2xl p-6 bg-gradient-to-br from-teal-50 to-cyan-50 cursor-pointer">
+        <label htmlFor="comprobante" className="block cursor-pointer">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 bg-gradient-to-br from-teal-500 to-cyan-500 rounded-xl flex items-center justify-center flex-shrink-0">
+              <Check className="w-8 h-8 text-white" />
+            </div>
+            
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-gray-800 mb-1">Archivo cargado</p>
+              <p className="text-sm text-gray-600 truncate">{comprobante.name}</p>
+              <p className="text-xs text-teal-600 mt-1">
+                ✓ Listo para enviar - Haz clic para cambiar
+              </p>
+            </div>
+          </div>
+        </label>
+      </div>
+    )}
+  </div>
+  
+  <div className="mt-3 flex items-start gap-2 text-sm text-gray-500">
+    <div className="w-1 h-1 bg-gray-400 rounded-full mt-2"></div>
+    <p>Asegúrate de que el comprobante sea legible y contenga todos los datos del pago</p>
+  </div>
+</div>
 
                 <button onClick={handleUploadComprobante} disabled={!comprobante || isUploadingComprobante} className={`w-full py-4 rounded-xl font-bold text-lg transition-all duration-300 ${comprobante && !isUploadingComprobante ? 'bg-gradient-to-r from-cyan-500 to-teal-600 text-white hover:shadow-2xl hover:shadow-teal-500/40 hover:scale-[1.02] active:scale-95' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>
-                  {isUploadingComprobante ? (
+                  
                     <div className="flex items-center justify-center gap-2">
                       <div className="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
                       Procesando...
                     </div>
-                  ) : (
-                    `Confirmar Pago - ${precioAdelanto.toFixed(2)} Bs.`
-                  )}
+              
                 </button>
 
-                {uploadError && <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 text-sm rounded-lg">Error: {uploadError}</div>}
-              </div>
+                </div>
             </div>
 
             <div className="bg-gradient-to-r from-cyan-50 to-teal-50 px-8 py-4 text-center border-t border-gray-100">
@@ -479,10 +582,17 @@ export default function Eventos() {
                   name="nombre"
                   value={formData.nombre}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                  onBlur={() => handleBlur('nombre')}
+                  onKeyDown={soloLetrasEvento}
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent ${
+                    errores.nombre ? 'border-red-500' : 'border-gray-300'
+                  }`}
                   placeholder="Ej: Juan"
                   required
                 />
+                {errores.nombre && (
+                  <p className="text-red-500 text-xs mt-1">{errores.nombre}</p>
+                )}
               </div>
 
               <div>
@@ -494,25 +604,37 @@ export default function Eventos() {
                   name="apellidoPaterno"
                   value={formData.apellidoPaterno}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                  onBlur={() => handleBlur('apellidoPaterno')}
+                  onKeyDown={soloLetrasEvento}
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent ${
+                    errores.apellidoPaterno ? 'border-red-500' : 'border-gray-300'
+                  }`}
                   placeholder="Ej: Pérez"
-                  required
                 />
+                {errores.apellidoPaterno && (
+                  <p className="text-red-500 text-xs mt-1">{errores.apellidoPaterno}</p>
+                )}
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Apellido Materno *
+                  Apellido Materno
                 </label>
                 <input
                   type="text"
                   name="apellidoMaterno"
                   value={formData.apellidoMaterno}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                  onBlur={() => handleBlur('apellidoMaterno')}
+                  onKeyDown={soloLetrasEvento}
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent ${
+                    errores.apellidoMaterno ? 'border-red-500' : 'border-gray-300'
+                  }`}
                   placeholder="Ej: García"
-                  required
                 />
+                {errores.apellidoMaterno && (
+                  <p className="text-red-500 text-xs mt-1">{errores.apellidoMaterno}</p>
+                )}
               </div>
             </div>
 
@@ -526,11 +648,21 @@ export default function Eventos() {
                   name="telefono"
                   value={formData.telefono}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                  onBlur={() => handleBlur('telefono')}
+                  onKeyDown={(e) => {
+                    soloNumerosEvento(e);
+                    bloquearCaracteresEspecialesEvento(e);
+                  }}
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent ${
+                    errores.telefono ? 'border-red-500' : 'border-gray-300'
+                  }`}
                   placeholder="7XXXXXXX"
                   maxLength={8}
                   required
                 />
+                {errores.telefono && (
+                  <p className="text-red-500 text-xs mt-1">{errores.telefono}</p>
+                )}
               </div>
 
               <div>
@@ -542,11 +674,21 @@ export default function Eventos() {
                   name="carnet"
                   value={formData.carnet}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                  onBlur={() => handleBlur('carnet')}
+                  onKeyDown={(e) => {
+                    soloNumerosEvento(e);
+                    bloquearCaracteresEspecialesEvento(e);
+                  }}
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent ${
+                    errores.carnet ? 'border-red-500' : 'border-gray-300'
+                  }`}
                   placeholder="XXXXXXXX"
                   maxLength={12}
                   required
                 />
+                {errores.carnet && (
+                  <p className="text-red-500 text-xs mt-1">{errores.carnet}</p>
+                )}
               </div>
             </div>
 
@@ -559,10 +701,16 @@ export default function Eventos() {
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                onBlur={() => handleBlur('email')}
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent ${
+                  errores.email ? 'border-red-500' : 'border-gray-300'
+                }`}
                 placeholder="ejemplo@correo.com"
                 required
               />
+              {errores.email && (
+                <p className="text-red-500 text-xs mt-1">{errores.email}</p>
+              )}
             </div>
           </div>
 
@@ -579,7 +727,10 @@ export default function Eventos() {
                 name="tipoReserva"
                 value={formData.tipoReserva}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                onBlur={() => handleBlur('tipoReserva')}
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent ${
+                  errores.tipoReserva ? 'border-red-500' : 'border-gray-300'
+                }`}
                 required
               >
                 <option value="">Seleccione un tipo de evento</option>
@@ -590,6 +741,9 @@ export default function Eventos() {
                 <option value="graduacion">Graduación</option>
                 <option value="otro">Otro</option>
               </select>
+              {errores.tipoReserva && (
+                <p className="text-red-500 text-xs mt-1">{errores.tipoReserva}</p>
+              )}
             </div>
 
             <div>
@@ -600,7 +754,9 @@ export default function Eventos() {
                 <button
                   type="button"
                   onClick={() => setMostrarCalendario(!mostrarCalendario)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-left flex items-center justify-between bg-white"
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-left flex items-center justify-between bg-white ${
+                    errores.fechaEvento ? 'border-red-500' : 'border-gray-300'
+                  }`}
                 >
                   <span className={formData.fechaEvento ? 'text-gray-900' : 'text-gray-500'}>
                     {formData.fechaEvento 
@@ -614,6 +770,9 @@ export default function Eventos() {
                   </span>
                   <Calendar className="w-5 h-5 text-gray-400" />
                 </button>
+                {errores.fechaEvento && (
+                  <p className="text-red-500 text-xs mt-1">{errores.fechaEvento}</p>
+                )}
 
                 {mostrarCalendario && (
                   <div className="absolute z-50 mt-2 bg-white rounded-xl shadow-2xl border border-gray-200 p-4 w-full md:w-96">
@@ -698,9 +857,15 @@ export default function Eventos() {
                   name="horaInicio"
                   value={formData.horaInicio}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                  onBlur={() => handleBlur('horaInicio')}
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent ${
+                    errores.horaInicio ? 'border-red-500' : 'border-gray-300'
+                  }`}
                   required
                 />
+                {errores.horaInicio && (
+                  <p className="text-red-500 text-xs mt-1">{errores.horaInicio}</p>
+                )}
               </div>
 
               <div>
@@ -712,9 +877,15 @@ export default function Eventos() {
                   name="horaFin"
                   value={formData.horaFin}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                  onBlur={() => handleBlur('horaFin')}
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent ${
+                    errores.horaFin ? 'border-red-500' : 'border-gray-300'
+                  }`}
                   required
                 />
+                {errores.horaFin && (
+                  <p className="text-red-500 text-xs mt-1">{errores.horaFin}</p>
+                )}
               </div>
             </div>
 
@@ -727,11 +898,21 @@ export default function Eventos() {
                 name="cantidadPersonas"
                 value={formData.cantidadPersonas}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                onBlur={() => handleBlur('cantidadPersonas')}
+                onKeyDown={(e) => {
+                  soloNumerosEvento(e);
+                  bloquearCaracteresEspecialesEvento(e);
+                }}
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent ${
+                  errores.cantidadPersonas ? 'border-red-500' : 'border-gray-300'
+                }`}
                 placeholder="Ej: 50"
                 min="1"
                 required
               />
+              {errores.cantidadPersonas && (
+                <p className="text-red-500 text-xs mt-1">{errores.cantidadPersonas}</p>
+              )}
             </div>
 
             <div>
@@ -779,7 +960,7 @@ export default function Eventos() {
             
             {serviciosSeleccionados.length > 0 ? (
               <div className="p-6 space-y-4">
-                {/* Lista de servicios */}
+                {/* Lista de servicios con detalles de cálculo */}
                 <div className="space-y-3">
                   {serviciosSeleccionados.map(servicio => (
                     <div key={servicio.id_servicios_adicionales} className="flex justify-between items-start gap-4 p-3 bg-gray-50 rounded-lg">
@@ -789,6 +970,9 @@ export default function Eventos() {
                           <p className="text-sm text-gray-500 mt-1">
                             {servicio.precio.toFixed(2)} Bs. × {formData.cantidadPersonas} persona{parseInt(formData.cantidadPersonas) > 1 ? 's' : ''}
                           </p>
+                        )}
+                        {servicio.tipo === 'E' && (
+                          <p className="text-sm text-gray-500 mt-1">Precio fijo</p>
                         )}
                       </div>
                       <div className="text-right">
@@ -806,7 +990,7 @@ export default function Eventos() {
                 {/* Totales */}
                 <div className="space-y-3 pt-4 border-t-2 border-dashed border-gray-200">
                   <div className="flex justify-between items-center p-4 bg-teal-50 rounded-xl">
-                    <span className="text-gray-700 font-semibold">Total:</span>
+                    <span className="text-gray-700 font-semibold">Total de servicios:</span>
                     <span className="text-2xl font-bold text-teal-700">{precioTotal.toFixed(2)} <span className="text-lg">Bs.</span></span>
                   </div>
                   
@@ -844,7 +1028,7 @@ export default function Eventos() {
             disabled={isLoading}
             className={`w-full bg-gradient-to-r from-cyan-500 to-teal-600 text-white py-4 rounded-lg hover:shadow-lg transition font-semibold text-lg ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
-            {isLoading ? 'Enviando...' : `Enviar Solicitud - ${precioAdelanto.toFixed(2)} Bs.`}
+            {isLoading ? 'Enviando...' : `Continuar al Pago - ${precioAdelanto.toFixed(2)} Bs.`}
           </button>
         </form>
       </div>
