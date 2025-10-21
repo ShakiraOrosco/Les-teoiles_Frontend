@@ -1,9 +1,11 @@
+// src/pages/Usuarios/UsuariosPage.tsx
 import { useState, useEffect } from "react";
 import PageBreadcrumb from "../../components/common/PageBreadCrumb";
 import PageMeta from "../../components/common/PageMeta";
-import UsuarioTable from "../../components/ui/table/Usuarios/UsuariosTable";
+import UsuariosTable from "../../components/tables/Usuarios/UsuariosTable";
 import { Pagination } from "../../components/tables/Pagination";
 import { useUsuarios } from "../../hooks/Usuario/useUsuarios";
+import { useUpdateUsuario } from "../../hooks/Usuario/useUpdateUsuarios";
 import Button from "../../components/ui/button/Button";
 import { FaPlus } from "react-icons/fa";
 import { useModal } from "../../hooks/useModal";
@@ -16,9 +18,9 @@ import autoTable from "jspdf-autotable";
 import Alert from "../../components/ui/alert/Alert";
 
 export default function Usuarios() {
-
     const { openModal, isOpen, closeModal } = useModal();
-    const { usuarios, loading, error, addUsuario, editarUsuario } = useUsuarios();
+    const { usuarios, loading, error, addUsuario, refetch } = useUsuarios();
+    const { updateUsuario } = useUpdateUsuario();
 
     // Estado para edición
     const [usuarioEdit, setUsuarioEdit] = useState<Usuario | null>(null);
@@ -29,12 +31,24 @@ export default function Usuarios() {
         setUsuarioEdit(usuario);
         setIsEditOpen(true);
     };
-    
-    const handleUpdate = async (updatedData: Partial<Usuario>) => {
-        if (usuarioEdit) {
-            await editarUsuario(usuarioEdit.id_usuario, updatedData);
+
+    // Editar usuario
+    const editarUsuario = async (usuario: Usuario) => {
+        const result = await updateUsuario(usuario);
+        if (result) {
+            refetch();
             setIsEditOpen(false);
-            setUsuarioEdit(null);
+        }
+    };
+
+    // Toggle estado (Activar/Desactivar)
+    const handleToggleEstado = async (usuario: Usuario) => {
+        const nuevoEstado: "A" | "I" = usuario.estado === "A" ? "I" : "A";
+        const usuarioActualizado: Usuario = { ...usuario, estado: nuevoEstado };
+        
+        const result = await updateUsuario(usuarioActualizado);
+        if (result) {
+            refetch();
         }
     };
 
@@ -267,7 +281,11 @@ export default function Usuarios() {
                         </div>
                     ) : (
                         <>
-                            <UsuarioTable usuarios={usuariosPaginados} onEdit={handleEdit} />
+                            <UsuariosTable 
+                                usuarios={usuariosPaginados} 
+                                onEdit={handleEdit}
+                                onToggleEstado={handleToggleEstado}
+                            />
                             <Pagination
                                 paginaActual={paginaActual}
                                 totalPaginas={totalPaginas}
@@ -291,11 +309,10 @@ export default function Usuarios() {
                 <EditUsuarioModal
                     isOpen={isEditOpen}
                     onClose={() => setIsEditOpen(false)}
-                    onSubmit={(data) => editarUsuario(usuarioEdit.id_usuario, data)}
+                    onSubmit={editarUsuario}
                     usuario={usuarioEdit}
                 />
             )}
-
         </div>
     );
 }
