@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Home, ChevronLeft, ChevronRight, X, Upload, Copy, Check } from 'lucide-react';
 import { useCreateReserva } from '../../hooks/Reservas/useCreateReserva';
 import { useUploadComprobante } from '../../hooks/Reservas/useUploadComprobante';
+import { useObtenerTarifa } from '../../hooks/Reservas/useObtenerTarifa';
 import {
   validarNombreHospedaje,
   validarApellidos,
@@ -9,7 +10,6 @@ import {
   validarCarnetHospedaje,
   validarEmailHospedaje,
   validarCantidadPersonas,
-  validarFechas,
   validarFormularioHospedaje,
   soloNumeros,
   soloLetras,
@@ -19,7 +19,8 @@ import {
 
 export default function Hospedaje() {
   const { crearReserva, isLoading, error, resetState } = useCreateReserva();
-  const { subirComprobante, isLoading: isUploadingComprobante, error: uploadError, success: uploadSuccess } = useUploadComprobante();
+  const { subirComprobante, isLoading: isUploadingComprobante, error: uploadError } = useUploadComprobante();
+  const { obtenerPrecioPorPersona, isLoading: isLoadingTarifas } = useObtenerTarifa();
 
   const [formData, setFormData] = useState({
     nombre: '',
@@ -46,6 +47,40 @@ export default function Hospedaje() {
   const [copiado, setCopiado] = useState(false);
   const [errores, setErrores] = useState<Record<string, string | null>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
+  
+  const [montoTotal, setMontoTotal] = useState<number>(0);
+  const [precioPorPersona, setPrecioPorPersona] = useState<number | null>(null);
+  const [cantidadDias, setCantidadDias] = useState<number>(0);
+
+  // Calcular cantidad de días (inclusivo: cuenta tanto el día de inicio como el de fin)
+  useEffect(() => {
+    if (formData.fechaInicio && formData.fechaFin) {
+      const fechaInicio = new Date(formData.fechaInicio);
+      const fechaFin = new Date(formData.fechaFin);
+      const diferencia = fechaFin.getTime() - fechaInicio.getTime();
+      const dias = Math.ceil(diferencia / (1000 * 60 * 60 * 24)) + 1; // +1 para contar inclusivamente
+      setCantidadDias(dias > 0 ? dias : 0);
+    } else {
+      setCantidadDias(0);
+    }
+  }, [formData.fechaInicio, formData.fechaFin]);
+
+  // Calcular el total: precio × personas × días
+  useEffect(() => {
+    const precio = obtenerPrecioPorPersona(formData.amoblado, formData.banoPrivado);
+    setPrecioPorPersona(precio);
+
+    if (precio && formData.cantidadPersonas && cantidadDias > 0) {
+      const cantidad = parseInt(formData.cantidadPersonas);
+      if (!isNaN(cantidad) && cantidad > 0) {
+        setMontoTotal(precio * cantidad * cantidadDias);
+      } else {
+        setMontoTotal(0);
+      }
+    } else {
+      setMontoTotal(0);
+    }
+  }, [formData.amoblado, formData.banoPrivado, formData.cantidadPersonas, cantidadDias, obtenerPrecioPorPersona]);
 
   useEffect(() => {
     if (step === 'waiting' && waitingTime > 0) {
@@ -56,7 +91,6 @@ export default function Hospedaje() {
     }
   }, [step, waitingTime]);
 
-  // Validar campo individual
   const validarCampo = (nombre: string, valor: string) => {
     let error: string | null = null;
     
@@ -90,7 +124,6 @@ export default function Hospedaje() {
     const { name, value } = e.target;
     let valorFinal = value;
     
-    // Para teléfono y carnet, limitar dígitos
     if (name === 'telefono' && value.length > 8) {
       valorFinal = value.slice(0, 8);
     }
@@ -100,7 +133,6 @@ export default function Hospedaje() {
     
     setFormData(prev => ({ ...prev, [name]: valorFinal }));
     
-    // Validar en tiempo real si el campo ya fue tocado
     if (touched[name]) {
       const error = validarCampo(name, valorFinal);
       setErrores(prev => ({ ...prev, [name]: error }));
@@ -113,7 +145,6 @@ export default function Hospedaje() {
     setTouched(prev => ({ ...prev, [name]: true }));
     let error = validarCampo(name, value);
     
-    // Validar estructura para nombre y apellidos
     if ((name === 'nombre' || name === 'apellidoPaterno' || name === 'apellidoMaterno') && value.trim() && !error) {
       if (!validarEstructuraTexto(value)) {
         error = `El ${name === 'nombre' ? 'nombre' : 'apellido'} no parece ser válido. Verifica que contenga letras reales.`;
@@ -167,62 +198,34 @@ export default function Hospedaje() {
     return (
       <div className="bg-white border border-gray-300 rounded-lg shadow-lg p-4 w-80">
         <div className="flex justify-between items-center mb-4">
-          <button
-            type="button"
-            onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))}
-            className="p-1 hover:bg-gray-100 rounded"
-          >
+          <button type="button" onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))} className="p-1 hover:bg-gray-100 rounded">
             <ChevronLeft className="w-5 h-5" />
           </button>
           <span className="font-semibold">
             {currentMonth.toLocaleString('es-ES', { month: 'long', year: 'numeric' })}
           </span>
-          <button
-            type="button"
-            onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))}
-            className="p-1 hover:bg-gray-100 rounded"
-          >
+          <button type="button" onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))} className="p-1 hover:bg-gray-100 rounded">
             <ChevronRight className="w-5 h-5" />
           </button>
         </div>
 
         <div className="grid grid-cols-7 gap-1 mb-2">
           {['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa'].map(day => (
-            <div key={day} className="text-center text-sm font-semibold text-gray-600">
-              {day}
-            </div>
+            <div key={day} className="text-center text-sm font-semibold text-gray-600">{day}</div>
           ))}
         </div>
 
         <div className="grid grid-cols-7 gap-1">
           {days.map((day, idx) => {
-            if (day === null) {
-              return <div key={`empty-${idx}`} />;
-            }
+            if (day === null) return <div key={`empty-${idx}`} />;
 
             const dateStr = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
             const isToday = isCurrentMonth && day === today.getDate();
-            const isSelected =
-              (type === 'inicio' && formData.fechaInicio === dateStr) ||
-              (type === 'fin' && formData.fechaFin === dateStr);
+            const isSelected = (type === 'inicio' && formData.fechaInicio === dateStr) || (type === 'fin' && formData.fechaFin === dateStr);
             const isPast = isCurrentMonth && day < today.getDate();
 
             return (
-              <button
-                key={day}
-                type="button"
-                onClick={() => handleDateSelect(dateStr, type)}
-                disabled={isPast}
-                className={`w-10 h-10 rounded text-sm font-medium transition ${
-                  isSelected
-                    ? 'bg-teal-600 text-white'
-                    : isToday
-                    ? 'bg-teal-100 text-teal-700 border border-teal-600'
-                    : isPast
-                    ? 'text-gray-300 cursor-not-allowed'
-                    : 'hover:bg-gray-100'
-                }`}
-              >
+              <button key={day} type="button" onClick={() => handleDateSelect(dateStr, type)} disabled={isPast} className={`w-10 h-10 rounded text-sm font-medium transition ${isSelected ? 'bg-teal-600 text-white' : isToday ? 'bg-teal-100 text-teal-700 border border-teal-600' : isPast ? 'text-gray-300 cursor-not-allowed' : 'hover:bg-gray-100'}`}>
                 {day}
               </button>
             );
@@ -235,7 +238,6 @@ export default function Hospedaje() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Marcar todos los campos como tocados
     const allTouched = {
       nombre: true,
       apellidoPaterno: true,
@@ -249,15 +251,11 @@ export default function Hospedaje() {
     };
     setTouched(allTouched);
     
-    // Validar todo el formulario
     const erroresValidacion = validarFormularioHospedaje(formData);
     setErrores(erroresValidacion);
     
-    // Si hay errores, no continuar
     const hayErrores = Object.values(erroresValidacion).some(error => error !== null);
-    if (hayErrores) {
-      return;
-    }
+    if (hayErrores) return;
     
     setStep('waiting');
     setWaitingTime(30);
@@ -323,6 +321,9 @@ export default function Hospedaje() {
     setCopiado(false);
     setErrores({});
     setTouched({});
+    setMontoTotal(0);
+    setPrecioPorPersona(null);
+    setCantidadDias(0);
     resetState();
   };
 
@@ -379,14 +380,14 @@ export default function Hospedaje() {
                 <div className="bg-gradient-to-br from-teal-50 to-cyan-50 rounded-2xl p-6 mb-6 border border-teal-200/50 text-center w-fit mx-auto">
                   <p className="text-sm text-gray-600 mb-2">Monto a pagar:</p>
                   <div className="flex items-baseline gap-2 mb-2 justify-center">
-                    <span className="text-4xl font-bold text-teal-700">250.00</span>
+                    <span className="text-4xl font-bold text-teal-700">{(montoTotal * 0.5).toFixed(2)}</span>
                     <span className="text-lg font-semibold text-teal-600">Bs.</span>
                   </div>
                   <p className="text-xs text-gray-500">(50% de adelanto)</p>
                 </div>
 
                 <div className="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-lg mb-6">
-                  <p className="text-sm text-amber-900"><strong>Importante:</strong> El restante 50% se pagará en recepción</p>
+                  <p className="text-sm text-amber-900"><strong>Importante:</strong> El restante 50% ({(montoTotal * 0.5).toFixed(2)} Bs.) se pagará en recepción</p>
                 </div>
 
                 <div className="mb-6">
@@ -399,7 +400,7 @@ export default function Hospedaje() {
                       <label htmlFor="comprobante" className="cursor-pointer">
                         <span className="text-teal-600 hover:text-teal-700 font-semibold">Seleccionar archivo</span>
                       </label>
-                      <p className="text-xs text-gray-500 mt-1">PNG oJPG(máx. 5MB)</p>
+                      <p className="text-xs text-gray-500 mt-1">PNG o JPG (máx. 5MB)</p>
                       {comprobante && (
                         <div className="flex items-center justify-center gap-2 mt-2 text-teal-600 font-medium">
                           <Check className="w-5 h-5" />
@@ -545,12 +546,6 @@ export default function Hospedaje() {
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Cantidad de Personas *</label>
-            <input type="number" name="cantidadPersonas" value={formData.cantidadPersonas} onChange={handleChange} onBlur={handleBlur} onKeyDown={(e) => { soloNumeros(e); bloquearEscrituraDirecta(e); }} min="1" max="5" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent [appearance:textfield] [&::-webkit-inner-spin-button]:hidden [&::-webkit-outer-spin-button]:hidden" placeholder="Ej: 1" />
-            {errores.cantidadPersonas && <p className="text-xs text-red-600 mt-1">{errores.cantidadPersonas}</p>}
-          </div>
-
           <div className="grid md:grid-cols-2 gap-6 mt-4">
             <div>
               <p className="text-sm font-medium text-gray-700 mb-2">¿Habitación Amoblada? *</p>
@@ -580,10 +575,74 @@ export default function Hospedaje() {
               </div>
             </div>
           </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Cantidad de Personas *</label>
+            <input type="number" name="cantidadPersonas" value={formData.cantidadPersonas} onChange={handleChange} onBlur={handleBlur} onKeyDown={(e) => { soloNumeros(e); bloquearEscrituraDirecta(e); }} min="1" max="5" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent [appearance:textfield] [&::-webkit-inner-spin-button]:hidden [&::-webkit-outer-spin-button]:hidden" placeholder="Ej: 1" />
+            {errores.cantidadPersonas && <p className="text-xs text-red-600 mt-1">{errores.cantidadPersonas}</p>}
+          </div>
+
+          <div className="mt-6 bg-gradient-to-br from-teal-50 to-cyan-50 rounded-xl p-6 border-2 border-teal-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 mb-1">Monto Total a Pagar</p>
+                {precioPorPersona && formData.cantidadPersonas && cantidadDias > 0 && (
+                  <p className="text-xs text-gray-500">
+                    {precioPorPersona.toFixed(2)} Bs. × {formData.cantidadPersonas} persona(s) × {cantidadDias} día(s)
+                  </p>
+                )}
+              </div>
+              <div className="text-right">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-4xl font-bold text-teal-700">
+                    {montoTotal.toFixed(2)}
+                  </span>
+                  <span className="text-lg font-semibold text-teal-600">Bs.</span>
+                </div>
+                {montoTotal > 0 && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Adelanto (50%): {(montoTotal * 0.5).toFixed(2)} Bs.
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {!precioPorPersona && formData.cantidadPersonas && (
+              <div className="mt-3 text-center">
+                <p className="text-sm text-amber-600">
+                  ⚠️ Configuración seleccionada: 
+                  {formData.amoblado === 'si' ? ' Amoblado' : ' Sin amoblar'} + 
+                  {formData.banoPrivado === 'si' ? ' Baño privado' : ' Baño compartido'}
+                </p>
+              </div>
+            )}
+
+            {cantidadDias === 0 && formData.fechaInicio && formData.fechaFin && (
+              <div className="mt-3 text-center">
+                <p className="text-sm text-red-600">
+                  ⚠️ La fecha de fin debe ser posterior a la fecha de inicio
+                </p>
+              </div>
+            )}
+
+            {!formData.fechaInicio && !formData.fechaFin && (
+              <div className="mt-3 text-center">
+                <p className="text-sm text-gray-500">
+                  📅 Selecciona las fechas de inicio y fin
+                </p>
+              </div>
+            )}
+
+            {isLoadingTarifas && (
+              <div className="mt-3 text-center">
+                <p className="text-sm text-gray-500">Cargando tarifas...</p>
+              </div>
+            )}
+          </div>
         </div>
 
-        <button type="submit" disabled={isLoading} className={`w-full bg-gradient-to-r from-cyan-500 to-teal-600 text-white py-3 rounded-lg hover:shadow-lg transition font-semibold ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}>
-          {isLoading ? 'Enviando...' : 'Enviar Solicitud'}
+        <button type="submit" disabled={isLoading || montoTotal === 0} className={`w-full bg-gradient-to-r from-cyan-500 to-teal-600 text-white py-3 rounded-lg hover:shadow-lg transition font-semibold ${(isLoading || montoTotal === 0) ? 'opacity-50 cursor-not-allowed' : ''}`}>
+          {isLoading ? 'Enviando...' : montoTotal === 0 ? 'Complete el formulario' : 'Enviar Solicitud'}
         </button>
       </form>
     </>
