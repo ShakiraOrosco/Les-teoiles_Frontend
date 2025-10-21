@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Home, ChevronLeft, ChevronRight, X, Upload, Copy, Check } from 'lucide-react';
-import { useCreateReserva } from '../../hooks/Reservas/useCreateReserva';
-import { useUploadComprobante } from '../../hooks/Reservas/useUploadComprobante';
-import { useObtenerTarifa } from '../../hooks/Reservas/useObtenerTarifa';
+import { useCreateReserva } from '../../hooks/ReservasHospedaje/useCreateReserva';
+import { useUploadComprobante } from '../../hooks/ReservasHospedaje/useUploadComprobante';
+import { useObtenerTarifa } from '../../hooks/ReservasHospedaje/useObtenerTarifa';
 import {
   validarNombreHospedaje,
   validarApellidos,
@@ -329,16 +329,21 @@ export default function Hospedaje() {
 
   if (step === 'waiting') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-cyan-50 to-teal-50 p-4">
-        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
-          <div className="mb-6">
-            <div className="inline-block p-4 bg-teal-100 rounded-full mb-4">
-              <div className="w-16 h-16 border-4 border-teal-600 border-t-transparent rounded-full animate-spin"></div>
+      <div className="min-h-screen bg-teal-50 p-6 flex items-center justify-center">
+        <div className="max-w-lg w-full bg-white rounded-2xl shadow-xl p-12 text-center">
+          <div className="relative mb-6">
+            <div className="bg-teal-100 w-24 h-24 rounded-full flex items-center justify-center mx-auto animate-pulse">
+              <svg className="w-16 h-16 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-28 h-28 border-4 border-teal-200 border-t-teal-500 rounded-full animate-spin"></div>
             </div>
           </div>
-          <h2 className="text-2xl font-bold text-teal-900 mb-2">Analizando tu Solicitud</h2>
-          <p className="text-gray-600 mb-6">Por favor espera mientras verificamos los requisitos y disponibilidad de habitaciones</p>
-          <div className="text-4xl font-bold text-teal-600">{waitingTime}s</div>
+          <h2 className="text-2xl font-bold text-teal-800 mb-3">Analizando tu Solicitud</h2>
+          <p className="text-gray-600 mb-8">Por favor espera mientras verificamos los requisitos y disponibilidad de habitaciones</p>
+          <div className="text-5xl font-bold text-teal-600">{waitingTime}s</div>
         </div>
       </div>
     );
@@ -346,88 +351,73 @@ export default function Hospedaje() {
 
   if (step === 'payment') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-cyan-50 to-teal-50 p-4">
-        <div className="w-full max-w-2xl relative">
-          <button onClick={() => setStep('form')} className="absolute -top-10 right-0 text-gray-400 hover:text-gray-600 transition z-50">
+      <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
+        <div className="max-w-2xl w-full bg-white rounded-2xl shadow-xl p-8 relative">
+          <button onClick={() => setStep('form')} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition">
             <X className="w-6 h-6" />
           </button>
 
-          <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
-            <div className="text-center pt-8 pb-6 px-8">
-              <h2 className="text-4xl font-bold text-teal-900 mb-2">Realizar Pago</h2>
-              <p className="text-gray-600">Necesitamos el 50% de adelanto para confirmar tu reserva</p>
+          <div className="text-center mb-6">
+            <div className="bg-teal-500 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Home className="w-8 h-8 text-white" />
+            </div>
+            <h2 className="text-3xl font-bold text-teal-800">Realizar Pago</h2>
+            <p className="text-gray-600 mt-2">Necesitamos el 50% de adelanto para confirmar tu reserva</p>
+          </div>
+
+          <div className="flex flex-col md:flex-row gap-6 items-start">
+            <div className="flex flex-col items-center justify-center flex-shrink-0">
+              <div className="bg-white p-6 rounded-lg shadow-md border mb-3">
+                <img src="../images/ReservaPagos/ResHotel1.jpg" alt="Código QR de pago" className="w-48 h-48 rounded-xl" />
+              </div>
+              <p className="text-center text-gray-600 text-sm">Escanea con tu aplicación bancaria</p>
+              <p className="text-center text-teal-600 text-xs mt-1">• Altoke - Pago seguro •</p>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-8 p-8 pt-0">
-              <div className="flex flex-col items-center justify-center">
-                <div className="relative mb-6">
-                  <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/30 to-teal-400/30 rounded-2xl blur-2xl"></div>
-                  <div className="relative bg-white p-6 rounded-2xl shadow-xl border border-cyan-100/50">
-                    <img src="../images/ReservaPagos/ResHotel1.jpg" alt="Código QR de pago" className="w-56 h-56 rounded-xl" />
-                  </div>
-                </div>
-                <div className="text-center">
-                  <p className="text-sm text-gray-600 mb-1">Escanea con tu aplicación bancaria</p>
-                  <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
-                    <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
-                    <span>Altoke - Pago seguro</span>
-                    <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
-                  </div>
+            <div className="flex-1 space-y-4">
+              <div className="bg-teal-50 rounded-lg p-4">
+                <p className="text-sm text-gray-600 mb-1">Monto a pagar:</p>
+                <p className="text-4xl font-bold text-teal-700">{(montoTotal * 0.5).toFixed(2)} <span className="text-lg">Bs.</span></p>
+                <p className="text-xs text-gray-500 mt-1">(50% de adelanto)</p>
+              </div>
+
+              <div className="bg-yellow-50 border-l-4 border-yellow-400 p-3">
+                <p className="text-sm text-yellow-800"><strong>Importante:</strong> El restante 50% ({(montoTotal * 0.5).toFixed(2)} Bs.) se pagará en recepción</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Comprobante de Pago *</label>
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-teal-400 transition cursor-pointer">
+                  <input type="file" onChange={handleFileChange} accept="image/*,.pdf" className="hidden" id="comprobante" />
+                  <label htmlFor="comprobante" className="cursor-pointer">
+                    {comprobante ? (
+                      <div className="text-teal-600">
+                        <Check className="w-8 h-8 mx-auto mb-2" />
+                        <p className="font-medium">✓ {comprobante.name}</p>
+                      </div>
+                    ) : (
+                      <div className="text-gray-500">
+                        <Upload className="w-10 h-10 mx-auto mb-2" />
+                        <p className="font-medium text-teal-600">Seleccionar archivo</p>
+                        <p className="text-xs mt-1">PNG o JPG (máx. 5MB)</p>
+                      </div>
+                    )}
+                  </label>
                 </div>
               </div>
 
-              <div className="flex flex-col justify-between">
-                <div className="bg-gradient-to-br from-teal-50 to-cyan-50 rounded-2xl p-6 mb-6 border border-teal-200/50 text-center w-fit mx-auto">
-                  <p className="text-sm text-gray-600 mb-2">Monto a pagar:</p>
-                  <div className="flex items-baseline gap-2 mb-2 justify-center">
-                    <span className="text-4xl font-bold text-teal-700">{(montoTotal * 0.5).toFixed(2)}</span>
-                    <span className="text-lg font-semibold text-teal-600">Bs.</span>
+              <button onClick={handleUploadComprobante} disabled={!comprobante || isUploadingComprobante} className={`w-full py-3 rounded-lg font-semibold transition ${comprobante && !isUploadingComprobante ? 'bg-teal-500 hover:bg-teal-600 text-white' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>
+                {isUploadingComprobante ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Procesando...
                   </div>
-                  <p className="text-xs text-gray-500">(50% de adelanto)</p>
-                </div>
+                ) : (
+                  'Confirmar Pago'
+                )}
+              </button>
 
-                <div className="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-lg mb-6">
-                  <p className="text-sm text-amber-900"><strong>Importante:</strong> El restante 50% ({(montoTotal * 0.5).toFixed(2)} Bs.) se pagará en recepción</p>
-                </div>
-
-                <div className="mb-6">
-                  <label className="block text-sm font-semibold text-gray-700 mb-3">Comprobante de Pago *</label>
-                  <div className="relative group">
-                    <div className="absolute inset-0 bg-gradient-to-r from-cyan-200/40 to-teal-200/40 rounded-xl blur-md opacity-0 group-hover:opacity-100 transition duration-300"></div>
-                    <div className="relative border-2 border-dashed border-gray-300 group-hover:border-teal-400 rounded-xl p-6 text-center transition-all duration-300 bg-white group-hover:bg-teal-50/50">
-                      <Upload className="w-10 h-10 text-gray-400 mx-auto mb-2 group-hover:text-teal-500 transition" />
-                      <input type="file" onChange={handleFileChange} accept="image/*,.pdf" className="hidden" id="comprobante" />
-                      <label htmlFor="comprobante" className="cursor-pointer">
-                        <span className="text-teal-600 hover:text-teal-700 font-semibold">Seleccionar archivo</span>
-                      </label>
-                      <p className="text-xs text-gray-500 mt-1">PNG o JPG (máx. 5MB)</p>
-                      {comprobante && (
-                        <div className="flex items-center justify-center gap-2 mt-2 text-teal-600 font-medium">
-                          <Check className="w-5 h-5" />
-                          <span className="text-sm">✓ {comprobante.name}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <button onClick={handleUploadComprobante} disabled={!comprobante || isUploadingComprobante} className={`w-full py-4 rounded-xl font-bold text-lg transition-all duration-300 ${comprobante && !isUploadingComprobante ? 'bg-gradient-to-r from-cyan-500 to-teal-600 text-white hover:shadow-2xl hover:shadow-teal-500/40 hover:scale-[1.02] active:scale-95' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>
-                  {isUploadingComprobante ? (
-                    <div className="flex items-center justify-center gap-2">
-                      <div className="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
-                      Procesando...
-                    </div>
-                  ) : (
-                    'Confirmar Pago'
-                  )}
-                </button>
-
-                {uploadError && <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 text-sm rounded-lg">Error: {uploadError}</div>}
-              </div>
-            </div>
-
-            <div className="bg-gradient-to-r from-cyan-50 to-teal-50 px-8 py-4 text-center border-t border-gray-100">
-              <p className="text-xs text-gray-600">💳 Pago 100% seguro • Los datos están protegidos</p>
+              {uploadError && <div className="p-3 bg-red-100 border border-red-400 text-red-700 text-sm rounded-lg">Error: {uploadError}</div>}
             </div>
           </div>
         </div>
@@ -437,8 +427,8 @@ export default function Hospedaje() {
 
   if (step === 'success') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-cyan-50 to-teal-50 p-4">
-        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center relative">
+      <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
+        <div className="max-w-lg w-full bg-white rounded-2xl shadow-xl p-8 text-center relative">
           <button onClick={resetearFormulario} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600" title="Cerrar">
             <X className="w-6 h-6" />
           </button>
@@ -447,25 +437,25 @@ export default function Hospedaje() {
             <Check className="w-10 h-10 text-green-600" />
           </div>
 
-          <h2 className="text-2xl font-bold text-teal-900 mb-2">¡Reserva Exitosa!</h2>
+          <h2 className="text-2xl font-bold text-teal-800 mb-2">¡Reserva Exitosa!</h2>
           <p className="text-gray-600 mb-6">Tu pago del 50% ha sido recibido correctamente</p>
 
-          <div className="bg-teal-50 rounded-lg p-6 mb-6">
+          <div className="bg-teal-50 rounded-lg p-6 mb-4">
             <p className="text-sm text-gray-600 mb-2">Tu código de reserva es:</p>
-            <div className="flex items-center justify-center gap-2">
-              <p className="text-2xl font-mono font-bold text-teal-900">{codigoReserva}</p>
-              <button onClick={copiarCodigo} className="p-2 hover:bg-teal-100 rounded-lg transition" title="Copiar código">
-                {copiado ? <Check className="w-5 h-5 text-green-600" /> : <Copy className="w-5 h-5 text-teal-600" />}
+            <div className="flex items-center justify-center gap-3">
+              <p className="text-4xl font-bold text-teal-700 tracking-wider">{codigoReserva}</p>
+              <button onClick={copiarCodigo} className="bg-teal-500 hover:bg-teal-600 text-white p-2 rounded-lg transition" title="Copiar código">
+                {copiado ? <Check className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
               </button>
             </div>
-            {copiado && <p className="text-sm text-green-600 mt-2">¡Código copiado!</p>}
+            {copiado && <p className="text-xs text-teal-600 mt-2">✓ Copiado</p>}
           </div>
 
-          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6 text-left">
-            <p className="text-sm text-yellow-800"><strong>Importante:</strong> Guarda este código.</p>
+          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 text-left mb-6">
+            <p className="text-sm text-yellow-800 font-semibold">Importante: Guarda este código.</p>
           </div>
 
-          <button onClick={resetearFormulario} className="w-full bg-gradient-to-r from-cyan-500 to-teal-600 text-white py-3 rounded-lg hover:shadow-lg transition font-semibold">
+          <button onClick={resetearFormulario} className="w-full bg-teal-500 hover:bg-teal-600 text-white px-8 py-3 rounded-lg transition font-semibold">
             Cerrar
           </button>
         </div>
@@ -474,177 +464,181 @@ export default function Hospedaje() {
   }
 
   return (
-    <>
-      <div className="text-center mb-8">
-        <div className="bg-gradient-to-br from-cyan-500 to-teal-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-          <Home className="w-8 h-8 text-white" />
-        </div>
-        <h2 className="text-3xl font-bold text-teal-900">Reserva de Hospedaje</h2>
-        <p className="text-gray-600 mt-2">Completa el formulario para realizar tu solicitud</p>
-      </div>
-
-      {error && <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">Error: {error}</div>}
-
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="space-y-4">
-          <h3 className="text-xl font-semibold text-teal-900 border-b pb-2">Datos Personales</h3>
-
-          <div className="grid md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Nombre *</label>
-              <input type="text" name="nombre" value={formData.nombre} onChange={handleChange} onBlur={handleBlur} onKeyDown={soloLetras} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent" placeholder="Ej: Juan" />
-              {errores.nombre && <p className="text-xs text-red-600 mt-1">{errores.nombre}</p>}
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Apellido Paterno</label>
-              <input type="text" name="apellidoPaterno" value={formData.apellidoPaterno} onChange={handleChange} onBlur={handleBlur} onKeyDown={soloLetras} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent" placeholder="Ej: Pérez" />
-              {errores.apellidoPaterno && <p className="text-xs text-red-600 mt-1">{errores.apellidoPaterno}</p>}
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Apellido Materno</label>
-              <input type="text" name="apellidoMaterno" value={formData.apellidoMaterno} onChange={handleChange} onBlur={handleBlur} onKeyDown={soloLetras} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent" placeholder="Ej: García" />
-              {errores.apellidoMaterno && <p className="text-xs text-red-600 mt-1">{errores.apellidoMaterno}</p>}
-            </div>
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-4xl mx-auto">
+        <div className="text-center mb-8">
+          <div className="bg-teal-500 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Home className="w-8 h-8 text-white" />
           </div>
-
-          <div className="grid md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono *</label>
-              <input type="tel" name="telefono" value={formData.telefono} onChange={handleChange} onBlur={handleBlur} onKeyDown={soloNumeros} maxLength={8} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent" placeholder="7XXXXXXX" />
-              {errores.telefono && <p className="text-xs text-red-600 mt-1">{errores.telefono}</p>}
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Carnet de Identidad *</label>
-              <input type="text" name="carnet" value={formData.carnet} onChange={handleChange} onBlur={handleBlur} onKeyDown={soloNumeros} maxLength={12} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent" placeholder="XXXXXXXX" />
-              {errores.carnet && <p className="text-xs text-red-600 mt-1">{errores.carnet}</p>}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
-            <input type="email" name="email" value={formData.email} onChange={handleChange} onBlur={handleBlur} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent" placeholder="ejemplo@correo.com" />
-            {errores.email && <p className="text-xs text-red-600 mt-1">{errores.email}</p>}
-          </div>
+          <h2 className="text-3xl font-bold text-teal-800">Reserva de Hospedaje</h2>
+          <p className="text-gray-600 mt-2">Completa el formulario para realizar tu solicitud</p>
         </div>
 
-        <div className="space-y-4">
-          <h3 className="text-xl font-semibold text-teal-900 border-b pb-2">Detalles de la Reserva</h3>
+        {error && <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">Error: {error}</div>}
 
-          <div className="grid md:grid-cols-2 gap-4">
-            <div className="relative">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de Inicio *</label>
-              <input type="text" readOnly value={formData.fechaInicio} onClick={() => { setShowCalendarInicio(!showCalendarInicio); setShowCalendarFin(false); setCurrentMonth(new Date()); }} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent cursor-pointer bg-white" placeholder="Selecciona fecha" />
-              {errores.fechaInicio && <p className="text-xs text-red-600 mt-1">{errores.fechaInicio}</p>}
-              {showCalendarInicio && <div className="absolute top-full mt-2 left-0 z-10">{renderCalendar('inicio')}</div>}
-            </div>
+        <div className="bg-white rounded-xl shadow-lg p-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-4">
+              <h3 className="text-xl font-semibold text-teal-800 border-b pb-2">Datos Personales</h3>
 
-            <div className="relative">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de Fin *</label>
-              <input type="text" readOnly value={formData.fechaFin} onClick={() => { setShowCalendarFin(!showCalendarFin); setShowCalendarInicio(false); setCurrentMonth(new Date()); }} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent cursor-pointer bg-white" placeholder="Selecciona fecha" />
-              {errores.fechaFin && <p className="text-xs text-red-600 mt-1">{errores.fechaFin}</p>}
-              {showCalendarFin && <div className="absolute top-full mt-2 left-0 z-10">{renderCalendar('fin')}</div>}
-            </div>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-6 mt-4">
-            <div>
-              <p className="text-sm font-medium text-gray-700 mb-2">¿Habitación Amoblada? *</p>
-              <div className="flex space-x-6">
-                <label className="flex items-center space-x-2">
-                  <input type="radio" name="amoblado" value="si" checked={formData.amoblado === 'si'} onChange={(e) => handleCheckboxChange('amoblado', e.target.value)} className="w-5 h-5 text-teal-600 border-gray-300 rounded focus:ring-teal-500" />
-                  <span>Sí</span>
-                </label>
-                <label className="flex items-center space-x-2">
-                  <input type="radio" name="amoblado" value="no" checked={formData.amoblado === 'no'} onChange={(e) => handleCheckboxChange('amoblado', e.target.value)} className="w-5 h-5 text-teal-600 border-gray-300 rounded focus:ring-teal-500" />
-                  <span>No</span>
-                </label>
-              </div>
-            </div>
-
-            <div>
-              <p className="text-sm font-medium text-gray-700 mb-2">¿Baño Privado? *</p>
-              <div className="flex space-x-6">
-                <label className="flex items-center space-x-2">
-                  <input type="radio" name="banoPrivado" value="si" checked={formData.banoPrivado === 'si'} onChange={(e) => handleCheckboxChange('banoPrivado', e.target.value)} className="w-5 h-5 text-teal-600 border-gray-300 rounded focus:ring-teal-500" />
-                  <span>Sí</span>
-                </label>
-                <label className="flex items-center space-x-2">
-                  <input type="radio" name="banoPrivado" value="no" checked={formData.banoPrivado === 'no'} onChange={(e) => handleCheckboxChange('banoPrivado', e.target.value)} className="w-5 h-5 text-teal-600 border-gray-300 rounded focus:ring-teal-500" />
-                  <span>No</span>
-                </label>
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Cantidad de Personas *</label>
-            <input type="number" name="cantidadPersonas" value={formData.cantidadPersonas} onChange={handleChange} onBlur={handleBlur} onKeyDown={(e) => { soloNumeros(e); bloquearEscrituraDirecta(e); }} min="1" max="5" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent [appearance:textfield] [&::-webkit-inner-spin-button]:hidden [&::-webkit-outer-spin-button]:hidden" placeholder="Ej: 1" />
-            {errores.cantidadPersonas && <p className="text-xs text-red-600 mt-1">{errores.cantidadPersonas}</p>}
-          </div>
-
-          <div className="mt-6 bg-gradient-to-br from-teal-50 to-cyan-50 rounded-xl p-6 border-2 border-teal-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">Monto Total a Pagar</p>
-                {precioPorPersona && formData.cantidadPersonas && cantidadDias > 0 && (
-                  <p className="text-xs text-gray-500">
-                    {precioPorPersona.toFixed(2)} Bs. × {formData.cantidadPersonas} persona(s) × {cantidadDias} día(s)
-                  </p>
-                )}
-              </div>
-              <div className="text-right">
-                <div className="flex items-baseline gap-2">
-                  <span className="text-4xl font-bold text-teal-700">
-                    {montoTotal.toFixed(2)}
-                  </span>
-                  <span className="text-lg font-semibold text-teal-600">Bs.</span>
+              <div className="grid md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Nombre *</label>
+                  <input type="text" name="nombre" value={formData.nombre} onChange={handleChange} onBlur={handleBlur} onKeyDown={soloLetras} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent" placeholder="Ej: Juan" />
+                  {errores.nombre && <p className="text-xs text-red-600 mt-1">{errores.nombre}</p>}
                 </div>
-                {montoTotal > 0 && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    Adelanto (50%): {(montoTotal * 0.5).toFixed(2)} Bs.
-                  </p>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Apellido Paterno</label>
+                  <input type="text" name="apellidoPaterno" value={formData.apellidoPaterno} onChange={handleChange} onBlur={handleBlur} onKeyDown={soloLetras} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent" placeholder="Ej: Pérez" />
+                  {errores.apellidoPaterno && <p className="text-xs text-red-600 mt-1">{errores.apellidoPaterno}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Apellido Materno</label>
+                  <input type="text" name="apellidoMaterno" value={formData.apellidoMaterno} onChange={handleChange} onBlur={handleBlur} onKeyDown={soloLetras} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent" placeholder="Ej: García" />
+                  {errores.apellidoMaterno && <p className="text-xs text-red-600 mt-1">{errores.apellidoMaterno}</p>}
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono *</label>
+                  <input type="tel" name="telefono" value={formData.telefono} onChange={handleChange} onBlur={handleBlur} onKeyDown={soloNumeros} maxLength={8} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent" placeholder="7XXXXXXX" />
+                  {errores.telefono && <p className="text-xs text-red-600 mt-1">{errores.telefono}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Carnet de Identidad *</label>
+                  <input type="text" name="carnet" value={formData.carnet} onChange={handleChange} onBlur={handleBlur} onKeyDown={soloNumeros} maxLength={12} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent" placeholder="XXXXXXXX" />
+                  {errores.carnet && <p className="text-xs text-red-600 mt-1">{errores.carnet}</p>}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+                <input type="email" name="email" value={formData.email} onChange={handleChange} onBlur={handleBlur} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent" placeholder="ejemplo@correo.com" />
+                {errores.email && <p className="text-xs text-red-600 mt-1">{errores.email}</p>}
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="text-xl font-semibold text-teal-800 border-b pb-2">Detalles de la Reserva</h3>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="relative">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de Inicio *</label>
+                  <input type="text" readOnly value={formData.fechaInicio} onClick={() => { setShowCalendarInicio(!showCalendarInicio); setShowCalendarFin(false); setCurrentMonth(new Date()); }} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent cursor-pointer bg-white" placeholder="Selecciona fecha" />
+                  {errores.fechaInicio && <p className="text-xs text-red-600 mt-1">{errores.fechaInicio}</p>}
+                  {showCalendarInicio && <div className="absolute top-full mt-2 left-0 z-10">{renderCalendar('inicio')}</div>}
+                </div>
+
+                <div className="relative">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de Fin *</label>
+                  <input type="text" readOnly value={formData.fechaFin} onClick={() => { setShowCalendarFin(!showCalendarFin); setShowCalendarInicio(false); setCurrentMonth(new Date()); }} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent cursor-pointer bg-white" placeholder="Selecciona fecha" />
+                  {errores.fechaFin && <p className="text-xs text-red-600 mt-1">{errores.fechaFin}</p>}
+                  {showCalendarFin && <div className="absolute top-full mt-2 left-0 z-10">{renderCalendar('fin')}</div>}
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-6 mt-4">
+                <div>
+                  <p className="text-sm font-medium text-gray-700 mb-2">¿Habitación Amoblada? *</p>
+                  <div className="flex space-x-6">
+                    <label className="flex items-center space-x-2">
+                      <input type="radio" name="amoblado" value="si" checked={formData.amoblado === 'si'} onChange={(e) => handleCheckboxChange('amoblado', e.target.value)} className="w-5 h-5 text-teal-600 border-gray-300 rounded focus:ring-teal-500" />
+                      <span>Sí</span>
+                    </label>
+                    <label className="flex items-center space-x-2">
+                      <input type="radio" name="amoblado" value="no" checked={formData.amoblado === 'no'} onChange={(e) => handleCheckboxChange('amoblado', e.target.value)} className="w-5 h-5 text-teal-600 border-gray-300 rounded focus:ring-teal-500" />
+                      <span>No</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-sm font-medium text-gray-700 mb-2">¿Baño Privado? *</p>
+                  <div className="flex space-x-6">
+                    <label className="flex items-center space-x-2">
+                      <input type="radio" name="banoPrivado" value="si" checked={formData.banoPrivado === 'si'} onChange={(e) => handleCheckboxChange('banoPrivado', e.target.value)} className="w-5 h-5 text-teal-600 border-gray-300 rounded focus:ring-teal-500" />
+                      <span>Sí</span>
+                    </label>
+                    <label className="flex items-center space-x-2">
+                      <input type="radio" name="banoPrivado" value="no" checked={formData.banoPrivado === 'no'} onChange={(e) => handleCheckboxChange('banoPrivado', e.target.value)} className="w-5 h-5 text-teal-600 border-gray-300 rounded focus:ring-teal-500" />
+                      <span>No</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Cantidad de Personas *</label>
+                <input type="number" name="cantidadPersonas" value={formData.cantidadPersonas} onChange={handleChange} onBlur={handleBlur} onKeyDown={(e) => { soloNumeros(e); bloquearEscrituraDirecta(e); }} min="1" max="5" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent [appearance:textfield] [&::-webkit-inner-spin-button]:hidden [&::-webkit-outer-spin-button]:hidden" placeholder="Ej: 1" />
+                {errores.cantidadPersonas && <p className="text-xs text-red-600 mt-1">{errores.cantidadPersonas}</p>}
+              </div>
+
+              <div className="mt-6 bg-teal-50 rounded-xl p-6 border-2 border-teal-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">Monto Total a Pagar</p>
+                    {precioPorPersona && formData.cantidadPersonas && cantidadDias > 0 && (
+                      <p className="text-xs text-gray-500">
+                        {precioPorPersona.toFixed(2)} Bs. × {formData.cantidadPersonas} persona(s) × {cantidadDias} día(s)
+                      </p>
+                    )}
+                  </div>
+                  <div className="text-right">
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-4xl font-bold text-teal-700">
+                        {montoTotal.toFixed(2)}
+                      </span>
+                      <span className="text-lg font-semibold text-teal-600">Bs.</span>
+                    </div>
+                    {montoTotal > 0 && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        Adelanto (50%): {(montoTotal * 0.5).toFixed(2)} Bs.
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {!precioPorPersona && formData.cantidadPersonas && (
+                  <div className="mt-3 text-center">
+                    <p className="text-sm text-amber-600">
+                      ⚠️ Configuración seleccionada: 
+                      {formData.amoblado === 'si' ? ' Amoblado' : ' Sin amoblar'} + 
+                      {formData.banoPrivado === 'si' ? ' Baño privado' : ' Baño compartido'}
+                    </p>
+                  </div>
+                )}
+
+                {cantidadDias === 0 && formData.fechaInicio && formData.fechaFin && (
+                  <div className="mt-3 text-center">
+                    <p className="text-sm text-red-600">
+                      ⚠️ La fecha de fin debe ser posterior a la fecha de inicio
+                    </p>
+                  </div>
+                )}
+
+                {!formData.fechaInicio && !formData.fechaFin && (
+                  <div className="mt-3 text-center">
+                    <p className="text-sm text-gray-500">
+                      📅 Selecciona las fechas de inicio y fin
+                    </p>
+                  </div>
+                )}
+
+                {isLoadingTarifas && (
+                  <div className="mt-3 text-center">
+                    <p className="text-sm text-gray-500">Cargando tarifas...</p>
+                  </div>
                 )}
               </div>
             </div>
 
-            {!precioPorPersona && formData.cantidadPersonas && (
-              <div className="mt-3 text-center">
-                <p className="text-sm text-amber-600">
-                  ⚠️ Configuración seleccionada: 
-                  {formData.amoblado === 'si' ? ' Amoblado' : ' Sin amoblar'} + 
-                  {formData.banoPrivado === 'si' ? ' Baño privado' : ' Baño compartido'}
-                </p>
-              </div>
-            )}
-
-            {cantidadDias === 0 && formData.fechaInicio && formData.fechaFin && (
-              <div className="mt-3 text-center">
-                <p className="text-sm text-red-600">
-                  ⚠️ La fecha de fin debe ser posterior a la fecha de inicio
-                </p>
-              </div>
-            )}
-
-            {!formData.fechaInicio && !formData.fechaFin && (
-              <div className="mt-3 text-center">
-                <p className="text-sm text-gray-500">
-                  📅 Selecciona las fechas de inicio y fin
-                </p>
-              </div>
-            )}
-
-            {isLoadingTarifas && (
-              <div className="mt-3 text-center">
-                <p className="text-sm text-gray-500">Cargando tarifas...</p>
-              </div>
-            )}
-          </div>
+            <button type="submit" disabled={isLoading || montoTotal === 0} className={`w-full bg-teal-500 hover:bg-teal-600 text-white py-3 rounded-lg transition font-semibold text-lg ${(isLoading || montoTotal === 0) ? 'opacity-50 cursor-not-allowed' : ''}`}>
+              {isLoading ? 'Enviando...' : montoTotal === 0 ? 'Complete el formulario' : 'Enviar Solicitud'}
+            </button>
+          </form>
         </div>
-
-        <button type="submit" disabled={isLoading || montoTotal === 0} className={`w-full bg-gradient-to-r from-cyan-500 to-teal-600 text-white py-3 rounded-lg hover:shadow-lg transition font-semibold ${(isLoading || montoTotal === 0) ? 'opacity-50 cursor-not-allowed' : ''}`}>
-          {isLoading ? 'Enviando...' : montoTotal === 0 ? 'Complete el formulario' : 'Enviar Solicitud'}
-        </button>
-      </form>
-    </>
+      </div>
+    </div>
   );
 }
