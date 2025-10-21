@@ -1,6 +1,6 @@
-// src/hooks/Bienes/Servicios/useToggleServicio.ts
 import { useState } from "react";
 import { ServicioAdicional, EstadoServicio } from "../../../types/Bienes/Servicios/servicio";
+import { toggleServicioEstado } from "../../../services/Bienes/Servicios/serviciosServices";
 
 export function useToggleServicio() {
   const [isPending, setIsPending] = useState(false);
@@ -13,9 +13,12 @@ export function useToggleServicio() {
   ) => {
     setIsPending(true);
     setError(null);
+
     try {
-      await new Promise(res => setTimeout(res, 1000));
-      console.log("Estado actualizado:", { ...servicio, estado: nuevoEstado });
+      // 🔹 Llamada al backend usando services.ts
+      await toggleServicioEstado(servicio.id_servicios_adicionales, nuevoEstado);
+
+      console.log(`Estado de "${servicio.nombre}" actualizado a ${nuevoEstado}`);
       onSuccess?.();
     } catch (err) {
       console.error(err);
