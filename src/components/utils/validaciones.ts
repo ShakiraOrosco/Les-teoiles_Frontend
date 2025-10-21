@@ -119,7 +119,7 @@ export const validarNoDuplicado = (
 export const validarCI = (ci: string, nombreCampo = "El CI"): string | null => {
   if (ci.trim() === "") return `${nombreCampo} es obligatorio`;
   if (!/^\d+$/.test(ci)) return `${nombreCampo} solo puede contener números`;
-  if (ci.length < 6 || ci.length > 12) return `${nombreCampo} debe tener entre 6 y 12 dígitos`;
+  if (ci.length < 6 || ci.length > 9) return `${nombreCampo} debe tener entre 6 y 9 dígitos`;
   return null;
 };
 
@@ -159,9 +159,9 @@ export const validarNombreContacto = (nombre: string): string | null => {
     return "El nombre debe tener al menos 3 caracteres";
   }
   
-  // Máximo 60 caracteres
-  if (valorTrim.length > 60) {
-    return "El nombre no puede superar 60 caracteres";
+  // Máximo 35 caracteres
+  if (valorTrim.length > 35) {
+    return "El nombre no puede superar 35 caracteres";
   }
   
   // Solo letras, espacios y acentos (sin números ni símbolos)
@@ -413,12 +413,13 @@ export const validarNombreHospedaje = (nombre: string): string | null => {
     return "El nombre debe tener al menos 3 caracteres";
   }
   
-  if (valorTrim.length > 60) {
-    return "El nombre no puede superar 60 caracteres";
+  if (valorTrim.length > 35) {
+    return "El nombre no puede superar 35 caracteres";
   }
-  
-  if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(valorTrim)) {
-    return "El nombre solo puede contener letras y espacios";
+
+  // Nueva validación: no permitir caracteres especiales ni números
+  if (/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/.test(valorTrim)) {
+    return "El nombre no puede contener números ni caracteres especiales";
   }
   
   if (/(.)\1{3,}/.test(valorTrim)) {
@@ -432,6 +433,7 @@ export const validarNombreHospedaje = (nombre: string): string | null => {
   
   return null;
 };
+
 
 // ---------------------- VALIDACIÓN DE APELLIDOS ----------------------
 export const validarApellidos = (apellidoPaterno: string, apellidoMaterno: string): { paterno: string | null; materno: string | null } => {
@@ -449,8 +451,8 @@ export const validarApellidos = (apellidoPaterno: string, apellidoMaterno: strin
   if (paternoTrim !== "") {
     if (paternoTrim.length < 3) {
       errores.paterno = "Apellido paterno debe tener al menos 3 caracteres";
-    } else if (paternoTrim.length > 60) {
-      errores.paterno = "Apellido paterno no puede superar 60 caracteres";
+    } else if (paternoTrim.length > 25) {
+      errores.paterno = "Apellido paterno no puede superar 15 caracteres";
     } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(paternoTrim)) {
       errores.paterno = "Solo puede contener letras y espacios";
     } else if (/(.)\1{3,}/.test(paternoTrim)) {
@@ -467,8 +469,8 @@ export const validarApellidos = (apellidoPaterno: string, apellidoMaterno: strin
   if (maternoTrim !== "") {
     if (maternoTrim.length < 3) {
       errores.materno = "Apellido materno debe tener al menos 3 caracteres";
-    } else if (maternoTrim.length > 60) {
-      errores.materno = "Apellido materno no puede superar 60 caracteres";
+    } else if (maternoTrim.length > 25) {
+      errores.materno = "Apellido materno no puede superar 15 caracteres";
     } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(maternoTrim)) {
       errores.materno = "Solo puede contener letras y espacios";
     } else if (/(.)\1{3,}/.test(maternoTrim)) {
@@ -484,39 +486,62 @@ export const validarApellidos = (apellidoPaterno: string, apellidoMaterno: strin
   return errores;
 };
 
-// ---------------------- VALIDACIÓN DE EMAIL ----------------------
+// ---------------------- VALIDACIÓN DE EMAIL MEJORADA ----------------------
 export const validarEmailHospedaje = (email: string): string | null => {
   const valorTrim = email.trim();
   
+  // 1. Verificar si está vacío
   if (valorTrim === "") {
     return "El email es obligatorio";
   }
   
+  // 2. Verificar espacios
   if (/\s/.test(email)) {
     return "El email no puede contener espacios";
   }
   
-  if (valorTrim.length > 100) {
-    return "El email no puede superar 100 caracteres";
+  // 3. Verificar longitud
+  if (valorTrim.length > 50) {
+    return "El email no puede superar 50 caracteres";
   }
   
+  // 4. Verificar que contenga @ (ANTES de la regex)
   if (!valorTrim.includes("@")) {
     return "El email debe contener @";
   }
   
+  // 5. Verificar estructura básica
+  const partes = valorTrim.split("@");
+  
+  if (partes.length !== 2) {
+    return "El email solo puede contener un @";
+  }
+  
+  if (!partes[0] || partes[0].trim() === "") {
+    return "El email debe tener un nombre antes del @";
+  }
+  
+  if (!partes[1] || partes[1].trim() === "") {
+    return "El email debe tener un dominio después del @";
+  }
+  
+  if (!partes[1].includes(".")) {
+    return "El dominio debe contener un punto (.)";
+  }
+  
+  if (partes[1].endsWith(".")) {
+    return "El dominio no puede terminar con punto";
+  }
+  
+  const extension = partes[1].split(".").pop();
+  if (!extension || extension.length < 2) {
+    return "El email debe tener una extensión válida (.com, .edu, etc.)";
+  }
+  
+  // 6. Validación final con regex
   const emailRegex = /^[a-zA-Z0-9][a-zA-Z0-9._-]*[a-zA-Z0-9]@[a-zA-Z0-9][a-zA-Z0-9.-]*\.[a-zA-Z]{2,}$/;
   
   if (!emailRegex.test(valorTrim)) {
-    const partes = valorTrim.split("@");
-    
-    if (partes.length < 2 || !partes[1] || partes[1].trim() === "") {
-      return "El email debe tener un dominio después del @";
-    }
-    
-    if (!partes[1].includes(".") || partes[1].endsWith(".")) {
-      return "El email debe tener una extensión válida (.com, .edu, etc.)";
-    }
-    
     return "El formato del email no es válido";
   }
   
@@ -527,8 +552,14 @@ export const validarEmailHospedaje = (email: string): string | null => {
 export const validarTelefonoHospedaje = (telefono: string): string | null => {
   const valorTrim = telefono.trim();
   
-  if (valorTrim === "") return "El teléfono es obligatorio";
+  if (valorTrim === "") 
+    return "El teléfono es obligatorio";
   
+  // No permitir espacios o caracteres especiales
+  if (/[^0-9]/.test(valorTrim)) {
+    return "El teléfono no puede contener espacios ni caracteres especiales";
+  }
+
   if (!/^\d+$/.test(valorTrim)) {
     return "El teléfono solo puede contener números";
   }
@@ -555,13 +586,10 @@ export const validarCarnetHospedaje = (carnet: string): string | null => {
     return "El carnet solo puede contener números";
   }
   
-  if (valorTrim.length < 5 || valorTrim.length > 12) {
-    return "El carnet debe tener entre 5 y 12 dígitos";
+  if (valorTrim.length < 6 || valorTrim.length > 9) {
+    return "El carnet debe tener entre 6 y 9 dígitos";
   }
   
-  if (/(.)\1{4,}/.test(valorTrim)) {
-    return "El carnet no puede tener más de 4 dígitos iguales consecutivos";
-  }
   
   if (/^(.)\1+$/.test(valorTrim)) {
     return "El carnet no puede contener solo dígitos repetidos";

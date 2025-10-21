@@ -7,14 +7,13 @@ import Alert from "../../ui/alert/Alert";
 
 // Importa tus validaciones
 import { 
-    validarLongitud,    
-    validarDescripcion, 
-    validarTelefono,
-    validarCorreo, 
+    validarLongitud,   
+    validarNombreHospedaje, 
+    validarTelefonoHospedaje,
+    validarEmailHospedaje, 
     validarRepeticionCaracteres,
-    validarNumeroEntero,
-    validarNoDuplicado,
-    validarCI,
+    validarCarnetHospedaje,
+    validarApellidos,
 } from "../../utils/validaciones";
 
 interface UsuarioModalProps {
@@ -37,6 +36,7 @@ export default function UsuarioModal({ isOpen, onClose, onSubmit }: UsuarioModal
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [isPending, setIsPending] = useState(false);
   const [alert, setAlert] = useState<{ variant: "success" | "error"; message: string } | null>(null);
 
@@ -46,42 +46,75 @@ export default function UsuarioModal({ isOpen, onClose, onSubmit }: UsuarioModal
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     
-    // Limpiar error del campo cuando el usuario empieza a escribir
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: "" }));
+    // Validar el campo en tiempo real si ya fue tocado
+    if (touched[name]) {
+      validarCampo(name, value);
     }
+  };
+
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setTouched((prev) => ({ ...prev, [name]: true }));
+    validarCampo(name, value);
+  };
+
+  const validarCampo = (campo: string, valor: any) => {
+    let error = null;
+
+    switch (campo) {
+      case "nombre":
+        error = validarNombreHospedaje(valor || "");
+        break;
+      case "app_paterno":
+        const { paterno } = validarApellidos(valor || "", formData.app_materno || "");
+        error = paterno;
+        break;
+      case "app_materno":
+        const { materno } = validarApellidos(formData.app_paterno || "", valor || "");
+        error = materno;
+        break;
+      case "ci":
+        error = validarCarnetHospedaje(valor || "");
+        break;
+      case "telefono":
+        error = validarTelefonoHospedaje(valor || "");
+        break;
+      case "email":
+        error = validarEmailHospedaje(valor || "");
+        break;
+      case "password":
+        error = validarLongitud(valor || "", 6, 20, "La contraseña");
+        break;
+    }
+
+    setErrors((prev) => ({
+      ...prev,
+      [campo]: error || "",
+    }));
   };
 
   const validarFormulario = () => {
     const errores: Record<string, string> = {};
     
     // Nombre
-    const errorNombre = validarLongitud(formData.nombre || "", 3, 60, "El nombre") || 
-                        validarRepeticionCaracteres(formData.nombre || "", "El nombre");
+    const errorNombre = validarNombreHospedaje(formData.nombre || "");
     if (errorNombre) errores.nombre = errorNombre;
     
-    // Apellido Paterno
-    const errorApPaterno = validarLongitud(formData.app_paterno || "", 3, 60, "El apellido paterno") || 
-                           validarRepeticionCaracteres(formData.app_paterno || "", "El apellido paterno");
-    if (errorApPaterno) errores.app_paterno = errorApPaterno;
-    
-    // Apellido Materno (opcional)
-    if (formData.app_materno) {
-      const errorApMaterno = validarLongitud(formData.app_materno, 3, 60, "El apellido materno") || 
-                             validarRepeticionCaracteres(formData.app_materno, "El apellido materno");
-      if (errorApMaterno) errores.app_materno = errorApMaterno;
-    }
+    // Validar apellidos
+    const { paterno, materno } = validarApellidos(formData.app_paterno || "", formData.app_materno || "");
+    if (paterno) errores.app_paterno = paterno;
+    if (materno) errores.app_materno = materno;
     
     // CI
-    const errorCI = validarCI(formData.ci || "");
+    const errorCI = validarCarnetHospedaje(formData.ci || "");
     if (errorCI) errores.ci = errorCI;
     
     // Teléfono
-    const errorTelefono = validarTelefono(formData.telefono || "");
+    const errorTelefono = validarTelefonoHospedaje(formData.telefono || "");
     if (errorTelefono) errores.telefono = errorTelefono;
     
     // Email
-    const errorEmail = validarCorreo(formData.email || "");
+    const errorEmail = validarEmailHospedaje(formData.email || "");
     if (errorEmail) errores.email = errorEmail;
     
     // Password
@@ -104,11 +137,21 @@ export default function UsuarioModal({ isOpen, onClose, onSubmit }: UsuarioModal
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validar formulario
+    // Validar formulario completo
     const erroresForm = validarFormulario();
     
     if (Object.keys(erroresForm).length > 0) {
       setErrors(erroresForm);
+      // Marcar todos los campos como tocados
+      setTouched({
+        nombre: true,
+        app_paterno: true,
+        app_materno: true,
+        ci: true,
+        telefono: true,
+        email: true,
+        password: true,
+      });
       setAlert({ 
         variant: "error", 
         message: "Por favor corrige los errores en el formulario" 
@@ -120,7 +163,6 @@ export default function UsuarioModal({ isOpen, onClose, onSubmit }: UsuarioModal
     setAlert(null);
 
     try {
-      // 🔍 DEBUG: Ver qué se está enviando
       console.log("📤 Datos a enviar:", formData);
       
       await onSubmit(formData as Usuario);
@@ -140,6 +182,7 @@ export default function UsuarioModal({ isOpen, onClose, onSubmit }: UsuarioModal
         estado: "A",
       });
       setErrors({});
+      setTouched({});
       
       setTimeout(() => onClose(), 1500);
     } catch (error: any) {
@@ -196,6 +239,7 @@ export default function UsuarioModal({ isOpen, onClose, onSubmit }: UsuarioModal
                 name="nombre"
                 value={formData.nombre}
                 onChange={handleChange}
+                onBlur={handleBlur}
                 placeholder="Ej: Juan"
                 className={`w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-[#26a5b9]/20 focus:border-[#26a5b9] dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700 ${
                   errors.nombre ? "border-red-500 focus:border-red-500 focus:ring-red-500/20" : ""
@@ -214,6 +258,7 @@ export default function UsuarioModal({ isOpen, onClose, onSubmit }: UsuarioModal
                 name="app_paterno"
                 value={formData.app_paterno}
                 onChange={handleChange}
+                onBlur={handleBlur}
                 placeholder="Ej: Pérez"
                 className={`w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-[#26a5b9]/20 focus:border-[#26a5b9] dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700 ${
                   errors.app_paterno ? "border-red-500 focus:border-red-500 focus:ring-red-500/20" : ""
@@ -232,6 +277,7 @@ export default function UsuarioModal({ isOpen, onClose, onSubmit }: UsuarioModal
                 name="app_materno"
                 value={formData.app_materno}
                 onChange={handleChange}
+                onBlur={handleBlur}
                 placeholder="Ej: García"
                 className={`w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-[#26a5b9]/20 focus:border-[#26a5b9] dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700 ${
                   errors.app_materno ? "border-red-500 focus:border-red-500 focus:ring-red-500/20" : ""
@@ -250,6 +296,7 @@ export default function UsuarioModal({ isOpen, onClose, onSubmit }: UsuarioModal
                 name="ci"
                 value={formData.ci}
                 onChange={handleChange}
+                onBlur={handleBlur}
                 placeholder="Ej: 12345678"
                 className={`w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-[#26a5b9]/20 focus:border-[#26a5b9] dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700 ${
                   errors.ci ? "border-red-500 focus:border-red-500 focus:ring-red-500/20" : ""
@@ -268,6 +315,7 @@ export default function UsuarioModal({ isOpen, onClose, onSubmit }: UsuarioModal
                 name="telefono"
                 value={formData.telefono}
                 onChange={handleChange}
+                onBlur={handleBlur}
                 placeholder="Ej: 70123456"
                 className={`w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-[#26a5b9]/20 focus:border-[#26a5b9] dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700 ${
                   errors.telefono ? "border-red-500 focus:border-red-500 focus:ring-red-500/20" : ""
@@ -286,6 +334,7 @@ export default function UsuarioModal({ isOpen, onClose, onSubmit }: UsuarioModal
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
+                onBlur={handleBlur}
                 placeholder="Ej: usuario@correo.com"
                 className={`w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-[#26a5b9]/20 focus:border-[#26a5b9] dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700 ${
                   errors.email ? "border-red-500 focus:border-red-500 focus:ring-red-500/20" : ""
@@ -294,7 +343,7 @@ export default function UsuarioModal({ isOpen, onClose, onSubmit }: UsuarioModal
               {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email}</p>}
             </div>
 
-            {/* Rol */}
+           {/* Rol */}
             <div>
               <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
                 Rol <span className="text-red-500">*</span>
@@ -303,15 +352,16 @@ export default function UsuarioModal({ isOpen, onClose, onSubmit }: UsuarioModal
                 name="rol"
                 value={formData.rol}
                 onChange={handleChange}
-                className="w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-[#26a5b9]/20 focus:border-[#26a5b9] dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700"
-                disabled={isPending}
+                className={`w-full rounded-lg border px-3 py-2 text-sm dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700 ${
+                  errors.rol ? "border-red-500" : ""
+                }`}
               >
-                <option value="administrador">Administrador</option>
                 <option value="empleado">Empleado</option>
+                <option value="administrador">Administrador</option>
               </select>
               {errors.rol && <p className="text-xs text-red-500 mt-1">{errors.rol}</p>}
             </div>
-
+            
             {/* Estado */}
             <div>
               <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">

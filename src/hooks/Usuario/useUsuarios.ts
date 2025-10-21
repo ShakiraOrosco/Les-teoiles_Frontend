@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { getUsuarios, createUsuario, updateUsuario} from "../../services/usuario/usuarioService";
+import { getUsuarios, createUsuario} from "../../services/usuario/usuarioService";
 import { Usuario } from "../../types/Usuarios/usuario";
 
 export const useUsuarios = () => {
@@ -32,17 +32,9 @@ const fetchUsuarios = useCallback(async () => {
         }
     };
     
-  // === Nuevo: editar usuario ===
-  const editarUsuario = async (id_usuario: number, datos: Partial<Usuario>) => {
-    try {
-      await updateUsuario(id_usuario, datos);
-      await fetchUsuarios(); // recargar lista
-    } catch (error) {
-      console.error("Error al editar usuario:", error);
-    }
-  };
+ 
 
-    return { usuarios, loading, error, addUsuario,editarUsuario, refetch: fetchUsuarios  };
+    return { usuarios, loading, error, addUsuario, refetch: fetchUsuarios  };
 
     
 };

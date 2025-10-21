@@ -14,10 +14,11 @@ export const createUsuario = async (nuevoUsuario: Partial<Usuario>) => {
   return response.data;
 };
 // * === SERVICIO PARA EDITAR UN USUARIO === * //
-export const updateUsuario = async (
-  id_usuario: number,
-  datosActualizados: Partial<Usuario>
-) => {
-  const response = await api.put(`/usuarios/${id_usuario}/update/`, datosActualizados);
-  return response.data;
+// Editar un usuario
+export const editUsuario = async (id: number, data: Partial<Usuario>): Promise<Usuario> => {
+  const response = await api.put<{ mensaje: string; usuario: Usuario }>(
+    `/usuarios/actualizar/${id}/`, 
+    data
+  );
+  return response.data.usuario;
 };
