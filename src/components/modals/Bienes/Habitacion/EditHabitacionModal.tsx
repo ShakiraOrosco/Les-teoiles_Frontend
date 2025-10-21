@@ -139,12 +139,25 @@ export default function EditHabitacionModal({
             <input
               type="text"
               value={form.numero}
-              onChange={e => handleChange("numero", e.target.value)}
+              onChange={(e) => {
+                // Solo permitir números
+                let valor = e.target.value.replace(/[^0-9]/g, "");
+                // Limitar a máximo 3 dígitos
+                if (valor.length > 3) {
+                  valor = valor.slice(0, 3);
+                }
+                // Evitar valores mayores a 999
+                if (Number(valor) > 999) {
+                  valor = "999";
+                }
+                handleChange("numero", valor);
+              }}
               placeholder="Ej: 101"
               className="w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-[#26a5b9]/20 focus:border-[#26a5b9] dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700"
             />
             {errors.numero && <p className="text-xs text-red-500 mt-1">{errors.numero}</p>}
           </div>
+
 
           {/* Piso */}
           <div>

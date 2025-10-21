@@ -21,6 +21,8 @@ import EditServicioModal from "../../../components/modals/Bienes/Servicios/EditS
 // Hooks
 import { useModal } from "../../../hooks/useModal";
 import { useServicios } from "../../../hooks/Bienes/Servicios/useServicios";
+import ToggleServicioModal from "../../../components/modals/Bienes/Servicios/DeleteServicioModal";
+
 
 // Tipos
 import { ServicioAdicional } from "../../../types/Bienes/Servicios/servicio";
@@ -37,6 +39,10 @@ export default function ServiciosAdicionalesPage() {
   // Hook dinámico
   const { servicios, loading, refetch } = useServicios();
   const [servicioEdit, setServicioEdit] = useState<ServicioAdicional | null>(null);
+
+  // Modal de activación/desactivación
+  const [isToggleOpen, setIsToggleOpen] = useState(false);
+  const [servicioToggle, setServicioToggle] = useState<ServicioAdicional | null>(null);
 
   // Alertas
   const [alert, setAlert] = useState<{
@@ -86,24 +92,11 @@ export default function ServiciosAdicionalesPage() {
     setIsEditOpen(true);
   };
 
-  const handleToggleEstado = async (servicio: ServicioAdicional) => {
-    try {
-      await fetch(`/api/servicios/${servicio.id_servicios_adicionales}/toggle-estado/`, { method: "PATCH" });
-      refetch();
-      setAlert({
-        variant: "warning",
-        title: "Estado actualizado",
-        message: `El servicio "${servicio.nombre}" cambió de estado.`,
-      });
-    } catch {
-      setAlert({
-        variant: "error",
-        title: "Error",
-        message: "No se pudo actualizar el estado del servicio.",
-      });
-    }
-    setTimeout(() => setAlert(null), 3000);
+  const handleToggleEstado = (servicio: ServicioAdicional) => {
+    setServicioToggle(servicio);
+    setIsToggleOpen(true);
   };
+
 
   const onPrev = () => setPaginaActual((p) => Math.max(p - 1, 1));
   const onNext = () => setPaginaActual((p) => Math.min(p + 1, totalPaginas));
@@ -233,8 +226,25 @@ export default function ServiciosAdicionalesPage() {
         </div>
       </div>
 
-      <CreateServicioModal isOpen={isCreateOpen} onClose={closeCreateModal}/>
+      <CreateServicioModal isOpen={isCreateOpen} onClose={closeCreateModal} />
       {servicioEdit && <EditServicioModal isOpen={isEditOpen} onClose={() => setIsEditOpen(false)} servicio={servicioEdit} onEdited={onRefresh} />}
+      {servicioToggle && (
+        <ToggleServicioModal
+          isOpen={isToggleOpen}
+          onClose={() => setIsToggleOpen(false)}
+          servicio={servicioToggle}
+          onToggled={() => {
+            refetch();
+            setAlert({
+              variant: "warning",
+              title: "Estado actualizado",
+              message: `El servicio "${servicioToggle.nombre}" cambió de estado.`,
+            });
+            setTimeout(() => setAlert(null), 3000);
+          }}
+        />
+      )}
+
     </div>
   );
 }

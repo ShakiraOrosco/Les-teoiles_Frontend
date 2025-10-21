@@ -35,3 +35,11 @@ export const editServicio = async (
 export const deleteServicio = async (id_servicio: number): Promise<void> => {
   await api.delete(`/servicios/${id_servicio}/delete/`);
 };
+
+// 🔹 Cambiar estado (activar / desactivar)
+export const toggleServicioEstado = async (
+  id_servicio: number,
+  nuevoEstado: "A" | "I"
+): Promise<void> => {
+  await api.patch(`/servicios/${id_servicio}/update/`, { estado: nuevoEstado });
+};
