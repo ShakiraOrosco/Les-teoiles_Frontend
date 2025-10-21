@@ -153,10 +153,8 @@ La pasión por lo que hacemos y la dedicación de nuestro equipo han sido pilare
             </div>
           </div>
           <div className="flex gap-4">
-            <a href="/informacion" className="bg-teal-600 text-white px-6 py-3 rounded-lg hover:bg-teal-700 transition">Más Información</a>
-            <a href="/reserva" className="bg-cyan-500 text-white px-6 py-3 rounded-lg hover:bg-cyan-600 transition">Reservar</a>
-            <a href="/apartarlugar" className="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition">Aparta el Lugar</a>
-          </div>
+            <a href="/reservas" className="bg-cyan-500 text-white px-6 py-3 rounded-lg hover:bg-cyan-600 transition">Reservar</a>
+           </div>
         </div>
       </div>
     </div>
@@ -188,9 +186,7 @@ La pasión por lo que hacemos y la dedicación de nuestro equipo han sido pilare
             </div>
           </div>
           <div className="flex gap-4">
-            <a href="/informacion" className="bg-teal-600 text-white px-6 py-3 rounded-lg hover:bg-teal-700 transition">Más Información</a>
-            <a href="/reserva" className="bg-cyan-500 text-white px-6 py-3 rounded-lg hover:bg-cyan-600 transition">Reservar</a>
-            <a href="/apartarlugar" className="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition">Aparta el Lugar</a>
+            <a href="/reservas" className="bg-cyan-500 text-white px-6 py-3 rounded-lg hover:bg-cyan-600 transition">Reservar</a>
           </div>
         </div>
         <div className="bg-gradient-to-br from-teal-500 to-cyan-600 h-80 md:h-auto flex items-center justify-center p-8 order-1 md:order-2">
@@ -229,9 +225,7 @@ La pasión por lo que hacemos y la dedicación de nuestro equipo han sido pilare
             </div>
           </div>
           <div className="flex gap-4">
-            <a href="/informacion" className="bg-teal-600 text-white px-6 py-3 rounded-lg hover:bg-teal-700 transition">Más Información</a>
-            <a href="/reserva" className="bg-cyan-500 text-white px-6 py-3 rounded-lg hover:bg-cyan-600 transition">Reservar</a>
-            <a href="/apartarlugar" className="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition">Aparta el Lugar</a>
+              <a href="/reservas" className="bg-cyan-500 text-white px-6 py-3 rounded-lg hover:bg-cyan-600 transition">Reservar</a>
           </div>
         </div>
       </div>

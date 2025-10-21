@@ -86,7 +86,7 @@ export default function HabitacionesTable({
                     {habitacion.piso}
                   </TableCell>
                   <TableCell className="text-center text-gray-900 dark:text-white">
-                    {habitacion.tipo}
+                    {habitacion.tarifa_hotel.nombre}
                   </TableCell>
                   <TableCell className="text-center text-gray-900 dark:text-white">
                     {amobladoLabel}
