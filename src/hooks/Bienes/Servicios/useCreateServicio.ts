@@ -1,26 +1,46 @@
-// src/hooks/Bienes/Servicios/useCreateServicio.ts
-import { useState } from "react";
-import { ServicioDTO } from "../../../types/Bienes/Servicios/servicio";
+// src/hooks/Bienes/Servicios/useServiciosAdicionales.ts
+import { useEffect, useState, useCallback } from "react";
+import { ServicioDTO, ServicioAdicional } from "../../../types/Bienes/Servicios/servicio";
+import { getServicios, createServicio as createServicioAPI } from "../../../services/Bienes/Servicios/serviciosServices";
 
-export function useCreateServicio() {
-  const [isPending, setIsPending] = useState(false);
+export const useServiciosAdicionales = () => {
+  const [servicios, setServicios] = useState<ServicioAdicional[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const createServicio = async (servicio: ServicioDTO, onSuccess?: () => void) => {
-    setIsPending(true);
+  // === Obtener servicios ===
+  const fetchServicios = useCallback(async () => {
+    setLoading(true);
     setError(null);
     try {
-      // Simular API
-      await new Promise(res => setTimeout(res, 1000));
-      console.log("Servicio creado:", servicio);
-      onSuccess?.();
+      const data = await getServicios(); // Llamada real a API o mock
+      setServicios(data);
     } catch (err) {
-      console.error(err);
-      setError("Error al crear servicio");
+      setError("Error al cargar servicios");
+      setServicios([]);
     } finally {
-      setIsPending(false);
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchServicios();
+  }, [fetchServicios]);
+
+  // === Crear servicio ===
+  const addServicio = async (nuevo: ServicioDTO) => {
+    // Verificar duplicado por nombre
+    const existe = servicios.some(s => s.nombre.toLowerCase() === nuevo.nombre.toLowerCase());
+    if (existe) throw new Error("Ya existe un servicio con ese nombre");
+
+    try {
+      const creado = await createServicioAPI(nuevo); // Llamada a la API
+      setServicios(prev => [...prev, creado]);
+      return creado;
+    } catch (err: any) {
+      throw err;
     }
   };
 
-  return { createServicio, isPending, error };
-}
+  return { servicios, loading, error, refetch: fetchServicios, addServicio };
+};
