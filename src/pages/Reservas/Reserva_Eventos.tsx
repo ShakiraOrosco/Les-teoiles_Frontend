@@ -152,24 +152,50 @@ export default function Eventos() {
     }
   }, [step, segundos]);
 
-  const handleBlur = (field: string) => {
-    setTouched(prev => ({ ...prev, [field]: true }));
-    
-    // Validar el campo específico cuando pierde el foco
-    const error = validarCampo(field, formData[field as keyof typeof formData] as string);
-    setErrores(prev => ({ ...prev, [field]: error }));
-  };
+ const handleBlur = (field: string) => {
+  // ✅ Limpiar espacios al final cuando pierde el foco
+  let valorLimpio = formData[field as keyof typeof formData] as string;
+  
+  if (field === 'nombre' || field === 'apellidoPaterno' || field === 'apellidoMaterno') {
+    valorLimpio = valorLimpio.trim(); // Elimina espacios al inicio Y al final
+    // Actualizar el formData con el valor limpio
+    setFormData(prev => ({ ...prev, [field]: valorLimpio }));
+  }
+  
+  setTouched(prev => ({ ...prev, [field]: true }));
+  
+  // Validar el campo específico cuando pierde el foco
+  const error = validarCampo(field, valorLimpio);
+  setErrores(prev => ({ ...prev, [field]: error }));
+};
+const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const { name, value } = e.target;
+  let valorFinal = value;
+  
+  // ✅ Limpieza de espacios para campos de texto (nombre y apellidos)
+  if (name === 'nombre' || name === 'apellidoPaterno' || name === 'apellidoMaterno') {
+    // Eliminar espacios al inicio
+    valorFinal = value.replace(/^\s+/, '');
+    // Reemplazar múltiples espacios consecutivos por uno solo
+    valorFinal = valorFinal.replace(/\s{2,}/g, ' ');
+  }
+  
+  // Limitar longitud de teléfono y carnet
+  if (name === 'telefono' && valorFinal.length > 8) {
+    valorFinal = valorFinal.slice(0, 8);
+  }
+  if (name === 'carnet' && valorFinal.length > 12) {
+    valorFinal = valorFinal.slice(0, 12);
+  }
+  
+  setFormData(prev => ({ ...prev, [name]: valorFinal }));
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-
-    // Si el campo ya ha sido tocado, validar en tiempo real mientras escribe
-    if (touched[name]) {
-      const error = validarCampo(name, value);
-      setErrores(prev => ({ ...prev, [name]: error }));
-    }
-  };
+  // Si el campo ya ha sido tocado, validar en tiempo real mientras escribe
+  if (touched[name]) {
+    const error = validarCampo(name, valorFinal);
+    setErrores(prev => ({ ...prev, [name]: error }));
+  }
+};
 
   const handleCheckboxChange = (servicioId: number) => {
     setFormData(prev => ({

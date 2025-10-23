@@ -133,38 +133,54 @@ const validarCampo = (nombre: string, valor: string) => {
 };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    let valorFinal = value;
-    
-    if (name === 'telefono' && value.length > 8) {
-      valorFinal = value.slice(0, 8);
-    }
-    if (name === 'carnet' && value.length > 12) {
-      valorFinal = value.slice(0, 12);
-    }
-    
-    setFormData(prev => ({ ...prev, [name]: valorFinal }));
-    
-    if (touched[name]) {
-      const error = validarCampo(name, valorFinal);
-      setErrores(prev => ({ ...prev, [name]: error }));
-    }
-  };
+  const { name, value } = e.target;
+  let valorFinal = value;
+  
+  // Limpieza de espacios para campos de texto (nombre y apellidos)
+  if (name === 'nombre' || name === 'apellidoPaterno' || name === 'apellidoMaterno') {
+    // Eliminar espacios al inicio
+    valorFinal = value.replace(/^\s+/, '');
+    // Reemplazar múltiples espacios consecutivos por uno solo
+    valorFinal = valorFinal.replace(/\s{2,}/g, ' ');
+  }
+  
+  if (name === 'telefono' && value.length > 8) {
+    valorFinal = value.slice(0, 8);
+  }
+  if (name === 'carnet' && value.length > 12) {
+    valorFinal = value.slice(0, 12);
+  }
+  
+  setFormData(prev => ({ ...prev, [name]: valorFinal }));
+  
+  if (touched[name]) {
+    const error = validarCampo(name, valorFinal);
+    setErrores(prev => ({ ...prev, [name]: error }));
+  }
+};
 
   const handleBlur = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    
-    setTouched(prev => ({ ...prev, [name]: true }));
-    let error = validarCampo(name, value);
-    
-    if ((name === 'nombre' || name === 'apellidoPaterno' || name === 'apellidoMaterno') && value.trim() && !error) {
-      if (!validarEstructuraTexto(value)) {
-        error = `El ${name === 'nombre' ? 'nombre' : 'apellido'} no parece ser válido. Verifica que contenga letras reales.`;
-      }
+  const { name, value } = e.target;
+  
+  // Limpiar espacios al final cuando pierde el foco
+  let valorLimpio = value;
+  if (name === 'nombre' || name === 'apellidoPaterno' || name === 'apellidoMaterno') {
+    valorLimpio = value.trim(); // Elimina espacios al inicio Y al final
+    // Actualizar el formData con el valor limpio
+    setFormData(prev => ({ ...prev, [name]: valorLimpio }));
+  }
+  
+  setTouched(prev => ({ ...prev, [name]: true }));
+  let error = validarCampo(name, valorLimpio);
+  
+  if ((name === 'nombre' || name === 'apellidoPaterno' || name === 'apellidoMaterno') && valorLimpio && !error) {
+    if (!validarEstructuraTexto(valorLimpio)) {
+      error = `El ${name === 'nombre' ? 'nombre' : 'apellido'} no parece ser válido. Verifica que contenga letras reales.`;
     }
-    
-    setErrores(prev => ({ ...prev, [name]: error }));
-  };
+  }
+  
+  setErrores(prev => ({ ...prev, [name]: error }));
+};
 
   const handleCheckboxChange = (name: string, value: string) => {
     setFormData(prev => ({ ...prev, [name]: value }));
