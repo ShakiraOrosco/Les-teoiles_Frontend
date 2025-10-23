@@ -184,8 +184,8 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   if (name === 'telefono' && valorFinal.length > 8) {
     valorFinal = valorFinal.slice(0, 8);
   }
-  if (name === 'carnet' && valorFinal.length > 12) {
-    valorFinal = valorFinal.slice(0, 12);
+  if (name === 'carnet' && valorFinal.length > 9) {
+    valorFinal = valorFinal.slice(0, 9);
   }
   
   setFormData(prev => ({ ...prev, [name]: valorFinal }));

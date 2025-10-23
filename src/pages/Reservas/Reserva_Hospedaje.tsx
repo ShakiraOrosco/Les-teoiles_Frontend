@@ -147,8 +147,8 @@ const validarCampo = (nombre: string, valor: string) => {
   if (name === 'telefono' && value.length > 8) {
     valorFinal = value.slice(0, 8);
   }
-  if (name === 'carnet' && value.length > 12) {
-    valorFinal = value.slice(0, 12);
+  if (name === 'carnet' && value.length > 9) {
+    valorFinal = value.slice(0, 9);
   }
   
   setFormData(prev => ({ ...prev, [name]: valorFinal }));
