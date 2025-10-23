@@ -1,3 +1,4 @@
+
 // src/components/modals/servicios/EditServicioModal.tsx
 import { useState, useEffect } from "react";
 import { FaTimes } from "react-icons/fa";
@@ -15,7 +16,6 @@ import {
   validarSoloLetras,
   validarRepeticionCaracteres,
   validarNoSoloEspacios,
-  validarNumero,
 } from "../../../utils/validaciones";
 
 interface EditServicioModalProps {
@@ -100,9 +100,6 @@ export default function EditServicioModal({
     const errorPrecio = validarPrecio(form.precio.toString(), "El precio", 1, 999.99);
     if (errorPrecio) newErrors.precio = errorPrecio;
 
-    const errorNumero = validarNumero(form.precio.toString(), "El precio", 999.99);
-    if (errorNumero) newErrors.precio = errorNumero;
-
     // Tipo: obligatorio
     if (!form.tipo) newErrors.tipo = "Debe seleccionar un tipo";
 
@@ -170,7 +167,14 @@ export default function EditServicioModal({
             <input
               type="text"
               value={form.nombre}
-              onChange={handleChange("nombre")}
+              onChange={(e) => {
+                let valor = e.target.value;
+                valor = valor.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, "");
+                valor = valor.replace(/\s{2,}/g, " ");
+                valor = valor.trimStart();
+                valor = valor.replace(/\b\w/g, (letra) => letra.toUpperCase());
+                setForm({ ...form, nombre: valor });
+              }}
               className="w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-[#26a5b9]/20 focus:border-[#26a5b9] dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700"
             />
             {errors.nombre && <p className="text-xs text-red-500 mt-1">{errors.nombre}</p>}
@@ -224,28 +228,28 @@ export default function EditServicioModal({
               step={0.01}
               value={form.precio || ""}
               onChange={handleChange("precio")}
+              onKeyDown={(e) => {
+                // Permitir solo números, Backspace, Delete, Tab, flechas y punto
+                if (
+                  !(
+                    (e.key >= "0" && e.key <= "9") ||
+                    e.key === "." ||
+                    e.key === "Backspace" ||
+                    e.key === "Delete" ||
+                    e.key === "Tab" ||
+                    e.key === "ArrowLeft" ||
+                    e.key === "ArrowRight"
+                  )
+                ) {
+                  e.preventDefault();
+                }
+              }}
               className="w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-[#26a5b9]/20 focus:border-[#26a5b9] dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700"
             />
             {errors.precio && <p className="text-xs text-red-500 mt-1">{errors.precio}</p>}
             <p className="text-xs text-gray-400 mt-1">Rango permitido: 1.00 - 999.99 Bs.</p>
           </div>
 
-          {/* Estado */}
-          <div>
-            <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
-              Estado <span className="text-red-500">*</span>
-            </label>
-            <select
-              value={form.estado}
-              onChange={handleChange("estado")}
-              disabled={isPending}
-              className="w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-[#26a5b9]/20 focus:border-[#26a5b9] dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700"
-            >
-              <option value="A">Activo</option>
-              <option value="I">Inactivo</option>
-            </select>
-            {errors.estado && <p className="text-xs text-red-500 mt-1">{errors.estado}</p>}
-          </div>
 
           {/* Botones */}
           <div className="flex justify-end gap-3 pt-4">

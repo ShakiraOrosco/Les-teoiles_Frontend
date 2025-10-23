@@ -556,6 +556,7 @@ export const validarApellidos = (apellidoPaterno: string, apellidoMaterno: strin
       errores.materno = "Apellido materno debe tener al menos 3 caracteres";
     } else if (maternoTrim.length > 25) {
       errores.materno = "Apellido materno no puede superar 25 caracteres";
+      errores.materno = "Apellido materno no puede superar 25 caracteres";
     } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(maternoTrim)) {
       errores.materno = "Solo puede contener letras y espacios";
     } else if (/(.)\1{2,}/.test(maternoTrim)) {
@@ -714,17 +715,55 @@ export const validarFechas = (fechaInicio: string, fechaFin: string): { inicio: 
 
   if (fechaInicio && fechaFin) {
     const inicio = new Date(fechaInicio);
+    inicio.setHours(0, 0, 0, 0);
+    
     const fin = new Date(fechaFin);
+    fin.setHours(0, 0, 0, 0);
+    
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
 
-    if (inicio < hoy) errores.inicio = "No puedes seleccionar una fecha pasada";
-    if (fin <= inicio) errores.fin = "La fecha de fin debe ser después de la fecha de inicio";
+    const manana = new Date(hoy);
+    manana.setDate(manana.getDate() + 1);
+
+    // ✅ DEBUG: Agrega estos console.log temporalmente
+    console.log('=== DEBUG VALIDACIÓN FECHAS ===');
+    console.log('Hoy:', hoy);
+    console.log('Mañana:', manana);
+    console.log('Inicio recibido:', fechaInicio);
+    console.log('Inicio parseado:', inicio);
+    console.log('¿Inicio < Mañana?:', inicio < manana);
+    console.log('Comparación en milisegundos:');
+    console.log('  inicio.getTime():', inicio.getTime());
+    console.log('  manana.getTime():', manana.getTime());
+    console.log('================================');
+
+    const maxInicio = new Date(hoy);
+    maxInicio.setFullYear(maxInicio.getFullYear() + 3);
+
+    if (inicio >manana) {
+      errores.inicio = "La fecha de inicio debe ser al menos un día después de hoy";
+    } else if (inicio > maxInicio) {
+      errores.inicio = "La fecha de inicio no puede ser mayor a 3 años desde hoy";
+    }
+
+    if (errores.inicio === null) {
+      const minFin = new Date(inicio);
+      minFin.setDate(minFin.getDate() + 1);
+
+      const maxFin = new Date(inicio);
+      maxFin.setFullYear(maxFin.getFullYear() + 3);
+
+      if (fin < minFin) {
+        errores.fin = "La fecha de fin debe ser al menos un día después de la fecha de inicio";
+      } else if (fin > maxFin) {
+        errores.fin = "La fecha de fin no puede ser mayor a 3 años desde la fecha de inicio";
+      }
+    }
   }
 
   return errores;
 };
-
 // ---------------------- VALIDAR TODO EL FORMULARIO ----------------------
 export const validarFormularioHospedaje = (formData: {
   nombre: string;
@@ -797,6 +836,416 @@ export const validarEstructuraTexto = (texto: string): boolean => {
 
 // Bloquear notación científica y caracteres especiales en números
 export const bloquearEscrituraDirecta = (e: React.KeyboardEvent<HTMLInputElement>): void => {
+  if (e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-' || e.key === '.') {
+    e.preventDefault();
+  }
+};
+
+
+/**
+ * Validaciones para Formulario de Reserva de Eventos
+ * Todas devuelven string con mensaje de error o null si es válido
+ */
+
+// ===================== VALIDACIÓN DE NOMBRE =====================
+export const validarNombreEvento = (nombre: string): string | null => {
+  const valorTrim = nombre.trim();
+
+  if (valorTrim === "") {
+    return "El nombre es obligatorio";
+  }
+
+  if (nombre.length > 0 && valorTrim === "") {
+    return "El nombre no puede contener solo espacios";
+  }
+
+  if (valorTrim.length < 3) {
+    return "El nombre debe tener al menos 3 caracteres";
+  }
+  
+  if (valorTrim.length > 35) {
+    return "El nombre no puede superar 35 caracteres";
+  }
+
+  // Nueva validación: no permitir caracteres especiales ni números
+  if (/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/.test(valorTrim)) {
+    return "El nombre no puede contener números ni caracteres especiales";
+  }
+
+  if (/(.)\1{1,}/.test(valorTrim)) {
+    return "El nombre no puede tener caracteres repetidos excesivamente";
+  }
+
+  const letrasUnicas = new Set(valorTrim.replace(/\s/g, '').toLowerCase());
+  if (letrasUnicas.size < 2) {
+    return "El nombre debe contener al menos 2 letras diferentes";
+  }
+
+  return null;
+};
+
+
+// ===================== VALIDACIÓN DE APELLIDOS =====================
+export const validarApellidosEvento = (
+  apellidoPaterno: string, 
+  apellidoMaterno: string
+): { paterno: string | null; materno: string | null } => {
+  const paternoTrim = apellidoPaterno.trim();
+  const maternoTrim = apellidoMaterno.trim();
+
+  const errores = { paterno: null as string | null, materno: null as string | null };
+
+  // Al menos uno debe estar lleno
+  if (paternoTrim === "" && maternoTrim === "") {
+    return { paterno: "Debe llenar al menos un apellido", materno: null };
+  }
+
+  // Validar apellido paterno si está lleno
+  if (paternoTrim !== "") {
+    if (paternoTrim.length < 3) {
+      errores.paterno = "Debe tener al menos 3 caracteres";
+    } else if (paternoTrim.length > 50) {
+      errores.paterno = "No puede superar 50 caracteres";
+    } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(paternoTrim)) {
+      errores.paterno = "Solo puede contener letras y espacios";
+    } else if (/(.)\1{3,}/.test(paternoTrim)) {
+      errores.paterno = "No puede tener más de 3 caracteres iguales consecutivos";
+    }
+  }
+
+  // Validar apellido materno si está lleno
+  if (maternoTrim !== "") {
+    if (maternoTrim.length < 3) {
+      errores.materno = "Debe tener al menos 3 caracteres";
+    } else if (maternoTrim.length > 50) {
+      errores.materno = "No puede superar 50 caracteres";
+    } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(maternoTrim)) {
+      errores.materno = "Solo puede contener letras y espacios";
+    } else if (/(.)\1{3,}/.test(maternoTrim)) {
+      errores.materno = "No puede tener más de 3 caracteres iguales consecutivos";
+    }
+  }
+
+  return errores;
+};
+
+// ===================== VALIDACIÓN DE TELÉFONO =====================
+export const validarTelefonoEvento = (telefono: string): string | null => {
+  const valorTrim = telefono.trim();
+  
+  // No puede estar vacío
+  if (valorTrim === "") {
+    return "El teléfono es obligatorio";
+  }
+  
+  // No permitir espacios
+  if (/\s/.test(telefono)) {
+    return "El teléfono no puede contener espacios";
+  }
+
+  // Solo números
+  if (!/^\d+$/.test(valorTrim)) {
+    return "El teléfono solo puede contener números";
+  }
+
+  // Exactamente 8 dígitos
+  if (valorTrim.length !== 8) {
+    return "El teléfono debe tener exactamente 8 dígitos";
+  }
+
+  // Rango válido boliviano (60000000 - 79999999)
+  const num = Number(valorTrim);
+  if (num < 60000000 || num > 79999999) {
+    return "El teléfono debe comenzar con 6 o 7";
+  }
+
+  return null;
+};
+
+// ===================== VALIDACIÓN DE CI =====================
+export const validarCIEvento = (ci: string): string | null => {
+  const valorTrim = ci.trim();
+
+  // No puede estar vacío
+  if (valorTrim === "") {
+    return "El CI es obligatorio";
+  }
+
+  // No permitir espacios
+  if (/\s/.test(ci)) {
+    return "El CI no puede contener espacios";
+  }
+
+  // Solo números
+  if (!/^\d+$/.test(valorTrim)) {
+    return "El CI solo puede contener números";
+  }
+  
+  // Longitud entre 6 y 12 dígitos
+  if (valorTrim.length < 6 || valorTrim.length > 12) {
+    return "El CI debe tener entre 6 y 12 dígitos";
+  }
+
+  return null;
+};
+
+// ===================== VALIDACIÓN DE EMAIL =====================
+export const validarEmailEvento = (email: string): string | null => {
+  const valorTrim = email.trim();
+  
+  // No puede estar vacío
+  if (valorTrim === "") {
+    return "El email es obligatorio";
+  }
+
+  // No solo espacios
+  if (email.length > 0 && valorTrim === "") {
+    return "El email no puede contener solo espacios";
+  }
+  
+  // No permitir espacios dentro del email
+  if (/\s/.test(email)) {
+    return "El email no puede contener espacios";
+  }
+  
+  // Longitud máxima
+  if (valorTrim.length > 50) {
+    return "El email no puede superar 50 caracteres";
+  }
+  
+  // Debe contener @
+  if (!valorTrim.includes("@")) {
+    return "El email debe contener @";
+  }
+  
+  // Verificar estructura básica
+  const partes = valorTrim.split("@");
+  
+  if (partes.length !== 2) {
+    return "El email solo puede contener un @";
+  }
+  
+  if (!partes[0] || partes[0].trim() === "") {
+    return "El email debe tener un nombre antes del @";
+  }
+  
+  if (!partes[1] || partes[1].trim() === "") {
+    return "El email debe tener un dominio después del @";
+  }
+  
+  if (!partes[1].includes(".")) {
+    return "El dominio debe contener un punto (.)";
+  }
+  
+  if (partes[1].endsWith(".")) {
+    return "El dominio no puede terminar con punto";
+  }
+  
+  const extension = partes[1].split(".").pop();
+  if (!extension || extension.length < 2) {
+    return "El email debe tener una extensión válida (.com, .edu, etc.)";
+  }
+  
+  // Validación final con regex
+  const emailRegex = /^[a-zA-Z0-9][a-zA-Z0-9._-]*[a-zA-Z0-9]@[a-zA-Z0-9][a-zA-Z0-9.-]*\.[a-zA-Z]{2,}$/;
+
+  if (!emailRegex.test(valorTrim)) {
+    return "El formato del email no es válido";
+  }
+
+  return null;
+};
+
+// ===================== VALIDACIÓN DE FECHA DE EVENTO =====================
+export const validarFechaEvento = (fecha: string): string | null => {
+  if (!fecha || fecha.trim() === "") {
+    return "La fecha del evento es obligatoria";
+  }
+
+  const fechaSeleccionada = new Date(fecha);
+  const hoy = new Date();
+  const unAñoDespues = new Date();
+  
+  // Resetear horas para comparación exacta de días
+  hoy.setHours(0, 0, 0, 0);
+  unAñoDespues.setHours(0, 0, 0, 0);
+  unAñoDespues.setFullYear(unAñoDespues.getFullYear() + 1);
+
+  // No puede ser una fecha pasada o actual
+  if (fechaSeleccionada <= hoy) {
+    return "La fecha debe ser posterior a hoy";
+  }
+
+  // No puede ser más de 1 año en el futuro
+  if (fechaSeleccionada > unAñoDespues) {
+    return "La fecha no puede ser mayor a 1 año desde hoy";
+  }
+
+  return null;
+};
+
+// ===================== VALIDACIÓN DE HORA DE INICIO =====================
+export const validarHoraInicio = (hora: string): string | null => {
+  if (!hora || hora.trim() === "") {
+    return "La hora de inicio es obligatoria";
+  }
+
+  const [horas, minutos] = hora.split(':').map(Number);
+  const horaEnMinutos = horas * 60 + minutos;
+
+  // Mínimo 9:00 AM (540 minutos)
+  const minimo = 9 * 60; // 9:00 AM
+  // Máximo 20:00 (8:00 PM) (1200 minutos)
+  const maximo = 20 * 60; // 8:00 PM
+
+  if (horaEnMinutos < minimo) {
+    return "La hora de inicio debe ser desde las 9:00 AM";
+  }
+
+  if (horaEnMinutos > maximo) {
+    return "La hora de inicio debe ser hasta las 8:00 PM";
+  }
+
+  return null;
+};
+
+// ===================== VALIDACIÓN DE HORA DE FIN =====================
+export const validarHoraFin = (horaInicio: string, horaFin: string, fechaEvento: string): string | null => {
+  if (!horaFin || horaFin.trim() === "") {
+    return "La hora de fin es obligatoria";
+  }
+
+  if (!horaInicio || horaInicio.trim() === "") {
+    return "Primero debe seleccionar la hora de inicio";
+  }
+
+  const [horasInicio, minutosInicio] = horaInicio.split(':').map(Number);
+  const [horasFin, minutosFin] = horaFin.split(':').map(Number);
+
+  const inicioEnMinutos = horasInicio * 60 + minutosInicio;
+  const finEnMinutos = horasFin * 60 + minutosFin;
+
+  // La hora de fin debe ser al menos 1 hora después del inicio
+  const diferenciaMinima = 60; // 1 hora en minutos
+
+  // Si la hora de fin es menor que la hora de inicio, asumimos que es del día siguiente
+  let diferencia = finEnMinutos - inicioEnMinutos;
+  if (diferencia < 0) {
+    // Es del día siguiente (pasa la medianoche)
+    diferencia = (24 * 60 - inicioEnMinutos) + finEnMinutos;
+  }
+
+  if (diferencia < diferenciaMinima) {
+    return "La hora de fin debe ser al menos 1 hora después del inicio";
+  }
+
+  // Máximo hasta las 23:59 del día siguiente
+  const maximoPermitido = 24 * 60 - 1; // 23:59 en minutos
+  if (finEnMinutos > maximoPermitido) {
+    return "La hora de fin debe ser hasta las 23:59";
+  }
+
+  return null;
+};
+
+// ===================== VALIDACIÓN DE CANTIDAD DE PERSONAS =====================
+export const validarCantidadPersonasEvento = (cantidad: string): string | null => {
+  const valorTrim = cantidad.trim();
+
+  // No puede estar vacío
+  if (valorTrim === "") {
+    return "La cantidad de personas es obligatoria";
+  }
+
+  // No permitir espacios
+  if (/\s/.test(cantidad)) {
+    return "No puede contener espacios";
+  }
+
+  // Solo números
+  if (!/^\d+$/.test(valorTrim)) {
+    return "Solo puede contener números";
+  }
+
+  const num = Number(valorTrim);
+
+  // Debe ser un número entero
+  if (!Number.isInteger(num)) {
+    return "Debe ser un número entero";
+  }
+
+  // Mínimo 1 persona
+  if (num < 1) {
+    return "Debe ser al menos 1 persona";
+  }
+
+  // Máximo razonable (puedes ajustar este valor según tus necesidades)
+  if (num > 500) {
+    return "El máximo permitido es 500 personas";
+  }
+
+  return null;
+};
+
+// ===================== VALIDAR TODO EL FORMULARIO =====================
+export const validarFormularioEvento = (formData: {
+  nombre: string;
+  apellidoPaterno: string;
+  apellidoMaterno: string;
+  telefono: string;
+  email: string;
+  carnet: string;
+  fechaEvento: string;
+  cantidadPersonas: string;
+  tipoReserva: string;
+  horaInicio: string;
+  horaFin: string;
+}): Record<string, string | null> => {
+  const erroresApellidos = validarApellidosEvento(formData.apellidoPaterno, formData.apellidoMaterno);
+
+  return {
+    nombre: validarNombreEvento(formData.nombre),
+    apellidoPaterno: erroresApellidos.paterno,
+    apellidoMaterno: erroresApellidos.materno,
+    telefono: validarTelefonoEvento(formData.telefono),
+    email: validarEmailEvento(formData.email),
+    carnet: validarCIEvento(formData.carnet),
+    fechaEvento: validarFechaEvento(formData.fechaEvento),
+    cantidadPersonas: validarCantidadPersonasEvento(formData.cantidadPersonas),
+    tipoReserva: formData.tipoReserva ? null : "Debe seleccionar un tipo de evento",
+    horaInicio: validarHoraInicio(formData.horaInicio),
+    horaFin: validarHoraFin(formData.horaInicio, formData.horaFin, formData.fechaEvento),
+  };
+};
+
+// ===================== UTILIDADES PARA INPUTS =====================
+
+// Permitir solo números y bloquear letras (reutilizable)
+export const soloNumerosEvento = (e: React.KeyboardEvent<HTMLInputElement>): void => {
+  const tecla = e.key;
+  if (
+    !/[0-9]/.test(tecla) &&
+    !['Backspace', 'Delete', 'Tab', 'Home', 'End', 'ArrowLeft', 'ArrowRight'].includes(tecla) &&
+    !(e.ctrlKey && ['a', 'c', 'v', 'x'].includes(tecla.toLowerCase()))
+  ) {
+    e.preventDefault();
+  }
+};
+
+// Permitir solo letras y espacios (reutilizable)
+export const soloLetrasEvento = (e: React.KeyboardEvent<HTMLInputElement>): void => {
+  const tecla = e.key;
+  const esLetra = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]$/.test(tecla);
+  const esTeclaEspecial = ['Backspace', 'Delete', 'Tab', 'Home', 'End', 'ArrowLeft', 'ArrowRight'].includes(tecla);
+  const esControl = e.ctrlKey && ['a', 'c', 'v', 'x'].includes(tecla.toLowerCase());
+
+  if (!esLetra && !esTeclaEspecial && !esControl) {
+    e.preventDefault();
+  }
+};
+
+// Bloquear caracteres especiales en números
+export const bloquearCaracteresEspecialesEvento = (e: React.KeyboardEvent<HTMLInputElement>): void => {
   if (e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-' || e.key === '.') {
     e.preventDefault();
   }

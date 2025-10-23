@@ -12,11 +12,10 @@ import { TIPOS_LABEL } from "../../../../types/Bienes/Servicios/estados";
 import {
   validarLongitud,
   validarDescripcion,
-  validarPrecio,
   validarSoloLetras,
   validarRepeticionCaracteres,
   validarNoSoloEspacios,
-  validarNumero,
+  validarPrecio,
 } from "../../../utils/validaciones";
 
 interface Props {
@@ -77,14 +76,6 @@ export default function CreateServicioModal({ isOpen, onClose }: Props) {
     const errorNombreEspacio = validarNoSoloEspacios(form.nombre, "El nombre");
     if (errorNombreEspacio) newErrors.nombre = errorNombreEspacio;
 
-
-    // Precio: mínimo 1, máximo 999.99, hasta 2 decimales
-    const errorPrecio = validarPrecio(form.precio.toString(), "El precio", 999.99);
-    if (errorPrecio) newErrors.precio = errorPrecio;
-
-    const errorNumero = validarNumero(form.precio.toString(), "El precio", 999.99);
-    if (errorNumero) newErrors.precio = errorNumero;
-
     // Tipo: obligatorio
     if (!form.tipo) newErrors.tipo = "Debe seleccionar un tipo";
 
@@ -94,6 +85,9 @@ export default function CreateServicioModal({ isOpen, onClose }: Props) {
 
     const errorCaracterDesc = validarRepeticionCaracteres(form.nombre, "El nombre ");
     if (errorCaracterDesc) newErrors.descripcion = errorCaracterDesc;
+
+    const errorPrecio = validarPrecio(form.precio.toString(), "El precio", 1, 999.99);
+    if (errorPrecio) newErrors.precio = errorPrecio;
 
     setErrors(newErrors);
     return !Object.values(newErrors).some((e) => e);
@@ -171,6 +165,7 @@ export default function CreateServicioModal({ isOpen, onClose }: Props) {
               className="w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-[#26a5b9]/20 focus:border-[#26a5b9] dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700"
             />
             {errors.nombre && <p className="text-xs text-red-500 mt-1">{errors.nombre}</p>}
+            <p className="text-xs text-gray-400 mt-1">Rango permitido: 1.00 - 999.99 Bs.</p>
           </div>
 
           {/* Tipo */}
