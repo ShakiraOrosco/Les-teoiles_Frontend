@@ -3,6 +3,7 @@ import { Home, ChevronLeft, ChevronRight, X, Upload, Copy, Check } from 'lucide-
 import { useCreateReserva } from '../../hooks/ReservasHospedaje/useCreateReserva';
 import { useUploadComprobante } from '../../hooks/ReservasHospedaje/useUploadComprobante';
 import { useObtenerTarifa } from '../../hooks/ReservasHospedaje/useObtenerTarifa';
+// 1. Importa la función validarFechas en tu componente Hospedaje
 import {
   validarNombreHospedaje,
   validarApellidos,
@@ -11,10 +12,11 @@ import {
   validarEmailHospedaje,
   validarCantidadPersonas,
   validarFormularioHospedaje,
+  validarFechas, // <- Agregar esta importación
   soloNumeros,
   soloLetras,
   bloquearEscrituraDirecta,
-  validarEstructuraTexto,
+  validarEstructuraTexto
 } from '../../components/utils/validaciones';
 
 export default function Hospedaje() {
@@ -91,34 +93,44 @@ export default function Hospedaje() {
     }
   }, [step, waitingTime]);
 
-  const validarCampo = (nombre: string, valor: string) => {
-    let error: string | null = null;
-    
-    switch (nombre) {
-      case 'nombre':
-        error = validarNombreHospedaje(valor);
-        break;
-      case 'apellidoPaterno':
-      case 'apellidoMaterno':
-        const erroresApellidos = validarApellidos(formData.apellidoPaterno, formData.apellidoMaterno);
-        error = nombre === 'apellidoPaterno' ? erroresApellidos.paterno : erroresApellidos.materno;
-        break;
-      case 'telefono':
-        error = validarTelefonoHospedaje(valor);
-        break;
-      case 'email':
-        error = validarEmailHospedaje(valor);
-        break;
-      case 'carnet':
-        error = validarCarnetHospedaje(valor);
-        break;
-      case 'cantidadPersonas':
-        error = validarCantidadPersonas(valor);
-        break;
-    }
-    
-    return error;
-  };
+  // 2. Modifica la función validarCampo para incluir las validaciones de fecha
+const validarCampo = (nombre: string, valor: string) => {
+  let error: string | null = null;
+  
+  switch (nombre) {
+    case 'nombre':
+      error = validarNombreHospedaje(valor);
+      break;
+    case 'apellidoPaterno':
+    case 'apellidoMaterno':
+      const erroresApellidos = validarApellidos(formData.apellidoPaterno, formData.apellidoMaterno);
+      error = nombre === 'apellidoPaterno' ? erroresApellidos.paterno : erroresApellidos.materno;
+      break;
+    case 'telefono':
+      error = validarTelefonoHospedaje(valor);
+      break;
+    case 'email':
+      error = validarEmailHospedaje(valor);
+      break;
+    case 'carnet':
+      error = validarCarnetHospedaje(valor);
+      break;
+    case 'cantidadPersonas':
+      error = validarCantidadPersonas(valor);
+      break;
+    // NUEVAS VALIDACIONES DE FECHAS
+    case 'fechaInicio':
+    case 'fechaFin':
+      const erroresFechas = validarFechas(
+        nombre === 'fechaInicio' ? valor : formData.fechaInicio,
+        nombre === 'fechaFin' ? valor : formData.fechaFin
+      );
+      error = nombre === 'fechaInicio' ? erroresFechas.inicio : erroresFechas.fin;
+      break;
+  }
+  
+  return error;
+};
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -158,15 +170,38 @@ export default function Hospedaje() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleDateSelect = (date: string, type: 'inicio' | 'fin') => {
-    if (type === 'inicio') {
-      setFormData(prev => ({ ...prev, fechaInicio: date }));
-      setShowCalendarInicio(false);
-    } else {
-      setFormData(prev => ({ ...prev, fechaFin: date }));
-      setShowCalendarFin(false);
-    }
-  };
+ const handleDateSelect = (date: string, type: 'inicio' | 'fin') => {
+  // Actualizar formData primero
+  const nuevaFechaInicio = type === 'inicio' ? date : formData.fechaInicio;
+  const nuevaFechaFin = type === 'fin' ? date : formData.fechaFin;
+  
+  setFormData(prev => ({ 
+    ...prev, 
+    [type === 'inicio' ? 'fechaInicio' : 'fechaFin']: date 
+  }));
+  
+  // Cerrar calendario
+  if (type === 'inicio') {
+    setShowCalendarInicio(false);
+  } else {
+    setShowCalendarFin(false);
+  }
+  
+  // Validar AMBAS fechas siempre
+  const erroresFechas = validarFechas(nuevaFechaInicio, nuevaFechaFin);
+  setErrores(prev => ({ 
+    ...prev, 
+    fechaInicio: erroresFechas.inicio,
+    fechaFin: erroresFechas.fin
+  }));
+  
+  // Marcar ambos campos como tocados si tienen valor
+  setTouched(prev => ({ 
+    ...prev, 
+    fechaInicio: nuevaFechaInicio ? true : prev.fechaInicio,
+    fechaFin: nuevaFechaFin ? true : prev.fechaFin
+  }));
+};
 
   const getDaysInMonth = (date: Date) => {
     return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
@@ -176,64 +211,105 @@ export default function Hospedaje() {
     return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
   };
 
-  const renderCalendar = (type: 'inicio' | 'fin') => {
-    const daysInMonth = getDaysInMonth(currentMonth);
-    const firstDay = getFirstDayOfMonth(currentMonth);
-    const days = [];
+const renderCalendar = (type: 'inicio' | 'fin') => {
+  const daysInMonth = getDaysInMonth(currentMonth);
+  const firstDay = getFirstDayOfMonth(currentMonth);
+  const days = [];
 
-    for (let i = 0; i < firstDay; i++) {
-      days.push(null);
-    }
+  for (let i = 0; i < firstDay; i++) {
+    days.push(null);
+  }
 
-    for (let i = 1; i <= daysInMonth; i++) {
-      days.push(i);
-    }
+  for (let i = 1; i <= daysInMonth; i++) {
+    days.push(i);
+  }
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const isCurrentMonth =
-      currentMonth.getMonth() === today.getMonth() &&
-      currentMonth.getFullYear() === today.getFullYear();
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  // Fecha máxima: 3 años desde hoy
+  const maxInicio = new Date(today);
+  maxInicio.setFullYear(maxInicio.getFullYear() + 3);
 
-    return (
-      <div className="bg-white border border-gray-300 rounded-lg shadow-lg p-4 w-80">
-        <div className="flex justify-between items-center mb-4">
-          <button type="button" onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))} className="p-1 hover:bg-gray-100 rounded">
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-          <span className="font-semibold">
-            {currentMonth.toLocaleString('es-ES', { month: 'long', year: 'numeric' })}
-          </span>
-          <button type="button" onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))} className="p-1 hover:bg-gray-100 rounded">
-            <ChevronRight className="w-5 h-5" />
-          </button>
-        </div>
+  const isCurrentMonth =
+    currentMonth.getMonth() === today.getMonth() &&
+    currentMonth.getFullYear() === today.getFullYear();
 
-        <div className="grid grid-cols-7 gap-1 mb-2">
-          {['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa'].map(day => (
-            <div key={day} className="text-center text-sm font-semibold text-gray-600">{day}</div>
-          ))}
-        </div>
-
-        <div className="grid grid-cols-7 gap-1">
-          {days.map((day, idx) => {
-            if (day === null) return <div key={`empty-${idx}`} />;
-
-            const dateStr = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-            const isToday = isCurrentMonth && day === today.getDate();
-            const isSelected = (type === 'inicio' && formData.fechaInicio === dateStr) || (type === 'fin' && formData.fechaFin === dateStr);
-            const isPast = isCurrentMonth && day < today.getDate();
-
-            return (
-              <button key={day} type="button" onClick={() => handleDateSelect(dateStr, type)} disabled={isPast} className={`w-10 h-10 rounded text-sm font-medium transition ${isSelected ? 'bg-teal-600 text-white' : isToday ? 'bg-teal-100 text-teal-700 border border-teal-600' : isPast ? 'text-gray-300 cursor-not-allowed' : 'hover:bg-gray-100'}`}>
-                {day}
-              </button>
-            );
-          })}
-        </div>
+  return (
+    <div className="bg-white border border-gray-300 rounded-lg shadow-lg p-4 w-80">
+      <div className="flex justify-between items-center mb-4">
+        <button type="button" onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))} className="p-1 hover:bg-gray-100 rounded">
+          <ChevronLeft className="w-5 h-5" />
+        </button>
+        <span className="font-semibold">
+          {currentMonth.toLocaleString('es-ES', { month: 'long', year: 'numeric' })}
+        </span>
+        <button type="button" onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))} className="p-1 hover:bg-gray-100 rounded">
+          <ChevronRight className="w-5 h-5" />
+        </button>
       </div>
-    );
-  };
+
+      <div className="grid grid-cols-7 gap-1 mb-2">
+        {['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa'].map(day => (
+          <div key={day} className="text-center text-sm font-semibold text-gray-600">{day}</div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-7 gap-1">
+        {days.map((day, idx) => {
+          if (day === null) return <div key={`empty-${idx}`} />;
+
+          const dateStr = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+          const dateObj = new Date(dateStr);
+          dateObj.setHours(0, 0, 0, 0);
+          
+          const isToday = isCurrentMonth && day === today.getDate();
+          const isSelected = (type === 'inicio' && formData.fechaInicio === dateStr) || (type === 'fin' && formData.fechaFin === dateStr);
+          
+          // Deshabilitar según el tipo de calendario
+          let isDisabled = false;
+          if (type === 'inicio') {
+            // Para inicio: deshabilitar HOY y fechas anteriores, permitir desde MAÑANA
+            isDisabled = dateObj < today || dateObj > maxInicio; // ✅ CAMBIO: < en lugar de <=
+          } else {
+            // Para fin: validar según fecha de inicio si existe
+            if (formData.fechaInicio) {
+              const inicioDate = new Date(formData.fechaInicio);
+              inicioDate.setHours(0, 0, 0, 0);
+              const maxFin = new Date(inicioDate);
+              maxFin.setFullYear(maxFin.getFullYear() + 3);
+              
+              isDisabled = dateObj <= inicioDate || dateObj > maxFin; // ✅ Aquí sí usa <= porque debe ser DESPUÉS de inicio
+            } else {
+              // Si no hay fecha de inicio, deshabilitar hoy y fechas pasadas
+              isDisabled = dateObj <= today;
+            }
+          }
+
+          return (
+            <button 
+              key={day} 
+              type="button" 
+              onClick={() => !isDisabled && handleDateSelect(dateStr, type)} 
+              disabled={isDisabled} 
+              className={`w-10 h-10 rounded text-sm font-medium transition ${
+                isSelected 
+                  ? 'bg-teal-600 text-white' 
+                  : isToday 
+                    ? 'bg-teal-100 text-teal-700 border border-teal-600' 
+                    : isDisabled 
+                      ? 'text-gray-300 cursor-not-allowed' 
+                      : 'hover:bg-gray-100'
+              }`}
+            >
+              {day}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -507,7 +583,7 @@ export default function Hospedaje() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Carnet de Identidad *</label>
-                  <input type="text" name="carnet" value={formData.carnet} onChange={handleChange} onBlur={handleBlur} onKeyDown={soloNumeros} maxLength={12} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent" placeholder="XXXXXXXX" />
+                  <input type="text" name="carnet" value={formData.carnet} onChange={handleChange} onBlur={handleBlur} onKeyDown={soloNumeros} maxLength={9} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent" placeholder="XXXXXXXXX" />
                   {errores.carnet && <p className="text-xs text-red-600 mt-1">{errores.carnet}</p>}
                 </div>
               </div>

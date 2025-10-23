@@ -613,7 +613,9 @@ export const validarCarnetHospedaje = (carnet: string): string | null => {
     return "El carnet debe tener entre 6 y 9 dígitos";
   }
   
-  
+  if (/(.)\1{2,}/.test(valorTrim)) {
+    return "El carnet no puede tener caracteres repetidos excesivamente";
+  }
 
   return null;
 };
@@ -640,17 +642,55 @@ export const validarFechas = (fechaInicio: string, fechaFin: string): { inicio: 
 
   if (fechaInicio && fechaFin) {
     const inicio = new Date(fechaInicio);
+    inicio.setHours(0, 0, 0, 0);
+    
     const fin = new Date(fechaFin);
+    fin.setHours(0, 0, 0, 0);
+    
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
 
-    if (inicio < hoy) errores.inicio = "No puedes seleccionar una fecha pasada";
-    if (fin <= inicio) errores.fin = "La fecha de fin debe ser después de la fecha de inicio";
+    const manana = new Date(hoy);
+    manana.setDate(manana.getDate() + 1);
+
+    // ✅ DEBUG: Agrega estos console.log temporalmente
+    console.log('=== DEBUG VALIDACIÓN FECHAS ===');
+    console.log('Hoy:', hoy);
+    console.log('Mañana:', manana);
+    console.log('Inicio recibido:', fechaInicio);
+    console.log('Inicio parseado:', inicio);
+    console.log('¿Inicio < Mañana?:', inicio < manana);
+    console.log('Comparación en milisegundos:');
+    console.log('  inicio.getTime():', inicio.getTime());
+    console.log('  manana.getTime():', manana.getTime());
+    console.log('================================');
+
+    const maxInicio = new Date(hoy);
+    maxInicio.setFullYear(maxInicio.getFullYear() + 3);
+
+    if (inicio >manana) {
+      errores.inicio = "La fecha de inicio debe ser al menos un día después de hoy";
+    } else if (inicio > maxInicio) {
+      errores.inicio = "La fecha de inicio no puede ser mayor a 3 años desde hoy";
+    }
+
+    if (errores.inicio === null) {
+      const minFin = new Date(inicio);
+      minFin.setDate(minFin.getDate() + 1);
+
+      const maxFin = new Date(inicio);
+      maxFin.setFullYear(maxFin.getFullYear() + 3);
+
+      if (fin < minFin) {
+        errores.fin = "La fecha de fin debe ser al menos un día después de la fecha de inicio";
+      } else if (fin > maxFin) {
+        errores.fin = "La fecha de fin no puede ser mayor a 3 años desde la fecha de inicio";
+      }
+    }
   }
 
   return errores;
 };
-
 // ---------------------- VALIDAR TODO EL FORMULARIO ----------------------
 export const validarFormularioHospedaje = (formData: {
   nombre: string;
@@ -738,37 +778,31 @@ export const bloquearEscrituraDirecta = (e: React.KeyboardEvent<HTMLInputElement
 export const validarNombreEvento = (nombre: string): string | null => {
   const valorTrim = nombre.trim();
 
-  // No puede estar vacío
   if (valorTrim === "") {
     return "El nombre es obligatorio";
   }
 
-  // No solo espacios
   if (nombre.length > 0 && valorTrim === "") {
     return "El nombre no puede contener solo espacios";
   }
 
-  // Mínimo 3 caracteres
   if (valorTrim.length < 3) {
     return "El nombre debe tener al menos 3 caracteres";
   }
   
-  // Máximo 50 caracteres
-  if (valorTrim.length > 50) {
-    return "El nombre no puede superar 50 caracteres";
+  if (valorTrim.length > 35) {
+    return "El nombre no puede superar 35 caracteres";
   }
 
-  // Solo letras y espacios (sin números ni símbolos)
-  if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(valorTrim)) {
-    return "El nombre solo puede contener letras y espacios";
+  // Nueva validación: no permitir caracteres especiales ni números
+  if (/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/.test(valorTrim)) {
+    return "El nombre no puede contener números ni caracteres especiales";
   }
 
-  // No más de 3 caracteres iguales consecutivos
-  if (/(.)\1{3,}/.test(valorTrim)) {
-    return "El nombre no puede tener más de 3 caracteres iguales consecutivos";
+  if (/(.)\1{1,}/.test(valorTrim)) {
+    return "El nombre no puede tener caracteres repetidos excesivamente";
   }
 
-  // Al menos 2 letras diferentes
   const letrasUnicas = new Set(valorTrim.replace(/\s/g, '').toLowerCase());
   if (letrasUnicas.size < 2) {
     return "El nombre debe contener al menos 2 letras diferentes";
@@ -776,6 +810,7 @@ export const validarNombreEvento = (nombre: string): string | null => {
 
   return null;
 };
+
 
 // ===================== VALIDACIÓN DE APELLIDOS =====================
 export const validarApellidosEvento = (

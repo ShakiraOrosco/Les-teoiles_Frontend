@@ -7,8 +7,8 @@ interface MapboxMapProps {
 }
 
 export default function MapboxMap({ 
-  latitude = -14.29522,  // Coordenadas por defecto de Reyes
-  longitude = -67.33586,
+  latitude = -14.295222,  // 14°17'42.8"S
+  longitude = -67.335861,  // 67°20'09.1"W
   address = "SN 73031166, Reyes, Beni, Bolivia"
 }: MapboxMapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -57,6 +57,8 @@ export default function MapboxMap({
         markerElement.style.backgroundSize = 'cover';
         markerElement.style.cursor = 'pointer';
         markerElement.style.filter = 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))';
+        markerElement.style.position = 'absolute';
+        markerElement.style.pointerEvents = 'auto';
 
         // Crear popup con diseño mejorado
         const popup = new mapboxgl.Popup({ 
@@ -94,8 +96,11 @@ export default function MapboxMap({
           </div>`
         );
 
-        // Agregar marcador con popup
-        const marker = new mapboxgl.Marker(markerElement)
+        // Agregar marcador con popup (sin offset para que esté exactamente en las coordenadas)
+        const marker = new mapboxgl.Marker({
+          element: markerElement,
+          anchor: 'bottom' // Ancla el marcador desde la parte inferior (la punta del pin)
+        })
           .setLngLat([longitude, latitude])
           .setPopup(popup)
           .addTo(map);
@@ -104,16 +109,6 @@ export default function MapboxMap({
         setTimeout(() => {
           marker.togglePopup();
         }, 500);
-
-        // Agregar animación al marcador
-        markerElement.addEventListener('mouseenter', () => {
-          markerElement.style.transform = 'scale(1.1)';
-          markerElement.style.transition = 'transform 0.2s';
-        });
-
-        markerElement.addEventListener('mouseleave', () => {
-          markerElement.style.transform = 'scale(1)';
-        });
 
         mapRef.current = map;
       }
