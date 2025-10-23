@@ -890,27 +890,21 @@ export const validarTelefonoEvento = (telefono: string): string | null => {
 };
 
 // ===================== VALIDACIÓN DE CI =====================
-export const validarCIEvento = (ci: string): string | null => {
-  const valorTrim = ci.trim();
+export const validarCIEvento = (carnet: string): string | null => {
+  const valorTrim = carnet.trim();
 
-  // No puede estar vacío
-  if (valorTrim === "") {
-    return "El CI es obligatorio";
-  }
+  if (valorTrim === "") return "El carnet es obligatorio";
 
-  // No permitir espacios
-  if (/\s/.test(ci)) {
-    return "El CI no puede contener espacios";
-  }
-
-  // Solo números
   if (!/^\d+$/.test(valorTrim)) {
-    return "El CI solo puede contener números";
+    return "El carnet solo puede contener números";
   }
   
-  // Longitud entre 6 y 12 dígitos
-  if (valorTrim.length < 6 || valorTrim.length > 12) {
-    return "El CI debe tener entre 6 y 12 dígitos";
+  if (valorTrim.length < 6 || valorTrim.length > 9) {
+    return "El carnet debe tener entre 6 y 9 dígitos";
+  }
+  
+  if (/(.)\1{2,}/.test(valorTrim)) {
+    return "El carnet no puede tener caracteres repetidos excesivamente";
   }
 
   return null;
@@ -1107,8 +1101,8 @@ export const validarCantidadPersonasEvento = (cantidad: string): string | null =
   }
 
   // Máximo razonable (puedes ajustar este valor según tus necesidades)
-  if (num > 500) {
-    return "El máximo permitido es 500 personas";
+  if (num > 250) {
+    return "El máximo permitido es 250 personas";
   }
 
   return null;
