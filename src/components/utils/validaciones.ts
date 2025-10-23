@@ -421,6 +421,36 @@ export const validarNombreHospedaje = (nombre: string): string | null => {
   if (/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/.test(valorTrim)) {
     return "El nombre no puede contener números ni caracteres especiales";
   }
+
+  // ✨ NUEVAS VALIDACIONES PARA ESPACIOS ✨
+  
+  // No permitir espacios al inicio o final después del trim
+  // (esto valida el string original)
+  if (nombre !== valorTrim) {
+    return "El nombre no puede tener espacios al inicio o al final";
+  }
+  
+  // No permitir espacios múltiples consecutivos
+  if (/\s{2,}/.test(valorTrim)) {
+    return "El nombre no puede tener espacios consecutivos";
+  }
+  
+  // No permitir espacios entre caracteres individuales (como "J o s u e")
+  // Detecta cuando hay palabras de una sola letra (excepto al inicio)
+  const palabras = valorTrim.split(/\s+/);
+  const palabrasDeUnaLetra = palabras.filter((p, idx) => 
+    p.length === 1 && idx > 0
+  );
+  
+  if (palabrasDeUnaLetra.length > 0) {
+    return "El nombre no puede tener letras separadas por espacios";
+  }
+  
+  // No permitir que una palabra termine con una letra seguida de espacio y otra letra sola
+  // (como "maria s")
+  if (/\b\w+\s+\w\b/.test(valorTrim)) {
+    return "El nombre no puede tener letras sueltas";
+  }
   
   if (/(.)\1{3,}/.test(valorTrim)) {
     return "El nombre no puede tener caracteres repetidos excesivamente";
@@ -449,13 +479,29 @@ export const validarApellidos = (apellidoPaterno: string, apellidoMaterno: strin
   
   // Validar apellido paterno si está lleno
   if (paternoTrim !== "") {
-    if (paternoTrim.length < 3) {
+    // ✨ Validar espacios al inicio o final
+    if (apellidoPaterno !== paternoTrim) {
+      errores.paterno = "No puede tener espacios al inicio o al final";
+    }
+    // ✨ No permitir espacios múltiples consecutivos
+    else if (/\s{2,}/.test(paternoTrim)) {
+      errores.paterno = "No puede tener espacios consecutivos";
+    }
+    // ✨ No permitir letras separadas por espacios (como "G o n z a l e s")
+    else if (paternoTrim.split(/\s+/).some((p, idx) => p.length === 1 && idx > 0)) {
+      errores.paterno = "No puede tener letras separadas por espacios";
+    }
+    // ✨ No permitir letras sueltas (como "Gonzale s")
+    else if (/\b\w+\s+\w\b/.test(paternoTrim)) {
+      errores.paterno = "No puede tener letras sueltas";
+    }
+    else if (paternoTrim.length < 3) {
       errores.paterno = "Apellido paterno debe tener al menos 3 caracteres";
     } else if (paternoTrim.length > 25) {
-      errores.paterno = "Apellido paterno no puede superar 15 caracteres";
+      errores.paterno = "Apellido paterno no puede superar 25 caracteres";
     } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(paternoTrim)) {
       errores.paterno = "Solo puede contener letras y espacios";
-    } else if (/(.)\1{3,}/.test(paternoTrim)) {
+    } else if (/(.)\1{2,}/.test(paternoTrim)) {
       errores.paterno = "No puede tener caracteres repetidos excesivamente";
     } else {
       const letrasUnicas = new Set(paternoTrim.replace(/\s/g, '').toLowerCase());
@@ -467,13 +513,29 @@ export const validarApellidos = (apellidoPaterno: string, apellidoMaterno: strin
   
   // Validar apellido materno si está lleno
   if (maternoTrim !== "") {
-    if (maternoTrim.length < 3) {
+    // ✨ Validar espacios al inicio o final
+    if (apellidoMaterno !== maternoTrim) {
+      errores.materno = "No puede tener espacios al inicio o al final";
+    }
+    // ✨ No permitir espacios múltiples consecutivos
+    else if (/\s{2,}/.test(maternoTrim)) {
+      errores.materno = "No puede tener espacios consecutivos";
+    }
+    // ✨ No permitir letras separadas por espacios
+    else if (maternoTrim.split(/\s+/).some((p, idx) => p.length === 1 && idx > 0)) {
+      errores.materno = "No puede tener letras separadas por espacios";
+    }
+    // ✨ No permitir letras sueltas
+    else if (/\b\w+\s+\w\b/.test(maternoTrim)) {
+      errores.materno = "No puede tener letras sueltas";
+    }
+    else if (maternoTrim.length < 3) {
       errores.materno = "Apellido materno debe tener al menos 3 caracteres";
     } else if (maternoTrim.length > 25) {
-      errores.materno = "Apellido materno no puede superar 15 caracteres";
+      errores.materno = "Apellido materno no puede superar 25 caracteres";
     } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(maternoTrim)) {
       errores.materno = "Solo puede contener letras y espacios";
-    } else if (/(.)\1{3,}/.test(maternoTrim)) {
+    } else if (/(.)\1{2,}/.test(maternoTrim)) {
       errores.materno = "No puede tener caracteres repetidos excesivamente";
     } else {
       const letrasUnicas = new Set(maternoTrim.replace(/\s/g, '').toLowerCase());
@@ -582,6 +644,16 @@ export const validarCarnetHospedaje = (carnet: string): string | null => {
   
   if (valorTrim === "") return "El carnet es obligatorio";
   
+  // ✨ NUEVA: Validar que no tenga espacios en ninguna parte
+  if (/\s/.test(carnet)) {
+    return "El carnet no puede contener espacios";
+  }
+  
+  // ✨ NUEVA: Validar espacios al inicio o final (comparando original con trim)
+  if (carnet !== valorTrim) {
+    return "El carnet no puede tener espacios al inicio o al final";
+  }
+  
   if (!/^\d+$/.test(valorTrim)) {
     return "El carnet solo puede contener números";
   }
@@ -589,7 +661,6 @@ export const validarCarnetHospedaje = (carnet: string): string | null => {
   if (valorTrim.length < 6 || valorTrim.length > 9) {
     return "El carnet debe tener entre 6 y 9 dígitos";
   }
-  
   
   if (/^(.)\1+$/.test(valorTrim)) {
     return "El carnet no puede contener solo dígitos repetidos";
