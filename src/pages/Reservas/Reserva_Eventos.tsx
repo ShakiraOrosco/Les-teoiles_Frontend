@@ -191,6 +191,7 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   }
   if (name === 'carnet' && valorFinal.length > 9) {
     valorFinal = valorFinal.slice(0, 9);
+
   }
     if (name === 'email') {
     valorFinal = value.replace(/\s/g, ''); // Remover todos los espacios
@@ -208,6 +209,7 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
     
     // Limitar a 3 dígitos
     valorFinal = valorFinal.slice(0, 3);
+
   }
   setFormData(prev => ({ ...prev, [name]: valorFinal }));
 
