@@ -29,44 +29,44 @@ const navItems: NavItem[] = [
   {
     icon: <GridIcon />,
     name: "Dashboard",
-    subItems: [{ name: "Ecommerce", path: "/", pro: false }],
+    subItems: [{ name: "Ir dashboard", path: "dashboard", pro: false }],
   },
-  {
+  /*{
     icon: <CalenderIcon />,
     name: "Calendar",
     path: "/calendar",
-  },
+  },*/
   {
     icon: <UserCircleIcon />,
     name: "Usuarios",
     path: "/profile",
   },
-  {
+  /*{
     name: "Forms",
     icon: <ListIcon />,
     subItems: [{ name: "Form Elements", path: "/form-elements", pro: false }],
-  },
+  },*/
   {
-    name: "Tables",
+    name: "Registros",
     icon: <TableIcon />,
     subItems: [
-      { name: "Basic Tables", path: "/basic-tables" },
+      //{ name: "Basic Tables", path: "/basic-tables" },
       { name: "Servicios Adicionales", path: "/Bienes/Servicios" },
       { name: "Habitaciones", path: "/Bienes/Habitacion" },
     ],
   },
-  {
+  /*/{
     name: "Pages",
     icon: <PageIcon />,
     subItems: [
       { name: "Blank Page", path: "/blank", pro: false },
       { name: "404 Error", path: "/error-404", pro: false },
     ],
-  },
+  },*/
 ];
 
 const othersItems: NavItem[] = [
-  {
+  /*{
     icon: <PieChartIcon />,
     name: "Charts",
     subItems: [
@@ -93,7 +93,7 @@ const othersItems: NavItem[] = [
       { name: "Sign In", path: "/signin", pro: false },
       { name: "Sign Up", path: "/signup", pro: false },
     ],
-  },
+  },*/
 ];
 
 const AppSidebar: React.FC = () => {
@@ -312,16 +312,16 @@ const AppSidebar: React.FC = () => {
             <>
               <img
                 className="dark:hidden"
-                src="/images/logo/logo.svg"
+                src="/images/Informativa/LogoPlayaAzul.png"
                 alt="Logo"
-                width={150}
+                width={90}
                 height={40}
               />
               <img
                 className="hidden dark:block"
-                src="/images/logo/logo-dark.svg"
+                src="/images/Informativa/LogoPlayaAzul.png"
                 alt="Logo"
-                width={150}
+                width={90}
                 height={40}
               />
             </>
@@ -372,7 +372,7 @@ const AppSidebar: React.FC = () => {
             </div>
           </div>
         </nav>
-        {isExpanded || isHovered || isMobileOpen ? <SidebarWidget /> : null}
+        {/*isExpanded || isHovered || isMobileOpen ? <SidebarWidget /> : null*/}
       </div>
     </aside>
   );
