@@ -4,7 +4,7 @@ import { Modal } from "../../../ui/modal";
 import Button from "../../../ui/button/Button";
 import Alert from "../../../ui/alert/Alert";
 import { Habitacion, OpcionSiNo, EstadoHabitacion } from "../../../../types/Bienes/Habitacion/habitacion";
-import { validarNumeroEntero, obtenerPisoDesdeNumero } from "../../../utils/validaciones";
+import { validarNumeroEntero, obtenerPisoDesdeNumero, validarNumeroHabitacion } from "../../../utils/validaciones";
 import { useUpdateHabitacion } from "../../../../hooks/Bienes/Habitacion/useUpdateHabitacion";
 
 interface EditHabitacionModalProps {
@@ -68,6 +68,14 @@ export default function EditHabitacionModal({
     // Validar número solo dígitos
     const errorNumero = validarNumeroEntero(form.numero);
     if (errorNumero) newErrors.numero = errorNumero;
+
+    if (!form.numero) {
+      newErrors.numero = "El número de habitación es obligatorio";
+    } else {
+      const errorNumeroHab = validarNumeroHabitacion(form.numero);
+      if (errorNumeroHab) newErrors.numero = errorNumeroHab;
+    }
+
 
     // Primer dígito debe coincidir con el piso
     const pisoDesdeNumero = obtenerPisoDesdeNumero(String(form.numero));

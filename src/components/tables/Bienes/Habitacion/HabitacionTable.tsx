@@ -38,9 +38,9 @@ export default function HabitacionesTable({
       case "DISPONIBLE":
         return "#25a5b9"; // más fuerte verde azulado
       case "OCUPADA":
-        return "#4bb1d1"; // azul más intenso
+        return "#e22e2eff"; // azul más intenso
       case "MANTENIMIENTO":
-        return "#a78ac7"; // lila más fuerte
+        return "#e08b5eff"; // lila más fuerte
       default:
         return "#a78ac7";
     }
