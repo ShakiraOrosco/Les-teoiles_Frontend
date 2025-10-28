@@ -221,12 +221,12 @@ export const validarNombreContacto = (nombre: string): string | null => {
 
   // Validar ratio vocales/consonantes para detectar texto sin sentido
   const soloLetras = valorTrim.replace(/\s/g, '');
-  if (soloLetras.length > 4) {
+  if (soloLetras.length > 3) {
     const vocales = soloLetras.match(/[aeiouáéíóúAEIOUÁÉÍÓÚ]/g) || [];
     const ratioVocales = vocales.length / soloLetras.length;
     
     // Si tiene menos del 25% de vocales, probablemente es texto aleatorio
-    if (ratioVocales < 0.25) {
+    if (ratioVocales < 0.10) {
       return "El nombre debe contener vocales y ser legible";
     }
   }
