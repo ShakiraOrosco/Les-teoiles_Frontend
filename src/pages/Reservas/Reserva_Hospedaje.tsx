@@ -16,7 +16,8 @@ import {
   soloNumeros,
   soloLetras,
   bloquearEscrituraDirecta,
-  validarEstructuraTexto
+  validarEstructuraTexto,
+  validarComprobante
 } from '../../components/utils/validaciones';
 
 export default function Hospedaje() {
@@ -53,6 +54,8 @@ export default function Hospedaje() {
   const [montoTotal, setMontoTotal] = useState<number>(0);
   const [precioPorPersona, setPrecioPorPersona] = useState<number | null>(null);
   const [cantidadDias, setCantidadDias] = useState<number>(0);
+
+  const [comprobanteError, setComprobanteError] = useState<string | null>(null);
 
   // Calcular cantidad de días (inclusivo: cuenta tanto el día de inicio como el de fin)
   useEffect(() => {
@@ -132,6 +135,8 @@ const validarCampo = (nombre: string, valor: string) => {
   return error;
 };
 
+
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
   const { name, value } = e.target;
   let valorFinal = value;
@@ -147,8 +152,12 @@ const validarCampo = (nombre: string, valor: string) => {
   if (name === 'telefono' && value.length > 8) {
     valorFinal = value.slice(0, 8);
   }
-  if (name === 'carnet' && value.length > 12) {
-    valorFinal = value.slice(0, 12);
+  if (name === 'carnet' && value.length > 9) {
+    valorFinal = value.slice(0, 9);
+  }
+    // Para cantidad de personas, limitar a 1 dígito
+  if (name === 'cantidadPersonas') {
+    valorFinal = value.replace(/\D/g, '').slice(0, 1);
   }
   
   setFormData(prev => ({ ...prev, [name]: valorFinal }));
@@ -158,6 +167,7 @@ const validarCampo = (nombre: string, valor: string) => {
     setErrores(prev => ({ ...prev, [name]: error }));
   }
 };
+
 
   const handleBlur = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
   const { name, value } = e.target;
@@ -365,11 +375,31 @@ const renderCalendar = (type: 'inicio' | 'fin') => {
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files?.[0]) {
-      setComprobante(e.target.files[0]);
-    }
-  };
+const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const file = event.target.files?.[0];
+  
+  // Limpiar error previo
+  setComprobanteError(null);
+  
+  if (!file) {
+    setComprobante(null);
+    return;
+  }
+
+  // Usar la validación separada
+  const error = validarComprobante(file);
+  
+  if (error) {
+    setComprobanteError(error);
+    event.target.value = ''; // Limpiar el input
+    setComprobante(null);
+    return;
+  }
+
+  // Si pasa la validación, guardar el archivo y limpiar error
+  setComprobante(file);
+  setComprobanteError(null);
+};
 
   const handleUploadComprobante = async () => {
     if (!comprobante || reservaGenId === null) {
@@ -441,82 +471,202 @@ const renderCalendar = (type: 'inicio' | 'fin') => {
     );
   }
 
-  if (step === 'payment') {
-    return (
-      <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
-        <div className="max-w-2xl w-full bg-white rounded-2xl shadow-xl p-8 relative">
-          <button onClick={() => setStep('form')} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition">
-            <X className="w-6 h-6" />
-          </button>
+if (step === 'payment') {
+  return (
+    <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
+      <div className="max-w-4xl w-full bg-white rounded-2xl shadow-xl p-8 relative">
+        <button 
+          onClick={() => setStep('form')} 
+          className="absolute top-6 right-6 text-gray-400 hover:text-gray-600 transition"
+        >
+          <X className="w-6 h-6" />
+        </button>
 
-          <div className="text-center mb-6">
-            <div className="bg-teal-500 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Home className="w-8 h-8 text-white" />
+        {/* Header mejorado */}
+        <div className="text-center mb-8">
+          <div className="bg-gradient-to-r from-teal-500 to-cyan-600 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+            <Home className="w-10 h-10 text-white" />
+          </div>
+          <h2 className="text-3xl font-bold text-gray-800 mb-2">Realizar Pago</h2>
+          <p className="text-gray-600 text-lg">Confirma tu reserva con el 50% de adelanto</p>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-8 items-start">
+          {/* Sección QR - Mejorada */}
+          <div className="space-y-4">
+            <div className="bg-white p-6 rounded-2xl shadow-md border border-gray-200">
+              <img 
+                src="../images/ReservaPagos/ResHotel1.jpg" 
+                alt="Código QR de pago" 
+                className="w-full max-w-xs mx-auto rounded-xl"
+              />
             </div>
-            <h2 className="text-3xl font-bold text-teal-800">Realizar Pago</h2>
-            <p className="text-gray-600 mt-2">Necesitamos el 50% de adelanto para confirmar tu reserva</p>
+            <div className="text-center space-y-2">
+              <p className="text-gray-600 text-sm font-medium">Escanea con tu aplicación bancaria</p>
+              <div className="flex items-center justify-center gap-2 text-teal-600">
+                <div className="w-2 h-2 bg-teal-500 rounded-full"></div>
+                <p className="text-xs font-semibold">Altoke - Pago seguro</p>
+              </div>
+            </div>
           </div>
 
-          <div className="flex flex-col md:flex-row gap-6 items-start">
-            <div className="flex flex-col items-center justify-center flex-shrink-0">
-              <div className="bg-white p-6 rounded-lg shadow-md border mb-3">
-                <img src="../images/ReservaPagos/ResHotel1.jpg" alt="Código QR de pago" className="w-48 h-48 rounded-xl" />
-              </div>
-              <p className="text-center text-gray-600 text-sm">Escanea con tu aplicación bancaria</p>
-              <p className="text-center text-teal-600 text-xs mt-1">• Altoke - Pago seguro •</p>
-            </div>
-
-            <div className="flex-1 space-y-4">
-              <div className="bg-teal-50 rounded-lg p-4">
-                <p className="text-sm text-gray-600 mb-1">Monto a pagar:</p>
-                <p className="text-4xl font-bold text-teal-700">{(montoTotal * 0.5).toFixed(2)} <span className="text-lg">Bs.</span></p>
-                <p className="text-xs text-gray-500 mt-1">(50% de adelanto)</p>
-              </div>
-
-              <div className="bg-yellow-50 border-l-4 border-yellow-400 p-3">
-                <p className="text-sm text-yellow-800"><strong>Importante:</strong> El restante 50% ({(montoTotal * 0.5).toFixed(2)} Bs.) se pagará en recepción</p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Comprobante de Pago *</label>
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-teal-400 transition cursor-pointer">
-                  <input type="file" onChange={handleFileChange} accept="image/*,.pdf" className="hidden" id="comprobante" />
-                  <label htmlFor="comprobante" className="cursor-pointer">
-                    {comprobante ? (
-                      <div className="text-teal-600">
-                        <Check className="w-8 h-8 mx-auto mb-2" />
-                        <p className="font-medium">✓ {comprobante.name}</p>
-                      </div>
-                    ) : (
-                      <div className="text-gray-500">
-                        <Upload className="w-10 h-10 mx-auto mb-2" />
-                        <p className="font-medium text-teal-600">Seleccionar archivo</p>
-                        <p className="text-xs mt-1">PNG o JPG (máx. 5MB)</p>
-                      </div>
-                    )}
-                  </label>
+          {/* Sección Información de Pago - Mejorada */}
+          <div className="space-y-6">
+            {/* Monto a Pagar */}
+            <div className="bg-gradient-to-r from-teal-50 to-cyan-50 rounded-2xl p-6 border border-teal-100">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-sm text-gray-600 font-medium mb-1">Monto a pagar:</p>
+                  <p className="text-xs text-gray-500">50% de adelanto</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-3xl font-bold text-teal-700">
+                    {(montoTotal * 0.5).toFixed(2)}
+                  </p>
+                  <p className="text-lg font-semibold text-teal-600">Bs.</p>
                 </div>
               </div>
-
-              <button onClick={handleUploadComprobante} disabled={!comprobante || isUploadingComprobante} className={`w-full py-3 rounded-lg font-semibold transition ${comprobante && !isUploadingComprobante ? 'bg-teal-500 hover:bg-teal-600 text-white' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>
-                {isUploadingComprobante ? (
-                  <div className="flex items-center justify-center gap-2">
-                    <div className="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
-                    Procesando...
-                  </div>
-                ) : (
-                  'Confirmar Pago'
-                )}
-              </button>
-
-              {uploadError && <div className="p-3 bg-red-100 border border-red-400 text-red-700 text-sm rounded-lg">Error: {uploadError}</div>}
             </div>
+
+            {/* Información Importante */}
+            <div className="bg-amber-50 border-l-4 border-amber-400 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <div className="bg-amber-100 p-1 rounded-full mt-0.5">
+                  <svg className="w-4 h-4 text-amber-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-amber-800 mb-1">Importante</p>
+                  <p className="text-sm text-amber-700">
+                    El restante 50% ({(montoTotal * 0.5).toFixed(2)} Bs.) se pagará en recepción
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Comprobante de Pago - Mejorado */}
+            <div className="space-y-3">
+              <label className="block text-sm font-semibold text-gray-700">
+                Comprobante de Pago *
+              </label>
+              
+              <div className={`
+                border-2 border-dashed rounded-xl p-6 text-center transition-all cursor-pointer
+                ${comprobanteError 
+                  ? 'border-red-300 bg-red-50' 
+                  : comprobante
+                    ? 'border-teal-300 bg-teal-50'
+                    : 'border-gray-300 bg-gray-50 hover:border-teal-400 hover:bg-teal-50'
+                }
+              `}>
+                <input 
+                  type="file" 
+                  onChange={handleFileChange} 
+                  accept=".jpg,.jpeg,.png,.pdf" 
+                  className="hidden" 
+                  id="comprobante" 
+                />
+                <label htmlFor="comprobante" className="cursor-pointer block">
+                  {comprobante ? (
+                    <div className="text-teal-600 space-y-2">
+                      <Check className="w-12 h-12 mx-auto" />
+                      <p className="font-semibold text-lg">✓ Archivo seleccionado</p>
+                      <p className="text-sm text-teal-700 truncate">{comprobante.name}</p>
+                      <p className="text-xs text-teal-600 mt-2">
+                        {(comprobante.size / 1024 / 1024).toFixed(2)} MB
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="text-gray-500 space-y-3">
+                      <Upload className="w-12 h-12 mx-auto" />
+                      <div>
+                        <p className="font-semibold text-teal-600 text-lg">Seleccionar archivo</p>
+                        <p className="text-sm text-gray-500 mt-1">JPG, PNG o PDF (máx. 5MB)</p>
+                      </div>
+                    </div>
+                  )}
+                </label>
+              </div>
+              
+              {/* Mensaje de error mejorado */}
+              {comprobanteError && (
+                <div className="flex items-center gap-2 text-red-600 bg-red-50 p-3 rounded-lg border border-red-200">
+                  <X className="w-5 h-5 flex-shrink-0" />
+                  <p className="text-sm font-medium">{comprobanteError}</p>
+                </div>
+              )}
+
+              {/* Información de tipos de archivo */}
+              <div className="flex flex-wrap gap-4 justify-center text-xs text-gray-500">
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <span>JPG/JPEG</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                  <span>PNG</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                  <span>PDF</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Botón de Confirmación */}
+            <button 
+              onClick={handleUploadComprobante} 
+              disabled={!comprobante || isUploadingComprobante}
+              className={`
+                w-full py-4 rounded-xl font-semibold text-lg transition-all
+                ${comprobante && !isUploadingComprobante 
+                  ? 'bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-600 hover:to-cyan-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105' 
+                  : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                }
+              `}
+            >
+              {isUploadingComprobante ? (
+                <div className="flex items-center justify-center gap-3">
+                  <div className="w-6 h-6 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <span>Procesando comprobante...</span>
+                </div>
+              ) : (
+                'Confirmar Pago'
+              )}
+            </button>
+
+            {/* Error de subida */}
+            {uploadError && (
+              <div className="p-4 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl">
+                <div className="flex items-center gap-2 font-semibold mb-1">
+                  <X className="w-4 h-4" />
+                  Error al subir comprobante
+                </div>
+                <p>{uploadError}</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Información adicional en la parte inferior */}
+        <div className="mt-8 pt-6 border-t border-gray-200">
+          <div className="flex flex-wrap justify-center gap-6 text-xs text-gray-500">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+              <span>Pago seguro</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+              <span>Confirmación inmediata</span>
+            </div>
+        
           </div>
         </div>
       </div>
-    );
-  }
-
+    </div>
+  );
+}
   if (step === 'success') {
     return (
       <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
@@ -592,11 +742,40 @@ const renderCalendar = (type: 'inicio' | 'fin') => {
               </div>
 
               <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono *</label>
-                  <input type="tel" name="telefono" value={formData.telefono} onChange={handleChange} onBlur={handleBlur} onKeyDown={soloNumeros} maxLength={8} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent" placeholder="7XXXXXXX" />
-                  {errores.telefono && <p className="text-xs text-red-600 mt-1">{errores.telefono}</p>}
-                </div>
+               <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono *</label>
+                <input 
+                  type="tel"
+                  name="telefono"
+                  value={formData.telefono}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  onKeyDown={(e) => {
+                    // Solo permitir números y teclas de control
+                    if (
+                      !/^[0-9]$/.test(e.key) && // No es un número del 0-9
+                      ![
+                        'Backspace', 'Delete', 'Tab', 'Escape', 'Enter',
+                        'ArrowLeft', 'ArrowRight', 'Home', 'End'
+                      ].includes(e.key)
+                    ) {
+                      e.preventDefault();
+                    }
+                  }}
+                  onPaste={(e) => {
+                    // Validar contenido pegado
+                    const pastedText = e.clipboardData.getData('text');
+                    if (!/^\d*$/.test(pastedText)) {
+                      e.preventDefault();
+                    }
+                  }}
+                  maxLength={8}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent" 
+                  placeholder="7XXXXXXX"
+                  inputMode="numeric" // Muestra teclado numérico en móviles
+                />
+                {errores.telefono && <p className="text-xs text-red-600 mt-1">{errores.telefono}</p>}
+              </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Carnet de Identidad *</label>
                   <input type="text" name="carnet" value={formData.carnet} onChange={handleChange} onBlur={handleBlur} onKeyDown={soloNumeros} maxLength={9} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent" placeholder="XXXXXXXXX" />
@@ -606,7 +785,25 @@ const renderCalendar = (type: 'inicio' | 'fin') => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
-                <input type="email" name="email" value={formData.email} onChange={handleChange} onBlur={handleBlur} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent" placeholder="ejemplo@correo.com" />
+               <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                onKeyDown={(e) => {
+                  // Prevenir la tecla espacio
+                  if (e.key === ' ') {
+                    e.preventDefault();
+                  }
+                }}
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent transition ${
+                  errores.email && touched.email
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-gray-300 focus:ring-cyan-500'
+                }`}
+                placeholder="juan@email.com"
+              />
                 {errores.email && <p className="text-xs text-red-600 mt-1">{errores.email}</p>}
               </div>
             </div>
@@ -662,7 +859,7 @@ const renderCalendar = (type: 'inicio' | 'fin') => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Cantidad de Personas *</label>
-                <input type="number" name="cantidadPersonas" value={formData.cantidadPersonas} onChange={handleChange} onBlur={handleBlur} onKeyDown={(e) => { soloNumeros(e); bloquearEscrituraDirecta(e); }} min="1" max="5" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent [appearance:textfield] [&::-webkit-inner-spin-button]:hidden [&::-webkit-outer-spin-button]:hidden" placeholder="Ej: 1" />
+                <input type="number" name="cantidadPersonas" value={formData.cantidadPersonas} onChange={handleChange} onBlur={handleBlur} onKeyDown={(e) => { soloNumeros(e); bloquearEscrituraDirecta(e); }} maxLength={1} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent [appearance:textfield] [&::-webkit-inner-spin-button]:hidden [&::-webkit-outer-spin-button]:hidden" placeholder="Ej: 1" />
                 {errores.cantidadPersonas && <p className="text-xs text-red-600 mt-1">{errores.cantidadPersonas}</p>}
               </div>
 
