@@ -166,7 +166,11 @@ export const validarPassword = (password: string, nombreCampo = "La contraseña"
  * - No permite caracteres repetitivos excesivos
  */
 export const validarNombreContacto = (nombre: string): string | null => {
-  const valorTrim = nombre.trim();
+  // Limpieza de espacios (igual que en el otro formulario)
+  let valorFinal = nombre.replace(/^\s+/, ''); // Eliminar espacios al inicio
+  valorFinal = valorFinal.replace(/\s{2,}/g, ' '); // Reemplazar múltiples espacios consecutivos por uno solo
+  
+  const valorTrim = valorFinal.trim();
 
   // No vacío
   if (valorTrim === "") {
@@ -189,7 +193,7 @@ export const validarNombreContacto = (nombre: string): string | null => {
 
   // Solo letras, espacios y acentos (sin números ni símbolos)
   if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(valorTrim)) {
-    return "El nombre solo puede contener letras y espacios";
+    return "El nombre solo puede contener letras y espacios y no caracteres especiales como ser ., /, #, etc.";
   }
 
   // No permitir más de 3 caracteres iguales consecutivos
@@ -201,6 +205,40 @@ export const validarNombreContacto = (nombre: string): string | null => {
   const letrasUnicas = new Set(valorTrim.replace(/\s/g, '').toLowerCase());
   if (letrasUnicas.size < 2) {
     return "El nombre debe contener al menos 2 letras diferentes";
+  }
+
+  // Validar que tenga al menos 2 palabras (nombre y apellido)
+  const palabras = valorTrim.split(/\s+/).filter(palabra => palabra.length > 0);
+  if (palabras.length < 2) {
+    return "Por favor ingresa al menos un nombre y un apellido";
+  }
+
+  // Validar longitud mínima de palabras (evitar "a b" o "x y")
+  const palabrasCortas = palabras.filter(palabra => palabra.length < 2);
+  if (palabrasCortas.length > 0) {
+    return "Cada nombre y apellido debe tener al menos 2 letras";
+  }
+
+  // Validar ratio vocales/consonantes para detectar texto sin sentido
+  const soloLetras = valorTrim.replace(/\s/g, '');
+  if (soloLetras.length > 4) {
+    const vocales = soloLetras.match(/[aeiouáéíóúAEIOUÁÉÍÓÚ]/g) || [];
+    const ratioVocales = vocales.length / soloLetras.length;
+    
+    // Si tiene menos del 25% de vocales, probablemente es texto aleatorio
+    if (ratioVocales < 0.25) {
+      return "El nombre debe contener vocales y ser legible";
+    }
+  }
+
+  // Validar que no sean todas las palabras demasiado largas sin vocales suficientes
+  const palabrasSinVocales = palabras.filter(palabra => {
+    const vocalesEnPalabra = palabra.match(/[aeiouáéíóúAEIOUÁÉÍÓÚ]/g) || [];
+    return vocalesEnPalabra.length === 0;
+  });
+  
+  if (palabrasSinVocales.length > 0) {
+    return "Cada palabra debe contener al menos una vocal";
   }
 
   return null;
@@ -224,40 +262,164 @@ export const validarEmailContacto = (email: string): string | null => {
     return "El email es obligatorio";
   }
 
-  // No acepta espacios dentro del email
+  // No acepta espacios en ninguna parte del email
   if (/\s/.test(email)) {
     return "El email no puede contener espacios";
   }
 
-  // Longitud máxima
-  if (valorTrim.length > 100) {
-    return "El email no puede superar 100 caracteres";
+  // Validar que solo tenga un @
+  const arrobas = valorTrim.split("@").length - 1;
+  if (arrobas !== 1) {
+    return "El email debe contener exactamente un @";
   }
 
-  // Debe tener @
-  if (!valorTrim.includes("@")) {
-    return "El email debe contener @";
+  // Longitud máxima 50 caracteres
+  if (valorTrim.length > 50) {
+    return "El email no puede superar 50 caracteres";
   }
 
-  // Validar formato completo: usuario@dominio.extensión
-  // Permite letras, números, puntos, guiones y guiones bajos
-  // No permite símbolos especiales al inicio o final
-  const emailRegex = /^[a-zA-Z0-9][a-zA-Z0-9._-]*[a-zA-Z0-9]@[a-zA-Z0-9][a-zA-Z0-9.-]*\.[a-zA-Z]{2,}$/;
+  // Dividir en partes para validaciones específicas
+  const partes = valorTrim.split("@");
+  const usuario = partes[0];
+  const dominioCompleto = partes[1];
 
-  if (!emailRegex.test(valorTrim)) {
-    const partes = valorTrim.split("@");
+  // Validar que el usuario no esté vacío
+  if (usuario === "") {
+    return "El email debe tener una parte antes del @";
+  }
 
-    // Sin dominio
-    if (partes.length < 2 || !partes[1] || partes[1].trim() === "") {
-      return "El email debe tener un dominio después del @";
+  // Validar que el dominio no esté vacío
+  if (!dominioCompleto || dominioCompleto === "") {
+    return "El email debe tener un dominio después del @";
+  }
+
+  // Validar que el dominio tenga extensión
+  if (!dominioCompleto.includes(".") || dominioCompleto.endsWith(".")) {
+    return "El email debe tener una extensión válida (.com, .edu, etc.)";
+  }
+
+  // ========== VALIDACIONES PARA EL USUARIO ==========
+
+  // Validar formato del usuario: solo letras, números, ., -, _
+  if (!/^[a-zA-Z0-9]([a-zA-Z0-9._-]*[a-zA-Z0-9])?$/.test(usuario)) {
+    return "La parte antes del @ solo puede contener letras, números, ., - y _";
+  }
+
+  // Validar que no tenga puntos consecutivos excesivos en el usuario
+  if (/\.{2,}/.test(usuario)) {
+    return "No se permiten puntos consecutivos antes del @";
+  }
+
+  // Validar que no sea un solo carácter antes del @
+  if (usuario.length < 2) {
+    return "La parte antes del @ debe tener al menos 2 caracteres";
+  }
+
+  // Validar que el usuario no sea texto sin sentido (como "Isknikvnk")
+  if (usuario.length > 5) {
+    const vocalesUsuario = usuario.match(/[aeiouAEIOU]/g) || [];
+    const ratioVocalesUsuario = vocalesUsuario.length / usuario.length;
+    
+    // Si tiene menos del 15% de vocales, es probablemente texto aleatorio
+    if (ratioVocalesUsuario < 0.15) {
+      return "La parte antes del @ debe contener vocales y ser legible";
     }
 
-    // Sin extensión
-    if (!partes[1].includes(".") || partes[1].endsWith(".")) {
-      return "El email debe tener una extensión válida (.com, .edu, etc.)";
+    // Validar caracteres repetidos en el usuario
+    if (/(.)\1{3,}/.test(usuario)) {
+      return "No se permiten caracteres repetidos excesivamente antes del @";
     }
+  }
 
-    return "El formato del email no es válido";
+  // ========== VALIDACIONES PARA EL DOMINIO COMPLETO ==========
+
+  // Validar puntos consecutivos en el dominio completo (como "hot......juj")
+  if (/\.{2,}/.test(dominioCompleto)) {
+    return "No se permiten puntos consecutivos en el dominio";
+  }
+
+  // Validar formato del dominio completo
+  const dominioPartes = dominioCompleto.split(".");
+  const dominio = dominioPartes[0];
+  const extension = dominioPartes.slice(1).join(".");
+
+  // Validar que el dominio no esté vacío
+  if (dominio === "") {
+    return "El dominio del email no puede estar vacío";
+  }
+
+  // Validar que haya solo una extensión (evitar "hot......juj.com")
+  if (dominioPartes.length > 2) {
+    return "El dominio no puede contener múltiples extensiones";
+  }
+
+  // Validar formato del dominio: solo letras, números, -, .
+  if (!/^[a-zA-Z0-9]([a-zA-Z0-9.-]*[a-zA-Z0-9])?$/.test(dominio)) {
+    return "El dominio solo puede contener letras, números, - y .";
+  }
+
+  // Validar que no tenga puntos o guiones consecutivos en el dominio
+  if (/\.{2,}/.test(dominio) || /-{2,}/.test(dominio)) {
+    return "No se permiten puntos o guiones consecutivos en el dominio";
+  }
+
+  // ========== VALIDACIONES PARA DOMINIOS VÁLIDOS ==========
+
+  // 1. Validar longitud mínima y máxima del dominio
+  if (dominio.length < 2) {
+    return "El dominio debe tener al menos 2 caracteres";
+  }
+  if (dominio.length > 30) {
+    return "El dominio es demasiado largo";
+  }
+
+  // 2. Validar que no sean caracteres repetidos consecutivos (más de 3)
+  if (/(.)\1{3,}/.test(dominio)) {
+    return "El dominio contiene caracteres repetidos excesivamente";
+  }
+
+  // 3. Validar números repetidos consecutivos (como 2000000000, 5615555555)
+  if (/\d{5,}/.test(dominio)) {
+    return "El dominio no puede contener tantos números consecutivos";
+  }
+
+  // 4. Validar ratio de vocales/consonantes para detectar texto sin sentido
+  const soloLetrasDominio = dominio.replace(/[^a-zA-Z]/g, '');
+  if (soloLetrasDominio.length >= 4) {
+    const vocales = soloLetrasDominio.match(/[aeiouAEIOU]/g) || [];
+    const ratioVocales = vocales.length / soloLetrasDominio.length;
+    
+    // Si tiene menos del 20% de vocales, probablemente es texto aleatorio
+    if (ratioVocales < 0.2) {
+      return "El dominio debe contener vocales y ser legible";
+    }
+  }
+
+  // 5. Validar que tenga al menos 2 caracteres diferentes para dominios
+  const caracteresUnicos = new Set(dominio.toLowerCase());
+  if (caracteresUnicos.size < 2 && dominio.length > 3) {
+    return "El dominio debe contener al menos 2 caracteres diferentes";
+  }
+
+  // 6. Validar ratio de unicidad (evitar "aaaaa", "lllll", etc.)
+  const ratioUnicidad = caracteresUnicos.size / dominio.length;
+  if (dominio.length > 4 && ratioUnicidad < 0.5) {
+    return "El dominio es demasiado repetitivo";
+  }
+
+  // 7. Validar que no sean solo consonantes consecutivas sin vocales
+  if (/^[bcdfghjklmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZ]{4,}$/.test(dominio)) {
+    return "El dominio debe contener vocales";
+  }
+
+  // 8. Validar extensión del dominio
+  if (!/^[a-zA-Z]{2,}$/.test(extension)) {
+    return "La extensión del email debe contener solo letras (ej: .com, .org)";
+  }
+
+  // 9. Validar longitud de la extensión
+  if (extension.length < 2 || extension.length > 6) {
+    return "La extensión debe tener entre 2 y 6 caracteres";
   }
 
   return null;
@@ -328,7 +490,11 @@ export const validarAsuntoContacto = (asunto: string): string | null => {
  * - No permite caracteres repetitivos excesivos
  */
 export const validarMensajeContacto = (mensaje: string): string | null => {
-  const valorTrim = mensaje.trim();
+  // Limpieza inicial de espacios (igual que en nombre)
+  let valorFinal = mensaje.replace(/^\s+/, ''); // Eliminar espacios al inicio
+  valorFinal = valorFinal.replace(/\s{2,}/g, ' '); // Reemplazar múltiples espacios consecutivos por uno solo
+  
+  const valorTrim = valorFinal.trim();
 
   // No vacío
   if (valorTrim === "") {
@@ -355,15 +521,38 @@ export const validarMensajeContacto = (mensaje: string): string | null => {
     return "El mensaje no puede tener caracteres repetidos excesivamente";
   }
 
-  // Debe tener al menos 3 caracteres diferentes (sin contar espacios)
+  // Validar que tenga al menos 3 palabras (para evitar texto sin sentido)
+  const palabras = valorTrim.split(/\s+/).filter(palabra => palabra.length > 0);
+  if (palabras.length < 3) {
+    return "El mensaje debe contener al menos 3 palabras";
+  }
+
+  // Validar que las palabras tengan longitud mínima (evitar "a b c")
+  const palabrasCortas = palabras.filter(palabra => palabra.length < 2);
+  if (palabrasCortas.length > palabras.length / 2) {
+    return "El mensaje debe contener palabras más significativas";
+  }
+
+  // Debe tener al menos 5 caracteres diferentes (sin contar espacios)
   const caracteresUnicos = new Set(valorTrim.replace(/\s/g, '').toLowerCase());
-  if (caracteresUnicos.size < 3) {
-    return "El mensaje debe contener al menos 3 caracteres diferentes";
+  if (caracteresUnicos.size < 5) {
+    return "El mensaje debe contener al menos 5 caracteres diferentes";
+  }
+
+  // Validar que no sea principalmente caracteres aleatorios (ratio vocales/consonantes)
+  const soloLetras = valorTrim.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ]/g, '');
+  if (soloLetras.length > 10) {
+    const vocales = soloLetras.match(/[aeiouáéíóúAEIOUÁÉÍÓÚ]/g) || [];
+    const ratioVocales = vocales.length / soloLetras.length;
+    
+    // Si tiene menos del 20% de vocales, probablemente es texto sin sentido
+    if (ratioVocales < 0.2) {
+      return "El mensaje debe ser comprensible y contener vocales";
+    }
   }
 
   return null;
 };
-
 /*
  * Validar todo el formulario de contacto
  * Retorna un objeto con los errores de cada campo
@@ -445,6 +634,7 @@ export const validarNombreHospedaje = (nombre: string): string | null => {
     return "El nombre no puede contener números ni caracteres especiales";
   }
 
+  //***************************************************************************************** */
   // ✨ NUEVAS VALIDACIONES PARA ESPACIOS ✨
   
   // No permitir espacios al inicio o final después del trim
@@ -475,6 +665,10 @@ export const validarNombreHospedaje = (nombre: string): string | null => {
     return "El nombre no puede tener letras sueltas";
   }
   
+
+//****************************************************************************************************   */
+
+
   if (/(.)\1{3,}/.test(valorTrim)) {
     return "El nombre no puede tener caracteres repetidos excesivamente";
   }
@@ -502,29 +696,13 @@ export const validarApellidos = (apellidoPaterno: string, apellidoMaterno: strin
 
   // Validar apellido paterno si está lleno
   if (paternoTrim !== "") {
-    // ✨ Validar espacios al inicio o final
-    if (apellidoPaterno !== paternoTrim) {
-      errores.paterno = "No puede tener espacios al inicio o al final";
-    }
-    // ✨ No permitir espacios múltiples consecutivos
-    else if (/\s{2,}/.test(paternoTrim)) {
-      errores.paterno = "No puede tener espacios consecutivos";
-    }
-    // ✨ No permitir letras separadas por espacios (como "G o n z a l e s")
-    else if (paternoTrim.split(/\s+/).some((p, idx) => p.length === 1 && idx > 0)) {
-      errores.paterno = "No puede tener letras separadas por espacios";
-    }
-    // ✨ No permitir letras sueltas (como "Gonzale s")
-    else if (/\b\w+\s+\w\b/.test(paternoTrim)) {
-      errores.paterno = "No puede tener letras sueltas";
-    }
-    else if (paternoTrim.length < 3) {
+    if (paternoTrim.length < 3) {
       errores.paterno = "Apellido paterno debe tener al menos 3 caracteres";
     } else if (paternoTrim.length > 25) {
       errores.paterno = "Apellido paterno no puede superar 25 caracteres";
     } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(paternoTrim)) {
       errores.paterno = "Solo puede contener letras y espacios";
-    } else if (/(.)\1{2,}/.test(paternoTrim)) {
+    } else if (/(.)\1{3,}/.test(paternoTrim)) {
       errores.paterno = "No puede tener caracteres repetidos excesivamente";
     } else {
       const letrasUnicas = new Set(paternoTrim.replace(/\s/g, '').toLowerCase());
@@ -536,30 +714,13 @@ export const validarApellidos = (apellidoPaterno: string, apellidoMaterno: strin
 
   // Validar apellido materno si está lleno
   if (maternoTrim !== "") {
-    // ✨ Validar espacios al inicio o final
-    if (apellidoMaterno !== maternoTrim) {
-      errores.materno = "No puede tener espacios al inicio o al final";
-    }
-    // ✨ No permitir espacios múltiples consecutivos
-    else if (/\s{2,}/.test(maternoTrim)) {
-      errores.materno = "No puede tener espacios consecutivos";
-    }
-    // ✨ No permitir letras separadas por espacios
-    else if (maternoTrim.split(/\s+/).some((p, idx) => p.length === 1 && idx > 0)) {
-      errores.materno = "No puede tener letras separadas por espacios";
-    }
-    // ✨ No permitir letras sueltas
-    else if (/\b\w+\s+\w\b/.test(maternoTrim)) {
-      errores.materno = "No puede tener letras sueltas";
-    }
-    else if (maternoTrim.length < 3) {
+    if (maternoTrim.length < 3) {
       errores.materno = "Apellido materno debe tener al menos 3 caracteres";
     } else if (maternoTrim.length > 25) {
       errores.materno = "Apellido materno no puede superar 25 caracteres";
-      errores.materno = "Apellido materno no puede superar 25 caracteres";
     } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(maternoTrim)) {
       errores.materno = "Solo puede contener letras y espacios";
-    } else if (/(.)\1{2,}/.test(maternoTrim)) {
+    } else if (/(.)\1{3,}/.test(maternoTrim)) {
       errores.materno = "No puede tener caracteres repetidos excesivamente";
     } else {
       const letrasUnicas = new Set(maternoTrim.replace(/\s/g, '').toLowerCase());
@@ -576,59 +737,169 @@ export const validarApellidos = (apellidoPaterno: string, apellidoMaterno: strin
 export const validarEmailHospedaje = (email: string): string | null => {
   const valorTrim = email.trim();
   
-  // 1. Verificar si está vacío
+  // No vacío
   if (valorTrim === "") {
     return "El email es obligatorio";
   }
-  
-  // 2. Verificar espacios
+
+  // No acepta espacios en ninguna parte del email
   if (/\s/.test(email)) {
     return "El email no puede contener espacios";
   }
-  
-  // 3. Verificar longitud
+
+  // Validar que solo tenga un @
+  const arrobas = valorTrim.split("@").length - 1;
+  if (arrobas !== 1) {
+    return "El email debe contener exactamente un @";
+  }
+
+  // Longitud máxima 50 caracteres
   if (valorTrim.length > 50) {
     return "El email no puede superar 50 caracteres";
   }
-  
-  // 4. Verificar que contenga @ (ANTES de la regex)
-  if (!valorTrim.includes("@")) {
-    return "El email debe contener @";
-  }
-  
-  // 5. Verificar estructura básica
+
+  // Dividir en partes para validaciones específicas
   const partes = valorTrim.split("@");
-  
-  if (partes.length !== 2) {
-    return "El email solo puede contener un @";
+  const usuario = partes[0];
+  const dominioCompleto = partes[1];
+
+  // Validar que el usuario no esté vacío
+  if (usuario === "") {
+    return "El email debe tener una parte antes del @";
   }
-  
-  if (!partes[0] || partes[0].trim() === "") {
-    return "El email debe tener un nombre antes del @";
-  }
-  
-  if (!partes[1] || partes[1].trim() === "") {
+
+  // Validar que el dominio no esté vacío
+  if (!dominioCompleto || dominioCompleto === "") {
     return "El email debe tener un dominio después del @";
   }
-  
-  if (!partes[1].includes(".")) {
-    return "El dominio debe contener un punto (.)";
-  }
-  
-  if (partes[1].endsWith(".")) {
-    return "El dominio no puede terminar con punto";
-  }
-  
-  const extension = partes[1].split(".").pop();
-  if (!extension || extension.length < 2) {
+
+  // Validar que el dominio tenga extensión
+  if (!dominioCompleto.includes(".") || dominioCompleto.endsWith(".")) {
     return "El email debe tener una extensión válida (.com, .edu, etc.)";
   }
-  
-  // 6. Validación final con regex
-  const emailRegex = /^[a-zA-Z0-9][a-zA-Z0-9._-]*[a-zA-Z0-9]@[a-zA-Z0-9][a-zA-Z0-9.-]*\.[a-zA-Z]{2,}$/;
 
-  if (!emailRegex.test(valorTrim)) {
-    return "El formato del email no es válido";
+  // ========== VALIDACIONES PARA EL USUARIO ==========
+
+  // Validar formato del usuario: solo letras, números, ., -, _
+  if (!/^[a-zA-Z0-9]([a-zA-Z0-9._-]*[a-zA-Z0-9])?$/.test(usuario)) {
+    return "La parte antes del @ solo puede contener letras, números, ., - y _";
+  }
+
+  // Validar que no tenga puntos consecutivos excesivos en el usuario
+  if (/\.{2,}/.test(usuario)) {
+    return "No se permiten puntos consecutivos antes del @";
+  }
+
+  // Validar que no sea un solo carácter antes del @
+  if (usuario.length < 2) {
+    return "La parte antes del @ debe tener al menos 2 caracteres";
+  }
+
+  // Validar que el usuario no sea texto sin sentido (como "Isknikvnk")
+  if (usuario.length > 5) {
+    const vocalesUsuario = usuario.match(/[aeiouAEIOU]/g) || [];
+    const ratioVocalesUsuario = vocalesUsuario.length / usuario.length;
+    
+    // Si tiene menos del 15% de vocales, es probablemente texto aleatorio
+    if (ratioVocalesUsuario < 0.15) {
+      return "La parte antes del @ debe contener vocales y ser legible";
+    }
+
+    // Validar caracteres repetidos en el usuario
+    if (/(.)\1{3,}/.test(usuario)) {
+      return "No se permiten caracteres repetidos excesivamente antes del @";
+    }
+  }
+
+  // ========== VALIDACIONES PARA EL DOMINIO COMPLETO ==========
+
+  // Validar puntos consecutivos en el dominio completo (como "hot......juj")
+  if (/\.{2,}/.test(dominioCompleto)) {
+    return "No se permiten puntos consecutivos en el dominio";
+  }
+
+  // Validar formato del dominio completo
+  const dominioPartes = dominioCompleto.split(".");
+  const dominio = dominioPartes[0];
+  const extension = dominioPartes.slice(1).join(".");
+
+  // Validar que el dominio no esté vacío
+  if (dominio === "") {
+    return "El dominio del email no puede estar vacío";
+  }
+
+  // Validar que haya solo una extensión (evitar "hot......juj.com")
+  if (dominioPartes.length > 2) {
+    return "El dominio no puede contener múltiples extensiones";
+  }
+
+  // Validar formato del dominio: solo letras, números, -, .
+  if (!/^[a-zA-Z0-9]([a-zA-Z0-9.-]*[a-zA-Z0-9])?$/.test(dominio)) {
+    return "El dominio solo puede contener letras, números, - y .";
+  }
+
+  // Validar que no tenga puntos o guiones consecutivos en el dominio
+  if (/\.{2,}/.test(dominio) || /-{2,}/.test(dominio)) {
+    return "No se permiten puntos o guiones consecutivos en el dominio";
+  }
+
+  // ========== VALIDACIONES PARA DOMINIOS VÁLIDOS ==========
+
+  // 1. Validar longitud mínima y máxima del dominio
+  if (dominio.length < 2) {
+    return "El dominio debe tener al menos 2 caracteres";
+  }
+  if (dominio.length > 30) {
+    return "El dominio es demasiado largo";
+  }
+
+  // 2. Validar que no sean caracteres repetidos consecutivos (más de 3)
+  if (/(.)\1{3,}/.test(dominio)) {
+    return "El dominio contiene caracteres repetidos excesivamente";
+  }
+
+  // 3. Validar números repetidos consecutivos (como 2000000000, 5615555555)
+  if (/\d{5,}/.test(dominio)) {
+    return "El dominio no puede contener tantos números consecutivos";
+  }
+
+  // 4. Validar ratio de vocales/consonantes para detectar texto sin sentido
+  const soloLetrasDominio = dominio.replace(/[^a-zA-Z]/g, '');
+  if (soloLetrasDominio.length >= 4) {
+    const vocales = soloLetrasDominio.match(/[aeiouAEIOU]/g) || [];
+    const ratioVocales = vocales.length / soloLetrasDominio.length;
+    
+    // Si tiene menos del 20% de vocales, probablemente es texto aleatorio
+    if (ratioVocales < 0.2) {
+      return "El dominio debe contener vocales y ser legible";
+    }
+  }
+
+  // 5. Validar que tenga al menos 2 caracteres diferentes para dominios
+  const caracteresUnicos = new Set(dominio.toLowerCase());
+  if (caracteresUnicos.size < 2 && dominio.length > 3) {
+    return "El dominio debe contener al menos 2 caracteres diferentes";
+  }
+
+  // 6. Validar ratio de unicidad (evitar "aaaaa", "lllll", etc.)
+  const ratioUnicidad = caracteresUnicos.size / dominio.length;
+  if (dominio.length > 4 && ratioUnicidad < 0.5) {
+    return "El dominio es demasiado repetitivo";
+  }
+
+  // 7. Validar que no sean solo consonantes consecutivas sin vocales
+  if (/^[bcdfghjklmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZ]{4,}$/.test(dominio)) {
+    return "El dominio debe contener vocales";
+  }
+
+  // 8. Validar extensión del dominio
+  if (!/^[a-zA-Z]{2,}$/.test(extension)) {
+    return "La extensión del email debe contener solo letras (ej: .com, .org)";
+  }
+
+  // 9. Validar longitud de la extensión
+  if (extension.length < 2 || extension.length > 6) {
+    return "La extensión debe tener entre 2 y 6 caracteres";
   }
 
   return null;
@@ -667,7 +938,8 @@ export const validarCarnetHospedaje = (carnet: string): string | null => {
   const valorTrim = carnet.trim();
 
   if (valorTrim === "") return "El carnet es obligatorio";
-  
+
+
   // ✨ NUEVA: Validar que no tenga espacios en ninguna parte
   if (/\s/.test(carnet)) {
     return "El carnet no puede contener espacios";
@@ -677,17 +949,19 @@ export const validarCarnetHospedaje = (carnet: string): string | null => {
   if (carnet !== valorTrim) {
     return "El carnet no puede tener espacios al inicio o al final";
   }
-  
+
+
   if (!/^\d+$/.test(valorTrim)) {
-    return "El carnet solo puede contener números";
+    return "El carnet solo puede contener números y no caracteres especiales como ser .,´, /, #, etc.";
+  }
+
+  // No puede empezar con 0
+  if (valorTrim.startsWith('0')) {
+    return "El carnet no puede comenzar con 0";
   }
   
   if (valorTrim.length < 6 || valorTrim.length > 9) {
     return "El carnet debe tener entre 6 y 9 dígitos";
-  }
-  
-  if (/^(.)\1+$/.test(valorTrim)) {
-    return "El carnet no puede contener solo dígitos repetidos";
   }
 
   return null;
@@ -933,51 +1207,57 @@ export const validarApellidosEvento = (
 export const validarTelefonoEvento = (telefono: string): string | null => {
   const valorTrim = telefono.trim();
   
-  // No puede estar vacío
-  if (valorTrim === "") {
+   
+  if (valorTrim === "") 
     return "El teléfono es obligatorio";
-  }
   
-  // No permitir espacios
-  if (/\s/.test(telefono)) {
-    return "El teléfono no puede contener espacios";
+  // No permitir espacios o caracteres especiales
+  if (/[^0-9]/.test(valorTrim)) {
+    return "El teléfono no puede contener espacios ni caracteres especiales";
   }
 
-  // Solo números
   if (!/^\d+$/.test(valorTrim)) {
     return "El teléfono solo puede contener números";
   }
 
-  // Exactamente 8 dígitos
   if (valorTrim.length !== 8) {
-    return "El teléfono debe tener exactamente 8 dígitos";
+    return "El teléfono debe tener 8 dígitos";
   }
 
-  // Rango válido boliviano (60000000 - 79999999)
   const num = Number(valorTrim);
   if (num < 60000000 || num > 79999999) {
-    return "El teléfono debe comenzar con 6 o 7";
+    return "El teléfono debe ser un número boliviano válido (comenzar con 6 o 7)";
   }
 
   return null;
 };
 
 // ===================== VALIDACIÓN DE CI =====================
-export const validarCIEvento = (carnet: string): string | null => {
-  const valorTrim = carnet.trim();
+export const validarCIEvento = (ci: string): string | null => {
+  const valorTrim = ci.trim();
 
-  if (valorTrim === "") return "El carnet es obligatorio";
+  // No puede estar vacío
+  if (valorTrim === "") {
+    return "El CI es obligatorio";
+  }
 
+  // No permitir espacios
+  if (/\s/.test(ci)) {
+    return "El CI no puede contener espacios";
+  }
+
+  // No puede empezar con 0
+  if (valorTrim.startsWith('0')) {
+    return "El carnet no puede comenzar con 0";
+  }
+  // Solo números
   if (!/^\d+$/.test(valorTrim)) {
-    return "El carnet solo puede contener números";
+    return "El CI solo puede contener números y no caracteres especiales como ser .,´, /, #, etc.";
   }
   
+  // Longitud entre 6 y 12 dígitos
   if (valorTrim.length < 6 || valorTrim.length > 9) {
-    return "El carnet debe tener entre 6 y 9 dígitos";
-  }
-  
-  if (/(.)\1{2,}/.test(valorTrim)) {
-    return "El carnet no puede tener caracteres repetidos excesivamente";
+    return "El CI debe tener entre 6 y 9 dígitos";
   }
 
   return null;
@@ -987,64 +1267,169 @@ export const validarCIEvento = (carnet: string): string | null => {
 export const validarEmailEvento = (email: string): string | null => {
   const valorTrim = email.trim();
   
-  // No puede estar vacío
+ // No vacío
   if (valorTrim === "") {
     return "El email es obligatorio";
   }
 
-  // No solo espacios
-  if (email.length > 0 && valorTrim === "") {
-    return "El email no puede contener solo espacios";
-  }
-  
-  // No permitir espacios dentro del email
+  // No acepta espacios en ninguna parte del email
   if (/\s/.test(email)) {
     return "El email no puede contener espacios";
   }
-  
-  // Longitud máxima
+
+  // Validar que solo tenga un @
+  const arrobas = valorTrim.split("@").length - 1;
+  if (arrobas !== 1) {
+    return "El email debe contener exactamente un @";
+  }
+
+  // Longitud máxima 50 caracteres
   if (valorTrim.length > 50) {
     return "El email no puede superar 50 caracteres";
   }
-  
-  // Debe contener @
-  if (!valorTrim.includes("@")) {
-    return "El email debe contener @";
-  }
-  
-  // Verificar estructura básica
+
+  // Dividir en partes para validaciones específicas
   const partes = valorTrim.split("@");
-  
-  if (partes.length !== 2) {
-    return "El email solo puede contener un @";
+  const usuario = partes[0];
+  const dominioCompleto = partes[1];
+
+  // Validar que el usuario no esté vacío
+  if (usuario === "") {
+    return "El email debe tener una parte antes del @";
   }
-  
-  if (!partes[0] || partes[0].trim() === "") {
-    return "El email debe tener un nombre antes del @";
-  }
-  
-  if (!partes[1] || partes[1].trim() === "") {
+
+  // Validar que el dominio no esté vacío
+  if (!dominioCompleto || dominioCompleto === "") {
     return "El email debe tener un dominio después del @";
   }
-  
-  if (!partes[1].includes(".")) {
-    return "El dominio debe contener un punto (.)";
-  }
-  
-  if (partes[1].endsWith(".")) {
-    return "El dominio no puede terminar con punto";
-  }
-  
-  const extension = partes[1].split(".").pop();
-  if (!extension || extension.length < 2) {
+
+  // Validar que el dominio tenga extensión
+  if (!dominioCompleto.includes(".") || dominioCompleto.endsWith(".")) {
     return "El email debe tener una extensión válida (.com, .edu, etc.)";
   }
-  
-  // Validación final con regex
-  const emailRegex = /^[a-zA-Z0-9][a-zA-Z0-9._-]*[a-zA-Z0-9]@[a-zA-Z0-9][a-zA-Z0-9.-]*\.[a-zA-Z]{2,}$/;
 
-  if (!emailRegex.test(valorTrim)) {
-    return "El formato del email no es válido";
+  // ========== VALIDACIONES PARA EL USUARIO ==========
+
+  // Validar formato del usuario: solo letras, números, ., -, _
+  if (!/^[a-zA-Z0-9]([a-zA-Z0-9._-]*[a-zA-Z0-9])?$/.test(usuario)) {
+    return "La parte antes del @ solo puede contener letras, números, ., - y _";
+  }
+
+  // Validar que no tenga puntos consecutivos excesivos en el usuario
+  if (/\.{2,}/.test(usuario)) {
+    return "No se permiten puntos consecutivos antes del @";
+  }
+
+  // Validar que no sea un solo carácter antes del @
+  if (usuario.length < 2) {
+    return "La parte antes del @ debe tener al menos 2 caracteres";
+  }
+
+  // Validar que el usuario no sea texto sin sentido (como "Isknikvnk")
+  if (usuario.length > 5) {
+    const vocalesUsuario = usuario.match(/[aeiouAEIOU]/g) || [];
+    const ratioVocalesUsuario = vocalesUsuario.length / usuario.length;
+    
+    // Si tiene menos del 15% de vocales, es probablemente texto aleatorio
+    if (ratioVocalesUsuario < 0.15) {
+      return "La parte antes del @ debe contener vocales y ser legible";
+    }
+
+    // Validar caracteres repetidos en el usuario
+    if (/(.)\1{3,}/.test(usuario)) {
+      return "No se permiten caracteres repetidos excesivamente antes del @";
+    }
+  }
+
+  // ========== VALIDACIONES PARA EL DOMINIO COMPLETO ==========
+
+  // Validar puntos consecutivos en el dominio completo (como "hot......juj")
+  if (/\.{2,}/.test(dominioCompleto)) {
+    return "No se permiten puntos consecutivos en el dominio";
+  }
+
+  // Validar formato del dominio completo
+  const dominioPartes = dominioCompleto.split(".");
+  const dominio = dominioPartes[0];
+  const extension = dominioPartes.slice(1).join(".");
+
+  // Validar que el dominio no esté vacío
+  if (dominio === "") {
+    return "El dominio del email no puede estar vacío";
+  }
+
+  // Validar que haya solo una extensión (evitar "hot......juj.com")
+  if (dominioPartes.length > 2) {
+    return "El dominio no puede contener múltiples extensiones";
+  }
+
+  // Validar formato del dominio: solo letras, números, -, .
+  if (!/^[a-zA-Z0-9]([a-zA-Z0-9.-]*[a-zA-Z0-9])?$/.test(dominio)) {
+    return "El dominio solo puede contener letras, números, - y .";
+  }
+
+  // Validar que no tenga puntos o guiones consecutivos en el dominio
+  if (/\.{2,}/.test(dominio) || /-{2,}/.test(dominio)) {
+    return "No se permiten puntos o guiones consecutivos en el dominio";
+  }
+
+  // ========== VALIDACIONES PARA DOMINIOS VÁLIDOS ==========
+
+  // 1. Validar longitud mínima y máxima del dominio
+  if (dominio.length < 2) {
+    return "El dominio debe tener al menos 2 caracteres";
+  }
+  if (dominio.length > 30) {
+    return "El dominio es demasiado largo";
+  }
+
+  // 2. Validar que no sean caracteres repetidos consecutivos (más de 3)
+  if (/(.)\1{3,}/.test(dominio)) {
+    return "El dominio contiene caracteres repetidos excesivamente";
+  }
+
+  // 3. Validar números repetidos consecutivos (como 2000000000, 5615555555)
+  if (/\d{5,}/.test(dominio)) {
+    return "El dominio no puede contener tantos números consecutivos";
+  }
+
+  // 4. Validar ratio de vocales/consonantes para detectar texto sin sentido
+  const soloLetrasDominio = dominio.replace(/[^a-zA-Z]/g, '');
+  if (soloLetrasDominio.length >= 4) {
+    const vocales = soloLetrasDominio.match(/[aeiouAEIOU]/g) || [];
+    const ratioVocales = vocales.length / soloLetrasDominio.length;
+    
+    // Si tiene menos del 20% de vocales, probablemente es texto aleatorio
+    if (ratioVocales < 0.2) {
+      return "El dominio debe contener vocales y ser legible";
+    }
+  }
+
+  // 5. Validar que tenga al menos 2 caracteres diferentes para dominios
+  const caracteresUnicos = new Set(dominio.toLowerCase());
+  if (caracteresUnicos.size < 2 && dominio.length > 3) {
+    return "El dominio debe contener al menos 2 caracteres diferentes";
+  }
+
+  // 6. Validar ratio de unicidad (evitar "aaaaa", "lllll", etc.)
+  const ratioUnicidad = caracteresUnicos.size / dominio.length;
+  if (dominio.length > 4 && ratioUnicidad < 0.5) {
+    return "El dominio es demasiado repetitivo";
+  }
+
+  // 7. Validar que no sean solo consonantes consecutivas sin vocales
+  if (/^[bcdfghjklmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZ]{4,}$/.test(dominio)) {
+    return "El dominio debe contener vocales";
+  }
+
+  // 8. Validar extensión del dominio
+  if (!/^[a-zA-Z]{2,}$/.test(extension)) {
+    return "La extensión del email debe contener solo letras (ej: .com, .org)";
+  }
+
+  // 9. Validar longitud de la extensión
+  if (extension.length < 2 || extension.length > 6) {
+    return "La extensión debe tener entre 2 y 6 caracteres";
   }
 
   return null;
@@ -1097,7 +1482,7 @@ export const validarHoraInicio = (hora: string): string | null => {
   }
 
   if (horaEnMinutos > maximo) {
-    return "La hora de inicio debe ser hasta las 8:00 PM";
+    return "La hora de inicio debe ser hasta las 20:00 PM";
   }
 
   return null;
@@ -1113,30 +1498,38 @@ export const validarHoraFin = (horaInicio: string, horaFin: string, fechaEvento:
     return "Primero debe seleccionar la hora de inicio";
   }
 
-  const [horasInicio, minutosInicio] = horaInicio.split(':').map(Number);
+  // Validar formato de hora (HH:MM)
+  const horaRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
+  if (!horaRegex.test(horaFin)) {
+    return "Formato de hora inválido (use HH:MM entre 00:00 y 23:59)";
+  }
+
   const [horasFin, minutosFin] = horaFin.split(':').map(Number);
+  const [horasInicio, minutosInicio] = horaInicio.split(':').map(Number);
+
+  // ✅ CORRECCIÓN PRINCIPAL: No permitir horas después de 23:59
+  if (horasFin > 23 || minutosFin > 59) {
+    return "La hora de fin no puede ser mayor a 23:59";
+  }
 
   const inicioEnMinutos = horasInicio * 60 + minutosInicio;
   const finEnMinutos = horasFin * 60 + minutosFin;
 
-  // La hora de fin debe ser al menos 1 hora después del inicio
-  const diferenciaMinima = 60; // 1 hora en minutos
-
-  // Si la hora de fin es menor que la hora de inicio, asumimos que es del día siguiente
-  let diferencia = finEnMinutos - inicioEnMinutos;
-  if (diferencia < 0) {
-    // Es del día siguiente (pasa la medianoche)
-    diferencia = (24 * 60 - inicioEnMinutos) + finEnMinutos;
+  // ✅ CORRECCIÓN: Validar que la hora fin sea MAYOR que la hora inicio (mismo día)
+  if (finEnMinutos <= inicioEnMinutos) {
+    return "La hora de fin debe ser posterior a la hora de inicio y su maximo es 23:59 del mismo día";
   }
 
-  if (diferencia < diferenciaMinima) {
-    return "La hora de fin debe ser al menos 1 hora después del inicio";
+  // ✅ Validar diferencia mínima de 1 hora
+  const diferencia = finEnMinutos - inicioEnMinutos;
+  if (diferencia < 60) {
+    return "El evento debe tener una duración mínima de 1 hora";
   }
 
-  // Máximo hasta las 23:59 del día siguiente
-  const maximoPermitido = 24 * 60 - 1; // 23:59 en minutos
-  if (finEnMinutos > maximoPermitido) {
-    return "La hora de fin debe ser hasta las 23:59";
+  // ✅ OPCIONAL: Validar hora máxima para fin (ej: 23:59)
+  const maximo = 23 * 60 + 59; // 23:59
+  if (finEnMinutos > maximo) {
+    return "La hora de fin no puede ser mayor a 23:59";
   }
 
   return null;
@@ -1161,6 +1554,11 @@ export const validarCantidadPersonasEvento = (cantidad: string): string | null =
     return "Solo puede contener números";
   }
 
+  // No permitir cero a la izquierda (ej: 012, 001, etc.)
+  if (valorTrim.length > 1 && valorTrim.startsWith('0')) {
+    return "No se permiten ceros a la izquierda";
+  }
+
   const num = Number(valorTrim);
 
   // Debe ser un número entero
@@ -1173,14 +1571,13 @@ export const validarCantidadPersonasEvento = (cantidad: string): string | null =
     return "Debe ser al menos 1 persona";
   }
 
-  // Máximo razonable (puedes ajustar este valor según tus necesidades)
+  // Máximo razonable
   if (num > 250) {
     return "El máximo permitido es 250 personas";
   }
 
   return null;
 };
-
 // ===================== VALIDAR TODO EL FORMULARIO =====================
 export const validarFormularioEvento = (formData: {
   nombre: string;
@@ -1243,4 +1640,43 @@ export const bloquearCaracteresEspecialesEvento = (e: React.KeyboardEvent<HTMLIn
   if (e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-' || e.key === '.') {
     e.preventDefault();
   }
+};
+
+
+
+// ===================== VALIDACIÓN DE COMPROBANTE =====================
+export const validarComprobante = (archivo: File): string | null => {
+  if (!archivo) {
+    return "El comprobante de pago es obligatorio";
+  }
+
+  // Validar tipo MIME
+  const tiposPermitidos = [
+    'image/jpeg',
+    'image/jpg', 
+    'image/png',
+    'application/pdf'
+  ];
+
+  // Validar extensión del archivo
+  const extension = archivo.name.toLowerCase().split('.').pop() || '';
+  const extensionesPermitidas = ['jpg', 'jpeg', 'png', 'pdf'];
+
+  // Validar tipo MIME y extensión
+  if (!tiposPermitidos.includes(archivo.type) || !extensionesPermitidas.includes(extension)) {
+    return "Solo se permiten archivos JPG, PNG o PDF";
+  }
+
+  // Validar tamaño (5MB máximo)
+  const tamañoMaximo = 5 * 1024 * 1024; // 5MB en bytes
+  if (archivo.size > tamañoMaximo) {
+    return "El archivo no puede ser mayor a 5MB";
+  }
+
+  // Validar que el archivo no esté vacío
+  if (archivo.size === 0) {
+    return "El archivo está vacío";
+  }
+
+  return null;
 };

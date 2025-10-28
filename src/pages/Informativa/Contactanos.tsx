@@ -64,28 +64,40 @@ export default function Contactanos() {
   };
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    
-    // Para el teléfono, limitar a 8 dígitos
-    let valorFinal = value;
-    if (name === 'telefono' && value.length > 8) {
-      valorFinal = value.slice(0, 8);
-    }
-    
-    setFormData({
-      ...formData,
-      [name]: valorFinal
+  const { name, value } = e.target;
+  
+  let valorFinal = value;
+  
+  // Aplicar limpieza específica para nombre
+  if (name === 'nombre') {
+    valorFinal = value.replace(/^\s+/, '').replace(/\s{2,}/g, ' ');
+  }
+  
+  // Para el teléfono, limitar a 8 dígitos
+  if (name === 'telefono' && value.length > 8) {
+     valorFinal = value.replace(/\D/g, '').slice(0, 8);
+  }
+
+  if (name === 'mensaje') {
+    valorFinal = value. replace(/^\s+/, '').replace(/\s{2,}/g, ' ');
+  }
+  if (name === 'email') {
+    valorFinal = value.replace(/^\s+/, '').replace(/\s{2,}/g, ' '); // Remover todos los espacios
+  }
+  setFormData({
+    ...formData,
+    [name]: valorFinal
+  });
+  
+  // Validar en tiempo real si el campo ya fue tocado
+  if (touched[name as keyof typeof touched]) {
+    const error = validarCampo(name, valorFinal);
+    setErrores({
+      ...errores,
+      [name]: error
     });
-    
-    // Validar en tiempo real si el campo ya fue tocado
-    if (touched[name as keyof typeof touched]) {
-      const error = validarCampo(name, valorFinal);
-      setErrores({
-        ...errores,
-        [name]: error
-      });
-    }
-  };
+  }
+};
 
   const handleBlur = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -225,18 +237,24 @@ export default function Contactanos() {
                 <div>
                   <label className="block text-gray-700 font-semibold mb-2">Email *</label>
                   <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent transition ${
-                      errores.email && touched.email
-                        ? 'border-red-500 focus:ring-red-500'
-                        : 'border-gray-300 focus:ring-cyan-500'
-                    }`}
-                    placeholder="juan@email.com"
-                  />
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                onKeyDown={(e) => {
+                  // Prevenir la tecla espacio
+                  if (e.key === ' ') {
+                    e.preventDefault();
+                  }
+                }}
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent transition ${
+                  errores.email && touched.email
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-gray-300 focus:ring-cyan-500'
+                }`}
+                placeholder="juan@email.com"
+              />
                   {errores.email && touched.email && (
                     <div className="flex items-center mt-2 text-red-600 text-sm">
                       <AlertCircle className="w-4 h-4 mr-1" />
@@ -251,31 +269,39 @@ export default function Contactanos() {
                     Teléfono <span className="text-gray-400 text-sm">(opcional)</span>
                   </label>
                   <input
-                    type="number"
+                    type="text" // Cambiado de "number" a "text"
                     name="telefono"
                     value={formData.telefono}
                     onChange={handleChange}
                     onBlur={handleBlur}
                     onKeyDown={(e) => {
-                      // Bloquear: e, E, +, -, ., y teclas de flechas
+                      // Permitir solo: números, teclas de control y backspace/delete
                       if (
-                        e.key === 'e' || 
-                        e.key === 'E' || 
-                        e.key === '+' || 
-                        e.key === '-' || 
-                        e.key === '.'
+                        !/^\d$/.test(e.key) && // No es un número
+                        ![
+                          'Backspace', 'Delete', 'Tab', 'Escape', 'Enter',
+                          'ArrowLeft', 'ArrowRight', 'Home', 'End'
+                        ].includes(e.key)
                       ) {
                         e.preventDefault();
                       }
                     }}
+                    onPaste={(e) => {
+                      // Validar contenido pegado
+                      const pastedText = e.clipboardData.getData('text');
+                      if (!/^\d*$/.test(pastedText)) {
+                        e.preventDefault();
+                      }
+                    }}
                     onWheel={(e) => e.currentTarget.blur()} // Desactivar scroll del mouse
-                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent transition [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent transition ${
                       errores.telefono && touched.telefono
                         ? 'border-red-500 focus:ring-red-500'
                         : 'border-gray-300 focus:ring-cyan-500'
                     }`}
                     placeholder="73031166"
                     maxLength={8}
+                    inputMode="numeric" // Muestra teclado numérico en dispositivos móviles
                   />
                   {errores.telefono && touched.telefono && (
                     <div className="flex items-center mt-2 text-red-600 text-sm">

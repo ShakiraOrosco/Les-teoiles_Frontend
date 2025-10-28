@@ -16,7 +16,8 @@ import {
   validarCantidadPersonasEvento,
   soloNumerosEvento,
   soloLetrasEvento,
-  bloquearCaracteresEspecialesEvento
+  bloquearCaracteresEspecialesEvento,
+  validarComprobante
 } from '../../components/utils/validaciones';
 
 export default function Eventos() {
@@ -50,6 +51,8 @@ export default function Eventos() {
   const [mostrarCalendario, setMostrarCalendario] = useState(false);
   const [mesActual, setMesActual] = useState(new Date());
   const [fechaSeleccionada, setFechaSeleccionada] = useState<Date | null>(null);
+
+  const [comprobanteError, setComprobanteError] = useState<string | null>(null);
 
   // Validación en tiempo real para cada campo
   const validarCampo = (nombre: string, valor: string) => {
@@ -161,6 +164,8 @@ export default function Eventos() {
     // Actualizar el formData con el valor limpio
     setFormData(prev => ({ ...prev, [field]: valorLimpio }));
   }
+
+
   
   setTouched(prev => ({ ...prev, [field]: true }));
   
@@ -186,8 +191,26 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   }
   if (name === 'carnet' && valorFinal.length > 9) {
     valorFinal = valorFinal.slice(0, 9);
+
   }
-  
+    if (name === 'email') {
+    valorFinal = value.replace(/\s/g, ''); // Remover todos los espacios
+  }
+
+  // Para cantidad de personas, solo permitir números y prevenir ceros a la izquierda
+  if (name === 'cantidadPersonas') {
+    // Remover cualquier caracter no numérico
+    valorFinal = value.replace(/\D/g, '');
+    
+    // Si empieza con 0 y tiene más de 1 dígito, quitar el cero
+    if (valorFinal.length > 1 && valorFinal.startsWith('0')) {
+      valorFinal = valorFinal.replace(/^0+/, '');
+    }
+    
+    // Limitar a 3 dígitos
+    valorFinal = valorFinal.slice(0, 3);
+
+  }
   setFormData(prev => ({ ...prev, [name]: valorFinal }));
 
   // Si el campo ya ha sido tocado, validar en tiempo real mientras escribe
@@ -206,11 +229,32 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
     }));
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files?.[0]) {
-      setComprobante(e.target.files[0]);
-    }
-  };
+const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const file = event.target.files?.[0];
+  
+  // Limpiar error previo
+  setComprobanteError(null);
+  
+  if (!file) {
+    setComprobante(null);
+    return;
+  }
+
+  // Usar la validación separada
+  const error = validarComprobante(file);
+  
+  if (error) {
+    setComprobanteError(error);
+    event.target.value = ''; // Limpiar el input
+    setComprobante(null);
+    return;
+  }
+
+  // Si pasa la validación, guardar el archivo y limpiar error
+  setComprobante(file);
+  setComprobanteError(null);
+};
+
 
   const handleContinuarPago = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -487,76 +531,49 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
                 <div className="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-lg mb-6">
                   <p className="text-sm text-amber-900"><strong>Importante:</strong> El restante 50% ({precioAdelanto.toFixed(2)} Bs.) se pagará en recepción</p>
                 </div>
-<div className="mb-6">
-  <label className="block text-sm font-semibold text-gray-700 mb-3">
-    📎 Comprobante de Pago
-  </label>
-  
-  <div className="relative group">
+                  <div className="mb-6">
+                    <label className="block text-sm font-semibold text-gray-700 mb-3">
+                      📎 Comprobante de Pago
+                    </label>
+                 <div>
+  <label className="block text-sm font-medium text-gray-700 mb-2">Comprobante de Pago *</label>
+  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-teal-400 transition cursor-pointer">
     <input 
       type="file" 
       onChange={handleFileChange} 
-      accept="image/*,.pdf" 
+      accept=".jpg,.jpeg,.png,.pdf" 
       className="hidden" 
       id="comprobante" 
     />
-    
-    {!comprobante ? (
-      <label 
-        htmlFor="comprobante" 
-        className="block cursor-pointer"
-      >
-        <div className="relative border-3 border-dashed border-gray-300 group-hover:border-teal-400 rounded-2xl p-8 text-center transition-all duration-300 bg-gradient-to-br from-white to-gray-50 group-hover:from-teal-50 group-hover:to-cyan-50">
-          <div className="absolute inset-0 bg-gradient-to-r from-teal-400/0 to-cyan-400/0 group-hover:from-teal-400/10 group-hover:to-cyan-400/10 rounded-2xl transition-all duration-300"></div>
-          
-          <div className="relative">
-            <div className="w-16 h-16 bg-gradient-to-br from-teal-100 to-cyan-100 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
-              <Upload className="w-8 h-8 text-teal-600" />
-            </div>
-            
-            <p className="text-lg font-semibold text-gray-700 mb-2">
-              Arrastra tu archivo aquí
-            </p>
-            <p className="text-sm text-gray-500 mb-3">
-              o haz clic para seleccionar
-            </p>
-            
-            <div className="inline-block px-6 py-2 bg-gradient-to-r from-teal-500 to-cyan-500 text-white rounded-lg font-medium group-hover:shadow-lg transition-all duration-300">
-              Seleccionar archivo
-            </div>
-            
-            <p className="text-xs text-gray-400 mt-4">
-              PNG, JPG o PDF (máx. 5MB)
-            </p>
-          </div>
+    <label htmlFor="comprobante" className="cursor-pointer">
+      {comprobante ? (
+        <div className="text-teal-600">
+          <Check className="w-8 h-8 mx-auto mb-2" />
+          <p className="font-medium">✓ {comprobante.name}</p>
         </div>
-      </label>
-    ) : (
-      <div className="border-3 border-teal-400 rounded-2xl p-6 bg-gradient-to-br from-teal-50 to-cyan-50 cursor-pointer">
-        <label htmlFor="comprobante" className="block cursor-pointer">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 bg-gradient-to-br from-teal-500 to-cyan-500 rounded-xl flex items-center justify-center flex-shrink-0">
-              <Check className="w-8 h-8 text-white" />
-            </div>
-            
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold text-gray-800 mb-1">Archivo cargado</p>
-              <p className="text-sm text-gray-600 truncate">{comprobante.name}</p>
-              <p className="text-xs text-teal-600 mt-1">
-                ✓ Listo para enviar - Haz clic para cambiar
-              </p>
-            </div>
-          </div>
-        </label>
-      </div>
-    )}
+      ) : (
+        <div className="text-gray-500">
+          <Upload className="w-10 h-10 mx-auto mb-2" />
+          <p className="font-medium text-teal-600">Seleccionar archivo</p>
+          <p className="text-xs mt-1">JPG, PNG o PDF (máx. 5MB)</p>
+        </div>
+      )}
+    </label>
   </div>
   
-  <div className="mt-3 flex items-start gap-2 text-sm text-gray-500">
-    <div className="w-1 h-1 bg-gray-400 rounded-full mt-2"></div>
-    <p>Asegúrate de que el comprobante sea legible y contenga todos los datos del pago</p>
-  </div>
-</div>
+  {/* Mostrar error debajo del campo */}
+  {comprobanteError && (
+    <p className="text-red-500 text-sm mt-2 flex items-center">
+      <X className="w-4 h-4 mr-1" />
+      {comprobanteError}
+    </p>
+  )}
+</div>  
+                    <div className="mt-3 flex items-start gap-2 text-sm text-gray-500">
+                      <div className="w-1 h-1 bg-gray-400 rounded-full mt-2"></div>
+                      <p>Asegúrate de que el comprobante sea legible y contenga todos los datos del pago</p>
+                    </div>
+                  </div>
 
                 <button onClick={handleUploadComprobante} disabled={!comprobante || isUploadingComprobante} className={`w-full py-4 rounded-xl font-bold text-lg transition-all duration-300 ${comprobante && !isUploadingComprobante ? 'bg-gradient-to-r from-cyan-500 to-teal-600 text-white hover:shadow-2xl hover:shadow-teal-500/40 hover:scale-[1.02] active:scale-95' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>
                   
@@ -709,7 +726,7 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
                     errores.carnet ? 'border-red-500' : 'border-gray-300'
                   }`}
                   placeholder="XXXXXXXX"
-                  maxLength={12}
+                  maxLength={9}
                   required
                 />
                 {errores.carnet && (
@@ -722,17 +739,24 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Correo Electrónico *
               </label>
-              <input
+             <input
                 type="email"
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
                 onBlur={() => handleBlur('email')}
-                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent ${
-                  errores.email ? 'border-red-500' : 'border-gray-300'
+                onKeyDown={(e) => {
+                  // Prevenir la tecla espacio
+                  if (e.key === ' ') {
+                    e.preventDefault();
+                  }
+                }}
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent transition ${
+                  errores.email && touched.email
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-gray-300 focus:ring-cyan-500'
                 }`}
-                placeholder="ejemplo@correo.com"
-                required
+                placeholder="juan@email.com"
               />
               {errores.email && (
                 <p className="text-red-500 text-xs mt-1">{errores.email}</p>
@@ -915,31 +939,47 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Número de Personas *
-              </label>
-              <input
-                type="number"
-                name="cantidadPersonas"
-                value={formData.cantidadPersonas}
-                onChange={handleChange}
-                onBlur={() => handleBlur('cantidadPersonas')}
-                onKeyDown={(e) => {
-                  soloNumerosEvento(e);
-                  bloquearCaracteresEspecialesEvento(e);
-                }}
-                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent ${
-                  errores.cantidadPersonas ? 'border-red-500' : 'border-gray-300'
-                }`}
-                placeholder="Ej: 50"
-                min="1"
-                required
-              />
-              {errores.cantidadPersonas && (
-                <p className="text-red-500 text-xs mt-1">{errores.cantidadPersonas}</p>
-              )}
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Cantidad de Personas *
+            </label>
+            <input
+              type="text" // Cambiado de "number" a "text"
+              name="cantidadPersonas"
+              value={formData.cantidadPersonas}
+              onChange={handleChange}
+              onBlur={() => handleBlur('cantidadPersonas')}
+              onKeyDown={(e) => {
+                // Solo permitir números y teclas de control
+                if (
+                  !/^[0-9]$/.test(e.key) && // No es un número del 0-9
+                  ![
+                    'Backspace', 'Delete', 'Tab', 'Escape', 'Enter',
+                    'ArrowLeft', 'ArrowRight', 'Home', 'End'
+                  ].includes(e.key)
+                ) {
+                  e.preventDefault();
+                }
+              }}
+              onPaste={(e) => {
+                // Validar contenido pegado
+                const pastedText = e.clipboardData.getData('text');
+                if (!/^\d*$/.test(pastedText)) {
+                  e.preventDefault();
+                }
+              }}
+              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent ${
+                errores.cantidadPersonas ? 'border-red-500' : 'border-gray-300'
+              }`}
+              placeholder="Ej: 50"
+              inputMode="numeric" // Muestra teclado numérico en móviles
+              maxLength={3} // Máximo 3 dígitos (para números hasta 250)
+              required
+            />
+            {errores.cantidadPersonas && (
+              <p className="text-red-500 text-xs mt-1">{errores.cantidadPersonas}</p>
+            )}
+          </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
