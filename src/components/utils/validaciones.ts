@@ -404,15 +404,25 @@ export const validarFormularioHabitacion = (numero: string): Record<string, stri
 
 export function validarNumeroHabitacion(num: string): string {
   const n = Number(num);
+
   if (isNaN(n) || !Number.isInteger(n)) {
     return "El número debe ser un valor entero";
   }
-  if (n < 100 || n > 999) {
-    return "El número debe estar entre 100 y 999";
+
+  if (n < 100 || n > 915) {
+    return "El número debe estar entre 100 y 915";
   }
+
+  // Verifica que sea múltiplo de 100 + 0–15
+  const piso = Math.floor(n / 100);
+  const habitacion = n % 100;
+
+  if (habitacion < 0 || habitacion > 15) {
+    return `En el piso ${piso}, el número de habitación debe estar entre ${piso}00 y ${piso}15`;
+  }
+
   return "";
 }
-
 
 
 /**

@@ -56,12 +56,12 @@ export default function ServiciosTable({ servicios, onEdit, onToggleEstado }: Se
                   key={servicio.id_servicios_adicionales}
                   className={`transition-colors duration-150 hover:bg-[#fff3ef]/30 dark:hover:bg-white/[0.05] ${!isActivo ? "opacity-60" : ""}`}
                 >
-                  <TableCell className="px-5 py-4 sm:px-6 text-start font-semibold text-gray-900 dark:text-white">
+                  <TableCell className="px-4 py-4 sm:px-6 text-start font-semibold text-gray-900 dark:text-white">
                     {servicio.nombre}
                   </TableCell>
 
                   {/* ✅ COLUMNA TIPO - Usa servicio.tipo */}
-                  <TableCell className="px-5 py-4 sm:px-6 text-start">
+                  <TableCell className="px-4 py-4 sm:px-6 text-start">
                     <Badge
                       size="sm"
                     >
@@ -69,19 +69,19 @@ export default function ServiciosTable({ servicios, onEdit, onToggleEstado }: Se
                     </Badge>
                   </TableCell>
 
-                  <TableCell className="px-5 py-4 sm:px-6 text-start">
+                  <TableCell className="px-3 py-4 sm:px-6 text-start">
                     <div className="max-w-xs truncate text-gray-900 dark:text-white" title={servicio.descripcion || '-'}>
                       {servicio.descripcion || <span className="text-gray-400 dark:text-gray-500 italic">Sin descripción</span>}
                     </div>
                   </TableCell>
 
-                  <TableCell className="px-5 py-4 sm:px-3 text-start font-bold text-[#26a5b9] dark:text-[#99d8cd] text-sm">
-                    $ {Number(servicio.precio).toFixed(2)}
+                  <TableCell className="px-6 py-4 sm:px-3 text-start font-bold text-[#26a5b9] dark:text-[#99d8cd] text-sm">
+                    Bs. {Number(servicio.precio).toFixed(2)}
                   </TableCell>
 
 
                   {/* ✅ COLUMNA ESTADO - Usa servicio.estado */}
-                  <TableCell className="px-5 py-4 sm:px-6 text-start">
+                  <TableCell className="px-3 py-4 sm:px-6 text-start">
                     <Badge
                       size="sm"
                       color={isActivo ? "success" : "warning"}
@@ -90,7 +90,7 @@ export default function ServiciosTable({ servicios, onEdit, onToggleEstado }: Se
                     </Badge>
                   </TableCell>
 
-                  <TableCell className="px-5 py-4 sm:px-6 text-start">
+                  <TableCell className="px-4 py-4 sm:px-6 text-start">
                     <div className="flex items-center gap-2">
                       {isActivo && (
                         <Button

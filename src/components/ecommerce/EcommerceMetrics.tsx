@@ -9,40 +9,45 @@ import Badge from "../ui/badge/Badge";
 export default function EcommerceMetrics() {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-6">
-      {/* <!-- Metric Item Start --> */}
+      {/* <!-- Reservas en Hotel --> */}
       <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] md:p-6">
-        <div className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-xl dark:bg-gray-800">
-          <GroupIcon className="text-gray-800 size-6 dark:text-white/90" />
+        {/* Icono */}
+        <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-[#e2e8f6] dark:bg-[#26a5b9]/20">
+          <GroupIcon className="size-6 text-[#458890] dark:text-[#99d8cd]" />
         </div>
 
+        {/* Texto y badge */}
         <div className="flex items-end justify-between mt-5">
           <div>
-            <span className="text-sm text-gray-500 dark:text-gray-400">
-              Customers
+            <span className="text-sm text-[#458890]/80 dark:text-[#99d8cd]/80">
+              Reservas en Hotel
             </span>
-            <h4 className="mt-2 font-bold text-gray-800 text-title-sm dark:text-white/90">
+            <h4 className="mt-2 font-bold text-[#458890] dark:text-[#99d8cd] text-title-sm">
               3,782
             </h4>
           </div>
+
           <Badge color="success">
             <ArrowUpIcon />
             11.01%
           </Badge>
         </div>
       </div>
-      {/* <!-- Metric Item End --> */}
 
-      {/* <!-- Metric Item Start --> */}
+      {/* <!-- Reservas de Evento --> */}
       <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] md:p-6">
-        <div className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-xl dark:bg-gray-800">
-          <BoxIconLine className="text-gray-800 size-6 dark:text-white/90" />
+        {/* Icono */}
+        <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-[#fff3ef] dark:bg-[#26a5b9]/20">
+          <BoxIconLine className="size-6 text-[#458890] dark:text-[#99d8cd]" />
         </div>
+
+        {/* Texto y badge */}
         <div className="flex items-end justify-between mt-5">
           <div>
-            <span className="text-sm text-gray-500 dark:text-gray-400">
-              Orders
+            <span className="text-sm text-[#458890]/80 dark:text-[#99d8cd]/80">
+              Reservas de Evento
             </span>
-            <h4 className="mt-2 font-bold text-gray-800 text-title-sm dark:text-white/90">
+            <h4 className="mt-2 font-bold text-[#458890] dark:text-[#99d8cd] text-title-sm">
               5,359
             </h4>
           </div>
@@ -53,7 +58,6 @@ export default function EcommerceMetrics() {
           </Badge>
         </div>
       </div>
-      {/* <!-- Metric Item End --> */}
     </div>
   );
 }
