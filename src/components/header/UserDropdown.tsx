@@ -112,7 +112,7 @@ export default function UserDropdown() {
                   fill=""
                 />
               </svg>
-              Account settings
+              ajustes de cuenta
             </DropdownItem>
           </li>
           <li>
@@ -137,7 +137,7 @@ export default function UserDropdown() {
                   fill=""
                 />
               </svg>
-              Support
+              Soporte
             </DropdownItem>
           </li>
         </ul>
