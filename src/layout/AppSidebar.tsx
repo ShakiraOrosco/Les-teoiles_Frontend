@@ -26,7 +26,7 @@ type NavItem = {
 };
 
 const navItems: NavItem[] = [
-  {
+  /*{
     icon: <GridIcon />,
     name: "Dashboard",
     subItems: [{ name: "Ir dashboard", path: "dashboard", pro: false }],
@@ -41,13 +41,17 @@ const navItems: NavItem[] = [
     name: "Usuarios",
     path: "/profile",
   },
-  /*{
-    name: "Forms",
-    icon: <ListIcon />,
-    subItems: [{ name: "Form Elements", path: "/form-elements", pro: false }],
-  },*/
   {
-    name: "Registros",
+    name: "Reservas",
+    icon: <ListIcon />,
+    subItems: [
+      //{ name: "Form Elements", path: "/form-elements", pro: false },
+      { name: "Reserva Eventos", path: "/form-elements", pro: false },
+      { name: "Reserva Hospedaje", path: "/form-elements", pro: false },
+    ],
+  },
+  {
+    name: "Bienes",
     icon: <TableIcon />,
     subItems: [
       //{ name: "Basic Tables", path: "/basic-tables" },
