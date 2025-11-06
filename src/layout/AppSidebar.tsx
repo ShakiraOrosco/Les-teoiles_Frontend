@@ -46,8 +46,8 @@ const navItems: NavItem[] = [
     icon: <ListIcon />,
     subItems: [
       //{ name: "Form Elements", path: "/form-elements", pro: false }
-      { name: "Hospedaje", path: "/AdReservas/Reserva_Hospedaje" },
-      { name: "Reservas Evento", path: "/Bienes/Habitacion" },
+      { name: "Reserva Hospedaje", path: "/AdReservas/Reserva_Hospedaje" },
+      { name: "Reservas Evento", path: "/AdReservas/Reserva_Eventos" },
     ]
   },
   {
