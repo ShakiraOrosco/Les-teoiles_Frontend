@@ -41,13 +41,17 @@ const navItems: NavItem[] = [
     name: "Usuarios",
     path: "/profile",
   },
-  /*{
-    name: "Forms",
-    icon: <ListIcon />,
-    subItems: [{ name: "Form Elements", path: "/form-elements", pro: false }],
-  },*/
   {
-    name: "Registros",
+    name: "Reservas",
+    icon: <ListIcon />,
+    subItems: [
+      //{ name: "Form Elements", path: "/form-elements", pro: false }
+      { name: "Hospedaje", path: "/AdReservas/Reserva_Hospedaje" },
+      { name: "Reservas Evento", path: "/Bienes/Habitacion" },
+    ],
+  },
+  {
+    name: "Bienes",
     icon: <TableIcon />,
     subItems: [
       //{ name: "Basic Tables", path: "/basic-tables" },

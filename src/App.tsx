@@ -32,6 +32,7 @@ import ProtectedRoute from "./components/routes/ProtectedRoute";
 import Reserva from "./pages/Reservas/Reservas";
 import ReservaHospedaje from "./pages/Reservas/Reserva_Hospedaje";
 import ReservaEventos from "./pages/Reservas/Reserva_Eventos";
+import ReservasPage from "./pages/AdReservas/Reserva_Hospedaje/Reserva_Hospedaje";
 
 export default function App() {
   return (
@@ -59,7 +60,6 @@ export default function App() {
             {/* Others Page */}
              {/*Crud de Usuarios */}
             <Route path="/profile" element={<Usuarios/>} />
-
             
             <Route path="/calendar" element={<Calendar />} />
             <Route path="/blank" element={<Blank />} />
@@ -76,19 +76,17 @@ export default function App() {
             <Route path="/badge" element={<Badges />} />
             <Route path="/buttons" element={<Buttons />} />
             <Route path="/images" element={<Images />} />
-            <Route path="/videos" element={<Videos />} />
-
-            
+            <Route path="/videos" element={<Videos />} />            
 
             {/* Charts */}
             <Route path="/line-chart" element={<LineChart />} />
             <Route path="/bar-chart" element={<BarChart />} />
 
-
-
-            {/*Crud Servicios Adicionales */}
+            {/*Crud Bienes */}
             <Route path="/Bienes/Servicios" element={<ServiciosAdicionalesPage />} />
             <Route path="/Bienes/Habitacion" element={<HabitacionPage />} />
+            <Route path="/AdReservas/Reserva_Hospedaje" element={<ReservasPage />} />
+
 
           </Route>
 
