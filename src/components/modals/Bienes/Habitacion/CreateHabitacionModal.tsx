@@ -56,7 +56,6 @@ export default function CreateHabitacionModal({ isOpen, onClose }: Props) {
     const newErrors: typeof errors = { numero: "", piso: "", amoblado: "", baño_priv: "" };
 
     // 1️⃣ Validar que el número sea obligatorio y solo dígitos
-    
     if (!form.numero) newErrors.numero = "El número de habitación es obligatorio";
     else {
       const errorNumero = validarNumeroEntero(form.numero);
@@ -77,7 +76,6 @@ export default function CreateHabitacionModal({ isOpen, onClose }: Props) {
       const errorNumero = validarNumeroHabitacion(form.numero);
       if (errorNumero) newErrors.numero = errorNumero;
     }
-    
 
     setErrors(newErrors);
     return !Object.values(newErrors).some((e) => e);

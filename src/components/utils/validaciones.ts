@@ -806,21 +806,23 @@ export const validarEmailHospedaje = (email: string): string | null => {
   }
 
   // Validar que el usuario no sea texto sin sentido (como "Isknikvnk")
-  if (usuario.length > 5) {
-    const vocalesUsuario = usuario.match(/[aeiouAEIOU]/g) || [];
-    const ratioVocalesUsuario = vocalesUsuario.length / usuario.length;
-    
-    // Si tiene menos del 15% de vocales, es probablemente texto aleatorio
-    if (ratioVocalesUsuario < 0.15) {
-      return "La parte antes del @ debe contener vocales y ser legible";
-    }
-
-    // Validar caracteres repetidos en el usuario
-    if (/(.)\1{3,}/.test(usuario)) {
-      return "No se permiten caracteres repetidos excesivamente antes del @";
-    }
+if (usuario.length > 5) {
+  const vocalesUsuario = usuario.match(/[aeiouAEIOU]/g) || [];
+  const ratioVocalesUsuario = vocalesUsuario.length / usuario.length;
+  
+  // ✅ CAMBIO: Reducir el umbral de 15% a 10% o eliminar para usuarios con números
+  // Si tiene números, es probable que sea un código institucional válido
+  const tieneNumeros = /\d/.test(usuario);
+  
+  if (!tieneNumeros && ratioVocalesUsuario < 0.15) {
+    return "La parte antes del @ debe contener vocales y ser legible";
   }
 
+  // Validar caracteres repetidos en el usuario
+  if (/(.)\1{3,}/.test(usuario)) {
+    return "No se permiten caracteres repetidos excesivamente antes del @";
+  }
+}
   // ========== VALIDACIONES PARA EL DOMINIO COMPLETO ==========
 
   // Validar puntos consecutivos en el dominio completo (como "hot......juj")
@@ -830,36 +832,44 @@ export const validarEmailHospedaje = (email: string): string | null => {
 
   // Validar formato del dominio completo
   const dominioPartes = dominioCompleto.split(".");
-  const dominio = dominioPartes[0];
-  const extension = dominioPartes.slice(1).join(".");
+  
+  // ✅ CAMBIO: Permitir múltiples subdominios (est.univalle.edu)
+  // La extensión es la última parte
+  const extension = dominioPartes[dominioPartes.length - 1];
+  // El dominio principal es todo menos la extensión
+  const dominio = dominioPartes.slice(0, -1).join(".");
 
   // Validar que el dominio no esté vacío
   if (dominio === "") {
     return "El dominio del email no puede estar vacío";
   }
 
-  // Validar que haya solo una extensión (evitar "hot......juj.com")
-  if (dominioPartes.length > 2) {
-    return "El dominio no puede contener múltiples extensiones";
-  }
+  // ✅ ELIMINADO: La validación que rechazaba múltiples extensiones
 
-  // Validar formato del dominio: solo letras, números, -, .
-  if (!/^[a-zA-Z0-9]([a-zA-Z0-9.-]*[a-zA-Z0-9])?$/.test(dominio)) {
-    return "El dominio solo puede contener letras, números, - y .";
-  }
-
-  // Validar que no tenga puntos o guiones consecutivos en el dominio
-  if (/\.{2,}/.test(dominio) || /-{2,}/.test(dominio)) {
-    return "No se permiten puntos o guiones consecutivos en el dominio";
+  // Validar cada parte del dominio (subdominios)
+  for (const parte of dominioPartes.slice(0, -1)) {
+    if (parte === "") {
+      return "El dominio no puede tener partes vacías";
+    }
+    
+    // Validar formato de cada subdominio
+    if (!/^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?$/.test(parte)) {
+      return "Cada parte del dominio solo puede contener letras, números y guiones";
+    }
+    
+    // Validar que no tenga guiones consecutivos
+    if (/-{2,}/.test(parte)) {
+      return "No se permiten guiones consecutivos en el dominio";
+    }
   }
 
   // ========== VALIDACIONES PARA DOMINIOS VÁLIDOS ==========
 
-  // 1. Validar longitud mínima y máxima del dominio
+  // 1. Validar longitud mínima y máxima del dominio completo (sin extensión)
   if (dominio.length < 2) {
     return "El dominio debe tener al menos 2 caracteres";
   }
-  if (dominio.length > 30) {
+  if (dominio.length > 50) {
     return "El dominio es demasiado largo";
   }
 
@@ -886,20 +896,24 @@ export const validarEmailHospedaje = (email: string): string | null => {
   }
 
   // 5. Validar que tenga al menos 2 caracteres diferentes para dominios
-  const caracteresUnicos = new Set(dominio.toLowerCase());
+  const caracteresUnicos = new Set(dominio.toLowerCase().replace(/\./g, ''));
   if (caracteresUnicos.size < 2 && dominio.length > 3) {
     return "El dominio debe contener al menos 2 caracteres diferentes";
   }
 
   // 6. Validar ratio de unicidad (evitar "aaaaa", "lllll", etc.)
-  const ratioUnicidad = caracteresUnicos.size / dominio.length;
-  if (dominio.length > 4 && ratioUnicidad < 0.5) {
+  const dominioSinPuntos = dominio.replace(/\./g, '');
+  const caracteresUnicosSinPuntos = new Set(dominioSinPuntos.toLowerCase());
+  const ratioUnicidad = caracteresUnicosSinPuntos.size / dominioSinPuntos.length;
+  if (dominioSinPuntos.length > 4 && ratioUnicidad < 0.5) {
     return "El dominio es demasiado repetitivo";
   }
 
-  // 7. Validar que no sean solo consonantes consecutivas sin vocales
-  if (/^[bcdfghjklmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZ]{4,}$/.test(dominio)) {
-    return "El dominio debe contener vocales";
+  // 7. Validar que no sean solo consonantes consecutivas sin vocales (aplicar a cada parte)
+  for (const parte of dominioPartes.slice(0, -1)) {
+    if (/^[bcdfghjklmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZ]{4,}$/.test(parte)) {
+      return "El dominio debe contener vocales";
+    }
   }
 
   // 8. Validar extensión del dominio
@@ -914,7 +928,6 @@ export const validarEmailHospedaje = (email: string): string | null => {
 
   return null;
 };
-
 // ---------------------- VALIDACIÓN DE TELÉFONO ----------------------
 export const validarTelefonoHospedaje = (telefono: string): string | null => {
   const valorTrim = telefono.trim();
@@ -998,34 +1011,20 @@ export const validarFechas = (fechaInicio: string, fechaFin: string): { inicio: 
   if (!fechaFin) errores.fin = "La fecha de fin es obligatoria";
 
   if (fechaInicio && fechaFin) {
-    const inicio = new Date(fechaInicio);
-    inicio.setHours(0, 0, 0, 0);
+    // ✅ Crear fechas desde strings en formato local
+    const [yearInicio, monthInicio, dayInicio] = fechaInicio.split('-').map(Number);
+    const inicio = new Date(yearInicio, monthInicio - 1, dayInicio);
     
-    const fin = new Date(fechaFin);
-    fin.setHours(0, 0, 0, 0);
+    const [yearFin, monthFin, dayFin] = fechaFin.split('-').map(Number);
+    const fin = new Date(yearFin, monthFin - 1, dayFin);
     
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
 
-    const manana = new Date(hoy);
-    manana.setDate(manana.getDate() + 1);
-
-    // ✅ DEBUG: Agrega estos console.log temporalmente
-    console.log('=== DEBUG VALIDACIÓN FECHAS ===');
-    console.log('Hoy:', hoy);
-    console.log('Mañana:', manana);
-    console.log('Inicio recibido:', fechaInicio);
-    console.log('Inicio parseado:', inicio);
-    console.log('¿Inicio < Mañana?:', inicio < manana);
-    console.log('Comparación en milisegundos:');
-    console.log('  inicio.getTime():', inicio.getTime());
-    console.log('  manana.getTime():', manana.getTime());
-    console.log('================================');
-
     const maxInicio = new Date(hoy);
     maxInicio.setFullYear(maxInicio.getFullYear() + 3);
 
-    if (inicio >manana) {
+    if (inicio <= hoy) {
       errores.inicio = "La fecha de inicio debe ser al menos un día después de hoy";
     } else if (inicio > maxInicio) {
       errores.inicio = "La fecha de inicio no puede ser mayor a 3 años desde hoy";
@@ -1274,10 +1273,10 @@ export const validarCIEvento = (ci: string): string | null => {
 };
 
 // ===================== VALIDACIÓN DE EMAIL =====================
-export const validarEmailEvento = (email: string): string | null => {
+export const validarEmailEvento  = (email: string): string | null => {
   const valorTrim = email.trim();
   
- // No vacío
+  // No vacío
   if (valorTrim === "") {
     return "El email es obligatorio";
   }
@@ -1336,21 +1335,23 @@ export const validarEmailEvento = (email: string): string | null => {
   }
 
   // Validar que el usuario no sea texto sin sentido (como "Isknikvnk")
-  if (usuario.length > 5) {
-    const vocalesUsuario = usuario.match(/[aeiouAEIOU]/g) || [];
-    const ratioVocalesUsuario = vocalesUsuario.length / usuario.length;
-    
-    // Si tiene menos del 15% de vocales, es probablemente texto aleatorio
-    if (ratioVocalesUsuario < 0.15) {
-      return "La parte antes del @ debe contener vocales y ser legible";
-    }
-
-    // Validar caracteres repetidos en el usuario
-    if (/(.)\1{3,}/.test(usuario)) {
-      return "No se permiten caracteres repetidos excesivamente antes del @";
-    }
+if (usuario.length > 5) {
+  const vocalesUsuario = usuario.match(/[aeiouAEIOU]/g) || [];
+  const ratioVocalesUsuario = vocalesUsuario.length / usuario.length;
+  
+  // ✅ CAMBIO: Reducir el umbral de 15% a 10% o eliminar para usuarios con números
+  // Si tiene números, es probable que sea un código institucional válido
+  const tieneNumeros = /\d/.test(usuario);
+  
+  if (!tieneNumeros && ratioVocalesUsuario < 0.15) {
+    return "La parte antes del @ debe contener vocales y ser legible";
   }
 
+  // Validar caracteres repetidos en el usuario
+  if (/(.)\1{3,}/.test(usuario)) {
+    return "No se permiten caracteres repetidos excesivamente antes del @";
+  }
+}
   // ========== VALIDACIONES PARA EL DOMINIO COMPLETO ==========
 
   // Validar puntos consecutivos en el dominio completo (como "hot......juj")
@@ -1360,36 +1361,44 @@ export const validarEmailEvento = (email: string): string | null => {
 
   // Validar formato del dominio completo
   const dominioPartes = dominioCompleto.split(".");
-  const dominio = dominioPartes[0];
-  const extension = dominioPartes.slice(1).join(".");
+  
+  // ✅ CAMBIO: Permitir múltiples subdominios (est.univalle.edu)
+  // La extensión es la última parte
+  const extension = dominioPartes[dominioPartes.length - 1];
+  // El dominio principal es todo menos la extensión
+  const dominio = dominioPartes.slice(0, -1).join(".");
 
   // Validar que el dominio no esté vacío
   if (dominio === "") {
     return "El dominio del email no puede estar vacío";
   }
 
-  // Validar que haya solo una extensión (evitar "hot......juj.com")
-  if (dominioPartes.length > 2) {
-    return "El dominio no puede contener múltiples extensiones";
-  }
+  // ✅ ELIMINADO: La validación que rechazaba múltiples extensiones
 
-  // Validar formato del dominio: solo letras, números, -, .
-  if (!/^[a-zA-Z0-9]([a-zA-Z0-9.-]*[a-zA-Z0-9])?$/.test(dominio)) {
-    return "El dominio solo puede contener letras, números, - y .";
-  }
-
-  // Validar que no tenga puntos o guiones consecutivos en el dominio
-  if (/\.{2,}/.test(dominio) || /-{2,}/.test(dominio)) {
-    return "No se permiten puntos o guiones consecutivos en el dominio";
+  // Validar cada parte del dominio (subdominios)
+  for (const parte of dominioPartes.slice(0, -1)) {
+    if (parte === "") {
+      return "El dominio no puede tener partes vacías";
+    }
+    
+    // Validar formato de cada subdominio
+    if (!/^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?$/.test(parte)) {
+      return "Cada parte del dominio solo puede contener letras, números y guiones";
+    }
+    
+    // Validar que no tenga guiones consecutivos
+    if (/-{2,}/.test(parte)) {
+      return "No se permiten guiones consecutivos en el dominio";
+    }
   }
 
   // ========== VALIDACIONES PARA DOMINIOS VÁLIDOS ==========
 
-  // 1. Validar longitud mínima y máxima del dominio
+  // 1. Validar longitud mínima y máxima del dominio completo (sin extensión)
   if (dominio.length < 2) {
     return "El dominio debe tener al menos 2 caracteres";
   }
-  if (dominio.length > 30) {
+  if (dominio.length > 50) {
     return "El dominio es demasiado largo";
   }
 
@@ -1416,20 +1425,24 @@ export const validarEmailEvento = (email: string): string | null => {
   }
 
   // 5. Validar que tenga al menos 2 caracteres diferentes para dominios
-  const caracteresUnicos = new Set(dominio.toLowerCase());
+  const caracteresUnicos = new Set(dominio.toLowerCase().replace(/\./g, ''));
   if (caracteresUnicos.size < 2 && dominio.length > 3) {
     return "El dominio debe contener al menos 2 caracteres diferentes";
   }
 
   // 6. Validar ratio de unicidad (evitar "aaaaa", "lllll", etc.)
-  const ratioUnicidad = caracteresUnicos.size / dominio.length;
-  if (dominio.length > 4 && ratioUnicidad < 0.5) {
+  const dominioSinPuntos = dominio.replace(/\./g, '');
+  const caracteresUnicosSinPuntos = new Set(dominioSinPuntos.toLowerCase());
+  const ratioUnicidad = caracteresUnicosSinPuntos.size / dominioSinPuntos.length;
+  if (dominioSinPuntos.length > 4 && ratioUnicidad < 0.5) {
     return "El dominio es demasiado repetitivo";
   }
 
-  // 7. Validar que no sean solo consonantes consecutivas sin vocales
-  if (/^[bcdfghjklmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZ]{4,}$/.test(dominio)) {
-    return "El dominio debe contener vocales";
+  // 7. Validar que no sean solo consonantes consecutivas sin vocales (aplicar a cada parte)
+  for (const parte of dominioPartes.slice(0, -1)) {
+    if (/^[bcdfghjklmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZ]{4,}$/.test(parte)) {
+      return "El dominio debe contener vocales";
+    }
   }
 
   // 8. Validar extensión del dominio
@@ -1444,7 +1457,6 @@ export const validarEmailEvento = (email: string): string | null => {
 
   return null;
 };
-
 // ===================== VALIDACIÓN DE FECHA DE EVENTO =====================
 export const validarFechaEvento = (fecha: string): string | null => {
   if (!fecha || fecha.trim() === "") {
