@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   Table,
   TableBody,
@@ -9,6 +10,7 @@ import Button from "../../../ui/button/Button";
 import Badge from "../../../ui/badge/Badge";
 import { Eye } from "lucide-react";
 import { ReservaHotel } from "../../../../types/AdReserva/Reserva_Hospedaje/hospedaje";
+import VerClienteModal from "../../../modals/AdReservas/Reserva_Hospedaje/VerClienteModal"; // NUEVO IMPORT
 
 interface ReservasTableProps {
   reservas: ReservaHotel[];
@@ -17,31 +19,39 @@ interface ReservasTableProps {
 }
 
 export default function ReservasTable({ reservas, onEdit, onCancel }: ReservasTableProps) {
+  // NUEVO ESTADO PARA EL MODAL
+  const [isClienteModalOpen, setIsClienteModalOpen] = useState(false);
+  const [clienteSeleccionado, setClienteSeleccionado] = useState<any>(null);
+
   // 🔹 Fecha actual
   const hoy = new Date();
 
-  // 🔹 Filtrado simple
-  const futuras = reservas.filter((r) => !r.fecha_ini || new Date(r.fecha_ini) > hoy);
-  const activas = reservas.filter(
-    (r) => r.fecha_ini && new Date(r.fecha_ini) <= hoy
+  // 🔹 Filtrado CORREGIDO - Las canceladas van a la segunda tabla
+  const futuras = reservas.filter((r) => 
+    r.estado !== "C" && // No canceladas
+    (!r.fecha_ini || new Date(r.fecha_ini) > hoy)
+  );
+  
+  const activas = reservas.filter((r) => 
+    r.estado === "C" || // Canceladas van aquí
+    (r.fecha_ini && new Date(r.fecha_ini) <= hoy)
   );
 
-  // ✅ Función segura para obtener información de habitación - AHORA MUESTRA EL NÚMERO
-  const getHabitacionInfo = (reserva: ReservaHotel) => {
-    if (typeof reserva.habitacion === 'object' && reserva.habitacion !== null) {
-      return reserva.habitacion.numero || '-'; // ← Cambiado de id_habitacion a numero
+  // NUEVA FUNCIÓN: Abrir modal del cliente
+  const handleVerCliente = (reserva: ReservaHotel) => {
+    if (typeof reserva.datos_cliente === 'object' && reserva.datos_cliente !== null) {
+      setClienteSeleccionado(reserva.datos_cliente);
+      setIsClienteModalOpen(true);
     }
-    return reserva.habitacion || '-';
   };
 
-  // ✅ Función segura para obtener información del cliente
-  const getClienteInfo = (reserva: ReservaHotel) => {
-    if (typeof reserva.datos_cliente === 'object' && reserva.datos_cliente !== null) {
-      const cliente = reserva.datos_cliente;
-      return `${cliente.nombre || ''} ${cliente.app_paterno || ''} ${cliente.app_materno || ''}`.trim() || 'Cliente no disponible';
+  // ✅ Función segura para obtener información de habitación
+  const getHabitacionInfo = (reserva: ReservaHotel) => {
+    if (typeof reserva.habitacion === 'object' && reserva.habitacion !== null) {
+      return reserva.habitacion.numero || '-';
     }
-    return 'Cliente no disponible';
-  };
+    return reserva.habitacion || '-';
+  };  
 
   // ✅ Etiquetas visuales de estado
   const getEstadoLabel = (reserva: ReservaHotel) => {
@@ -75,9 +85,6 @@ export default function ReservasTable({ reservas, onEdit, onCancel }: ReservasTa
               </TableCell>
               <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">
                 Habitación
-              </TableCell>
-              <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">
-                Cliente
               </TableCell>
               <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">
                 Fecha Inicio
@@ -116,7 +123,7 @@ export default function ReservasTable({ reservas, onEdit, onCancel }: ReservasTa
                 const estado = getEstadoLabel(reserva);
                 const codigoReserva = `RES${reserva.id_reserva_hotel}`;
                 const habitacionInfo = getHabitacionInfo(reserva);
-                const clienteInfo = getClienteInfo(reserva);
+                const tieneDatosCliente = typeof reserva.datos_cliente === 'object' && reserva.datos_cliente !== null;
 
                 return (
                   <TableRow
@@ -128,14 +135,9 @@ export default function ReservasTable({ reservas, onEdit, onCancel }: ReservasTa
                       {codigoReserva}
                     </TableCell>
 
-                    {/* Número de Habitación - AHORA MUESTRA EL NÚMERO LITERAL */}
+                    {/* Número de Habitación */}
                     <TableCell className="px-4 py-4 sm:px-6 text-start font-semibold text-gray-900 dark:text-white">
                       {habitacionInfo}
-                    </TableCell>
-
-                    {/* Cliente */}
-                    <TableCell className="px-4 py-4 sm:px-6 text-start text-gray-800 dark:text-gray-200">
-                      {clienteInfo}
                     </TableCell>
 
                     {/* Fecha Inicio */}
@@ -164,18 +166,24 @@ export default function ReservasTable({ reservas, onEdit, onCancel }: ReservasTa
                       </Badge>
                     </TableCell>
 
-                    {/* 👁️ Ver */}
+                    {/* 👁️ Ver - MODIFICADO */}
                     <TableCell className="px-4 py-4 sm:px-6 text-center">
                       <Button
                         variant="outline"
                         size="sm"
-                        className="text-[#26a5b9] flex items-center justify-center"
+                        className={`flex items-center justify-center ${
+                          tieneDatosCliente 
+                            ? "text-[#26a5b9] hover:bg-[#26a5b9] hover:text-white" 
+                            : "text-gray-400 cursor-not-allowed"
+                        }`}
+                        onClick={() => tieneDatosCliente && handleVerCliente(reserva)}
+                        disabled={!tieneDatosCliente}
                       >
                         <Eye className="w-4 h-4" />
                       </Button>
                     </TableCell>
 
-                    {/* ✏️ / ❌ Acciones solo en tabla 1 */}
+                    {/* ✏️ / ❌ Acciones solo en tabla 1 y solo para reservas NO canceladas */}
                     {withActions && (
                       <TableCell className="px-4 py-4 sm:px-6 text-center">
                         <div className="flex items-center justify-center gap-2">
@@ -184,6 +192,7 @@ export default function ReservasTable({ reservas, onEdit, onCancel }: ReservasTa
                             size="sm"
                             className="text-[#26a5b9]"
                             onClick={() => onEdit?.(reserva)}
+                            disabled={reserva.estado === "C"}
                           >
                             Editar
                           </Button>
@@ -192,8 +201,9 @@ export default function ReservasTable({ reservas, onEdit, onCancel }: ReservasTa
                             size="sm"
                             className="text-red-600"
                             onClick={() => onCancel?.(reserva)}
+                            disabled={reserva.estado === "C"}
                           >
-                            Cancelar
+                            {reserva.estado === "C" ? "Cancelada" : "Cancelar"}
                           </Button>
                         </div>
                       </TableCell>
@@ -210,10 +220,21 @@ export default function ReservasTable({ reservas, onEdit, onCancel }: ReservasTa
 
   return (
     <div className="space-y-10">
-      {/* 🟡 Con acciones */}
+      {/* Modal del Cliente */}
+      <VerClienteModal
+        isOpen={isClienteModalOpen}
+        onClose={() => {
+          setIsClienteModalOpen(false);
+          setClienteSeleccionado(null);
+        }}
+        cliente={clienteSeleccionado}
+      />
+
+      {/* 🟡 Con acciones - Solo reservas NO canceladas y futuras */}
       {renderTable(futuras, "Reservas Próximas o sin Check-In", true)}
-      {/* 🟢 Sin acciones */}
-      {renderTable(activas, "Reservas en Curso o Finalizadas")}
+      
+      {/* 🟢 Sin acciones - Reservas canceladas, en curso o finalizadas */}
+      {renderTable(activas, "Reservas en Curso, Finalizadas o Canceladas")}
     </div>
   );
 }

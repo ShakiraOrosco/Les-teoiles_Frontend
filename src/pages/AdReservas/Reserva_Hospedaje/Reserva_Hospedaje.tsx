@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
 import PageMeta from "../../../components/common/PageMeta";
 import ReservasTable from "../../../components/tables/AdReservas/Reserva_Hospedaje/ReservaHospedajeTable";
+import ReservaHospedajeFilter from "../../../components/filters/AdReservas/Reservas_Hospedaje/HospedajeFilter";
 import Button from "../../../components/ui/button/Button";
 import { FaPlus } from "react-icons/fa";
 import { Pagination } from "../../../components/tables/Pagination";
@@ -11,6 +12,7 @@ import autoTable from "jspdf-autotable";
 import { ReservaHotel } from "../../../types/AdReserva/Reserva_Hospedaje/hospedaje";
 import HospedajeModal from "../../../components/modals/AdReservas/Reserva_Hospedaje/CreateHospedajeModal";
 import EditHospedajeModal from "../../../components/modals/AdReservas/Reserva_Hospedaje/EditHospedajeModal";
+import EliminarReservaModal from "../../../components/modals/AdReservas/Reserva_Hospedaje/DeleteHospedajeModal";
 import { useReservasHotel } from "../../../hooks/AdReservas/Reserva_Hospedaje/useHospedaje";
 
 // Colores para Excel/PDF
@@ -30,6 +32,12 @@ export default function ReservasPage() {
   const [paginaActual, setPaginaActual] = useState(1);
   const elementosPorPagina = 6;
 
+  // NUEVOS ESTADOS PARA FILTROS
+  const [filtro, setFiltro] = useState("");
+  const [filtroEstado, setFiltroEstado] = useState<"" | "P" | "C" | "A" | "F">(""); // Agregar "F"
+  const [filtroHabitacion, setFiltroHabitacion] = useState("");
+  const [filtroFecha, setFiltroFecha] = useState<"" | "hoy" | "semana" | "mes" | "proximas">("");
+
   const [alert, setAlert] = useState<{
     variant: "success" | "info" | "warning" | "error";
     title: string;
@@ -39,9 +47,71 @@ export default function ReservasPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [reservaEdit, setReservaEdit] = useState<ReservaHotel | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [reservaDelete, setReservaDelete] = useState<ReservaHotel | null>(null);
 
-  // 📄 Paginación SEGURA - asegurar que reservas es array
-  const reservasArray = Array.isArray(reservas) ? reservas : [];
+  // 📊 FILTRADO DE RESERVAS - VERSIÓN CON "FINALIZADAS"
+  const reservasFiltradas = useMemo(() => {
+    let filtered = Array.isArray(reservas) ? reservas : [];
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+
+    // Filtro por texto (código, cliente, habitación)
+    if (filtro) {
+      const filtroLower = filtro.toLowerCase();
+      filtered = filtered.filter(reserva => {
+        const codigo = `RES${reserva.id_reserva_hotel}`.toLowerCase();
+
+        const habitacionInfo = (typeof reserva.habitacion === 'object' && reserva.habitacion !== null) ?
+          (reserva.habitacion.numero || String(reserva.habitacion)).toLowerCase() :
+          String(reserva.habitacion).toLowerCase();
+
+        const clienteInfo = typeof reserva.datos_cliente === 'object' ?
+          `${reserva.datos_cliente.nombre || ''} ${reserva.datos_cliente.app_paterno || ''}`.toLowerCase() :
+          '';
+
+        return codigo.includes(filtroLower) ||
+          habitacionInfo.includes(filtroLower) ||
+          clienteInfo.includes(filtroLower);
+      });
+    }
+
+    // Filtro por estado - ACTUALIZADO CON "FINALIZADAS"
+    if (filtroEstado) {
+      filtered = filtered.filter(reserva => {
+        // Si es cancelado, usar el estado directamente
+        if (filtroEstado === "C") {
+          return reserva.estado === "C";
+        }
+
+        // Para los demás estados, determinar según fechas
+        const fechaInicio = reserva.fecha_ini ? new Date(reserva.fecha_ini) : null;
+        const fechaFin = reserva.fecha_fin ? new Date(reserva.fecha_fin) : null;
+
+        if (filtroEstado === "P") {
+          // Pendiente: sin fecha de inicio o fecha futura
+          return !fechaInicio || fechaInicio > hoy;
+        }
+
+        if (filtroEstado === "A") {
+          // Activa: con fecha de inicio hoy o en el pasado, y fecha fin hoy o en el futuro
+          return fechaInicio && fechaInicio <= hoy && (!fechaFin || fechaFin >= hoy);
+        }
+
+        if (filtroEstado === "F") {
+          // Finalizada: fecha de fin es anterior a hoy
+          return fechaFin && fechaFin < hoy;
+        }
+
+        return true;
+      });
+    }
+
+    return filtered;
+  }, [reservas, filtro, filtroEstado, filtroHabitacion, filtroFecha]);
+
+  // 📄 Paginación SEGURA - usar reservas filtradas
+  const reservasArray = reservasFiltradas;
   const indiceInicio = (paginaActual - 1) * elementosPorPagina;
   const indiceFin = indiceInicio + elementosPorPagina;
   const reservasPaginadas = reservasArray.slice(indiceInicio, indiceFin);
@@ -50,18 +120,42 @@ export default function ReservasPage() {
   const onPrev = () => setPaginaActual((p) => Math.max(p - 1, 1));
   const onNext = () => setPaginaActual((p) => Math.min(p + 1, totalPaginas));
 
+  // Obtener habitaciones únicas para el filtro
+  const habitacionesDisponibles = useMemo(() => {
+    const habitacionesMap = new Map();
+
+    reservas.forEach(reserva => {
+      if (typeof reserva.habitacion === 'object' && reserva.habitacion !== null) {
+        const hab = reserva.habitacion;
+        if (hab.id_habitacion && hab.numero) {
+          habitacionesMap.set(hab.id_habitacion, {
+            id: hab.id_habitacion,
+            numero: hab.numero
+          });
+        }
+      }
+    });
+
+    return Array.from(habitacionesMap.values());
+  }, [reservas]);
+
   // 📝 Acciones
   const handleEdit = (reserva: ReservaHotel) => {
     setReservaEdit(reserva);
     setIsEditModalOpen(true);
   };
 
-  const handleCancel = (reserva: ReservaHotel) => {
-    console.log("Cancelar reserva:", reserva);
+  const handleDelete = (reserva: ReservaHotel) => {
+    setReservaDelete(reserva);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    refetch();
     setAlert({
-      variant: "info",
+      variant: "success",
       title: "Reserva cancelada",
-      message: `Reserva #${reserva.id_reserva_hotel} marcada como cancelada.`,
+      message: `La reserva ha sido cancelada exitosamente.`,
     });
     setTimeout(() => setAlert(null), 3000);
   };
@@ -80,8 +174,8 @@ export default function ReservasPage() {
 
   // 📊 Exportar a Excel
   const handleExportExcel = () => {
-    const reservasParaExportar = Array.isArray(reservas) ? reservas : [];
-    
+    const reservasParaExportar = reservasFiltradas;
+
     const htmlTable = `
       <table border="1">
         <thead>
@@ -91,14 +185,14 @@ export default function ReservasPage() {
         </thead>
         <tbody>
           ${reservasParaExportar
-            .map(
-              (r) => {
-                const habitacionId = typeof r.habitacion === 'object' ? r.habitacion.id_habitacion : r.habitacion;
-                const clienteNombre = typeof r.datos_cliente === 'object' ? 
-                  `${r.datos_cliente.nombre || ''} ${r.datos_cliente.app_paterno || ''}` : 
-                  'Cliente no disponible';
+        .map(
+          (r) => {
+            const habitacionId = typeof r.habitacion === 'object' ? r.habitacion.id_habitacion : r.habitacion;
+            const clienteNombre = typeof r.datos_cliente === 'object' ?
+              `${r.datos_cliente.nombre || ''} ${r.datos_cliente.app_paterno || ''}` :
+              'Cliente no disponible';
 
-                return `
+            return `
                   <tr>
                     <td>${r.id_reserva_hotel}</td>
                     <td>RES${r.id_reserva_hotel}</td>
@@ -109,9 +203,9 @@ export default function ReservasPage() {
                     <td>${r.cant_personas}</td>
                     <td>${r.estado}</td>
                   </tr>`;
-              }
-            )
-            .join("")}
+          }
+        )
+        .join("")}
         </tbody>
       </table>
     `;
@@ -131,16 +225,16 @@ export default function ReservasPage() {
 
   // 📄 Exportar PDF
   const handleExportPDF = () => {
-    const reservasParaExportar = Array.isArray(reservas) ? reservas : [];
-    
+    const reservasParaExportar = reservasFiltradas;
+
     const doc = new jsPDF({ orientation: "landscape" });
     doc.setFontSize(16);
     doc.text("REPORTE DE RESERVAS", 150, 15, { align: "center" });
 
     const tableData: (string | number)[][] = reservasParaExportar.map((r) => {
       const habitacionId = typeof r.habitacion === 'object' ? r.habitacion.id_habitacion : r.habitacion;
-      const clienteNombre = typeof r.datos_cliente === 'object' ? 
-        `${r.datos_cliente.nombre || ''} ${r.datos_cliente.app_paterno || ''}` : 
+      const clienteNombre = typeof r.datos_cliente === 'object' ?
+        `${r.datos_cliente.nombre || ''} ${r.datos_cliente.app_paterno || ''}` :
         'Cliente no disponible';
 
       return [
@@ -178,14 +272,25 @@ export default function ReservasPage() {
       <PageBreadcrumb pageTitle="Reservas de Hospedaje" />
 
       <div className="rounded-2xl border border-gray-200 bg-white dark:bg-gray-900 dark:border-gray-800 px-5 py-7 xl:px-10 xl:py-12 space-y-6">
-        {/* Botones sin filtro */}
-        <div className="flex flex-wrap justify-between items-center gap-3">
-          <div className="text-lg font-semibold dark:text-white">
-            {loading ? "Cargando reservas..." : `Total de reservas: ${reservasArray.length}`}
-          </div>
-
-          <div className="flex flex-wrap gap-2 ">
-            <Button size="md" variant="primary" onClick={() => setIsModalOpen(true)}>
+        {/* FILTROS - REEMPLAZA LA SECCIÓN DE BOTONES ACTUAL */}
+        <ReservaHospedajeFilter
+          filtro={filtro}
+          setFiltro={setFiltro}
+          estado={filtroEstado}
+          setEstado={setFiltroEstado}
+          habitacion={filtroHabitacion}
+          setHabitacion={setFiltroHabitacion}
+          fechaFiltro={filtroFecha}
+          setFechaFiltro={setFiltroFecha}
+          habitacionesDisponibles={habitacionesDisponibles}
+        >
+          {/* Botones de acción */}
+          <div className="flex flex-wrap gap-2">
+            <Button
+              size="md"
+              variant="primary"
+              onClick={() => setIsModalOpen(true)}
+            >
               <FaPlus className="mr-2" /> Nueva Reserva
             </Button>
 
@@ -196,6 +301,19 @@ export default function ReservasPage() {
               📄 PDF
             </Button>
           </div>
+        </ReservaHospedajeFilter>
+
+        {/* Información de resultados */}
+        <div className="flex justify-between items-center">
+          <div className="text-lg font-semibold dark:text-white">
+            {loading ? "Cargando reservas..." : `Mostrando ${reservasPaginadas.length} de ${reservasArray.length} reservas`}
+          </div>
+
+          {reservasArray.length > 0 && (
+            <div className="text-sm text-gray-500 dark:text-gray-400">
+              Página {paginaActual} de {totalPaginas}
+            </div>
+          )}
         </div>
 
         {/* Modal de CREAR */}
@@ -224,6 +342,19 @@ export default function ReservasPage() {
           onSave={handleSaveEdit}
         />
 
+        {/* Modal de ELIMINAR */}
+        <EliminarReservaModal
+          isOpen={isDeleteModalOpen}
+          onClose={() => {
+            setIsDeleteModalOpen(false);
+            setReservaDelete(null);
+          }}
+          onConfirm={handleConfirmDelete}
+          reservaId={reservaDelete?.id_reserva_hotel || 0}
+          codigoReserva={reservaDelete ? `RES${reservaDelete.id_reserva_hotel}` : undefined}
+          tipo="hospedaje"
+        />
+
         {alert && (
           <Alert variant={alert.variant} title={alert.title} message={alert.message} />
         )}
@@ -243,9 +374,9 @@ export default function ReservasPage() {
           ) : error ? (
             <div className="text-center py-8">
               <Alert variant="error" title="Error" message={error} />
-              <Button 
-                variant="outline" 
-                onClick={refetch} 
+              <Button
+                variant="outline"
+                onClick={refetch}
                 className="mt-4"
               >
                 Reintentar
@@ -268,8 +399,8 @@ export default function ReservasPage() {
               <p className="text-gray-500 dark:text-gray-400 text-lg font-medium mb-4">
                 No hay reservas registradas
               </p>
-              <Button 
-                variant="primary" 
+              <Button
+                variant="primary"
                 onClick={() => setIsModalOpen(true)}
               >
                 <FaPlus className="mr-2" /> Crear Primera Reserva
@@ -280,9 +411,9 @@ export default function ReservasPage() {
               <ReservasTable
                 reservas={reservasPaginadas}
                 onEdit={handleEdit}
-                onCancel={handleCancel}
+                onCancel={handleDelete}
               />
-              
+
               {reservasArray.length > 0 && (
                 <Pagination
                   paginaActual={paginaActual}

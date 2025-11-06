@@ -3,20 +3,13 @@ import { Link, useLocation } from "react-router";
 
 // Assume these icons are imported from an icon library
 import {
-  BoxCubeIcon,
-  CalenderIcon,
   ChevronDownIcon,
-  GridIcon,
   HorizontaLDots,
   ListIcon,
-  PageIcon,
-  PieChartIcon,
-  PlugInIcon,
   TableIcon,
   UserCircleIcon,
 } from "../icons";
 import { useSidebar } from "../context/SidebarContext";
-import SidebarWidget from "./SidebarWidget";
 
 type NavItem = {
   name: string;
@@ -47,7 +40,7 @@ const navItems: NavItem[] = [
     subItems: [
       //{ name: "Form Elements", path: "/form-elements", pro: false }
       { name: "Reserva Hospedaje", path: "/AdReservas/Reserva_Hospedaje" },
-      { name: "Reservas Evento", path: "/AdReservas/Reserva_Eventos" },
+      { name: "Reservas Evento", path: "/AdReservas/Reserva_Evento" },
     ]
   },
   {

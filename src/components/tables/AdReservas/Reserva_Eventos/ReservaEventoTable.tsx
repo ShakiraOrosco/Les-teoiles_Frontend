@@ -37,15 +37,6 @@ export default function ReservasEventoTable({
     return fechaEvento <= hoy || r.estado === 'F' || r.estado === 'C';
   });
 
-  // ✅ Función segura para obtener información del cliente
-  const getClienteInfo = (reserva: ReservaEvento) => {
-    if (reserva.datos_cliente) {
-      const cliente = reserva.datos_cliente;
-      return `${cliente.nombre || ''} ${cliente.app_paterno || ''} ${cliente.app_materno || ''}`.trim() || 'Cliente no disponible';
-    }
-    return 'Cliente no disponible';
-  };
-
   // ✅ Función para obtener servicios como string
   const getServiciosInfo = (reserva: ReservaEvento) => {
     if (reserva.servicios_adicionales && reserva.servicios_adicionales.length > 0) {
@@ -123,9 +114,6 @@ export default function ReservasEventoTable({
                 Código
               </TableCell>
               <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">
-                Cliente
-              </TableCell>
-              <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">
                 Fecha Evento
               </TableCell>
               <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">
@@ -167,7 +155,6 @@ export default function ReservasEventoTable({
               data.map((reserva) => {
                 const estado = getEstadoLabel(reserva);
                 const codigoReserva = `EVT${reserva.id_reservas_evento.toString().padStart(4, '0')}`;
-                const clienteInfo = getClienteInfo(reserva);
                 const serviciosInfo = getServiciosInfo(reserva);
 
                 return (
@@ -178,13 +165,6 @@ export default function ReservasEventoTable({
                     {/* Código de Reserva */}
                     <TableCell className="px-4 py-4 sm:px-6 text-start font-semibold text-gray-900 dark:text-white">
                       {codigoReserva}
-                    </TableCell>
-
-                    {/* Cliente */}
-                    <TableCell className="px-4 py-4 sm:px-6 text-start text-gray-800 dark:text-gray-200">
-                      <div className="max-w-[200px] truncate" title={clienteInfo}>
-                        {clienteInfo}
-                      </div>
                     </TableCell>
 
                     {/* Fecha del Evento */}
@@ -204,7 +184,6 @@ export default function ReservasEventoTable({
                     <TableCell className="px-4 py-4 sm:px-6 text-start text-gray-800 dark:text-gray-200">
                       <div className="flex items-center gap-1">
                         <span>{reserva.cant_personas}</span>
-                        <span className="text-xs text-gray-500">personas</span>
                       </div>
                     </TableCell>
 
@@ -213,11 +192,7 @@ export default function ReservasEventoTable({
                       <div className="max-w-[150px] truncate" title={serviciosInfo}>
                         {serviciosInfo}
                       </div>
-                      {reserva.total_servicios > 0 && (
-                        <div className="text-xs text-gray-500 mt-1">
-                          {reserva.total_servicios} servicio(s)
-                        </div>
-                      )}
+                      {reserva.total_servicios}
                     </TableCell>
 
                     {/* Duración */}
