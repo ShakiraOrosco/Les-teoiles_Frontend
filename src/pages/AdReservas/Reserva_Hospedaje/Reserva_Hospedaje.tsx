@@ -25,29 +25,6 @@ const colors = {
   grisMedio: '#E9ECEF'
 };
 
-// 📝 Función para convertir ReservaHotel a formato del modal
-const convertirReservaParaModal = (reserva: ReservaHotel) => {
-  const datosCliente = typeof reserva.datos_cliente === 'object' ? reserva.datos_cliente : null;
-  
-  return {
-    id: reserva.id_reserva_hotel!,
-    nombre: datosCliente?.nombre || '',
-    apellidoPaterno: datosCliente?.app_paterno || '',
-    apellidoMaterno: datosCliente?.app_materno || '',
-    telefono: datosCliente?.telefono?.toString() || '',
-    email: datosCliente?.email || '',
-    carnet: datosCliente?.ci?.toString() || '',
-    fechaInicio: reserva.fecha_ini || '',
-    fechaFin: reserva.fecha_fin || '',
-    cantidadPersonas: reserva.cant_personas?.toString() || '1',
-    amoblado: reserva.amoblado === 'S' ? 'si' : 'no',
-    banoPrivado: reserva.baño_priv === 'S' ? 'si' : 'no',
-    montoTotal: 0,
-    codigoReserva: `RES${reserva.id_reserva_hotel!}`,
-    estado: reserva.estado || 'A'
-  };
-};
-
 export default function ReservasPage() {
   const { reservas, loading, error, refetch } = useReservasHotel();
   const [paginaActual, setPaginaActual] = useState(1);
@@ -86,6 +63,18 @@ export default function ReservasPage() {
       title: "Reserva cancelada",
       message: `Reserva #${reserva.id_reserva_hotel} marcada como cancelada.`,
     });
+    setTimeout(() => setAlert(null), 3000);
+  };
+
+  const handleSaveEdit = (reservaActualizada: ReservaHotel) => {
+    refetch();
+    setAlert({
+      variant: "success",
+      title: "Reserva actualizada",
+      message: "Reserva actualizada correctamente.",
+    });
+    setIsEditModalOpen(false);
+    setReservaEdit(null);
     setTimeout(() => setAlert(null), 3000);
   };
 
@@ -213,6 +202,15 @@ export default function ReservasPage() {
         <HospedajeModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
+          onSuccess={() => {
+            refetch();
+            setAlert({
+              variant: "success",
+              title: "Reserva creada",
+              message: "Reserva creada correctamente.",
+            });
+            setTimeout(() => setAlert(null), 3000);
+          }}
         />
 
         {/* Modal de EDITAR */}
@@ -222,18 +220,8 @@ export default function ReservasPage() {
             setIsEditModalOpen(false);
             setReservaEdit(null);
           }}
-          reserva={reservaEdit ? convertirReservaParaModal(reservaEdit) : null}
-          onSave={() => {
-            refetch();
-            setAlert({
-              variant: "success",
-              title: "Reserva actualizada",
-              message: "Reserva actualizada correctamente.",
-            });
-            setIsEditModalOpen(false);
-            setReservaEdit(null);
-            setTimeout(() => setAlert(null), 3000);
-          }}
+          reserva={reservaEdit}
+          onSave={handleSaveEdit}
         />
 
         {alert && (

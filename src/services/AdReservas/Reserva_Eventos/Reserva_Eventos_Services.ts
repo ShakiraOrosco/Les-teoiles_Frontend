@@ -155,6 +155,10 @@ export const formatReservaData = (data: CrearReservaEventoDTO): CrearReservaEven
     fecha: data.fecha, // YYYY-MM-DD
     hora_ini: data.hora_ini, // ISO string
     hora_fin: data.hora_fin, // ISO string
+    // Asegurar tipos numéricos
+    cant_personas: Number(data.cant_personas),
+    telefono: Number(data.telefono),
+    ci: Number(data.ci)
   };
 };
 
@@ -181,7 +185,43 @@ export const validateReservaData = (data: CrearReservaEventoDTO): string[] => {
     }
   }
   
+  // Validar tipos numéricos
+  if (data.telefono && isNaN(Number(data.telefono))) {
+    errors.push("El teléfono debe ser un número válido");
+  }
+  
+  if (data.ci && isNaN(Number(data.ci))) {
+    errors.push("El CI debe ser un número válido");
+  }
+  
+  if (data.cant_personas && isNaN(Number(data.cant_personas))) {
+    errors.push("La cantidad de personas debe ser un número válido");
+  }
+  
   return errors;
+};
+
+// Función para manejar la respuesta de creación de reserva
+export const procesarRespuestaReserva = (response: CrearReservaEventoResponse) => {
+  // Tu backend retorna una estructura específica, esta función ayuda a procesarla
+  if (response.mensaje && response.reserva) {
+    return {
+      success: true,
+      data: response
+    };
+  }
+  
+  if (response.error) {
+    return {
+      success: false,
+      error: response.error
+    };
+  }
+  
+  return {
+    success: false,
+    error: 'Respuesta inesperada del servidor'
+  };
 };
 
 // Exportar todos los servicios como un objeto
@@ -213,6 +253,7 @@ const eventoService = {
   // Utilidades
   formatReservaData,
   validateReservaData,
+  procesarRespuestaReserva,
 };
 
 export default eventoService;

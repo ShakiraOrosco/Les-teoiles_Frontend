@@ -10,7 +10,7 @@ export const getReservasHotel = async (): Promise<ReservaHotel[]> => {
 
 // Obtener una reserva por ID
 export const getReservaHotelById = async (id: number): Promise<ReservaHotel> => {
-  const response = await api.get<ReservaHotel>(`/reservaHotel/reservas/${id}/`);
+  const response = await api.get(`/reservaHotel/reservas/${id}/`);
   return response.data;
 };
 
@@ -21,8 +21,8 @@ export const createReservaHotel = async (nuevaReserva: Partial<ReservaHotel>) =>
 };
 
 // Actualizar reserva
-export const updateReservaHotel = async (id: number, data: Partial<ReservaHotel>): Promise<ReservaHotel> => {
-  const response = await api.put<ReservaHotel>(`/reservaHotel/reservas/${id}/actualizar/`, data);
+export const updateReservaHotel = async (id: number, data: any): Promise<ReservaHotel> => {
+  const response = await api.put(`/reservaHotel/reservas/${id}/actualizar/`, data);
   return response.data;
 };
 
@@ -60,7 +60,7 @@ export const getTarifasHotel = async (): Promise<any[]> => {
 export const uploadComprobante = async (idReservaGen: number, archivo: File): Promise<any> => {
   const formData = new FormData();
   formData.append('pago', archivo);
-  
+
   const response = await api.post(`/reservaHotel/reservas/${idReservaGen}/subir-comprobante/`, formData, {
     headers: {
       'Content-Type': 'multipart/form-data',

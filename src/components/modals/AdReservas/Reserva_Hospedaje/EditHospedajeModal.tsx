@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { FaTimes, FaEdit, FaChevronLeft, FaChevronRight, FaCalendarAlt } from 'react-icons/fa';
 import { Modal } from '../../../ui/modal';
 import Button from '../../../ui/button/Button';
+import { useUpdateHospedaje } from '../../../../hooks/AdReservas/Reserva_Hospedaje/useUpdateHospedaje';
+import { ReservaHotel, DatosCliente } from '../../../../types/AdReserva/Reserva_Hospedaje/hospedaje';
 import {
   validarNombreHospedaje,
   validarApellidos,
@@ -17,32 +19,32 @@ import {
   bloquearEscrituraDirecta
 } from '../../../../components/utils/validaciones';
 
-interface ReservaHospedaje {
-  id: number;
-  nombre: string;
-  apellidoPaterno: string;
-  apellidoMaterno: string;
-  telefono: string;
-  email: string;
-  carnet: string;
-  fechaInicio: string;
-  fechaFin: string;
-  cantidadPersonas: string;
-  amoblado: string;
-  banoPrivado: string;
-  montoTotal?: number;
-  codigoReserva?: string;
-  estado?: string;
-}
-
 interface EditHospedajeModalProps {
   isOpen: boolean;
   onClose: () => void;
-  reserva: ReservaHospedaje | null;
-  onSave: (reserva: ReservaHospedaje) => void;
+  reserva: ReservaHotel | null;
+  onSave: (reserva: ReservaHotel) => void;
 }
 
+// Función helper para obtener datos del cliente de forma segura
+const getDatosCliente = (datosCliente: DatosCliente | number): DatosCliente => {
+  if (typeof datosCliente === 'object' && datosCliente !== null) {
+    return datosCliente;
+  }
+  return {
+    id_datos_cliente: 0,
+    nombre: '',
+    app_paterno: '',
+    app_materno: '',
+    telefono: '',
+    ci: '',
+    email: ''
+  };
+};
+
 export default function EditHospedajeModal({ isOpen, onClose, reserva, onSave }: EditHospedajeModalProps) {
+  const { updateReservaHotel, isUpdating, error } = useUpdateHospedaje();
+
   const [formData, setFormData] = useState({
     nombre: '',
     apellidoPaterno: '',
@@ -53,8 +55,22 @@ export default function EditHospedajeModal({ isOpen, onClose, reserva, onSave }:
     fechaInicio: '',
     fechaFin: '',
     cantidadPersonas: '',
-    amoblado: 'si',
-    banoPrivado: 'no',
+    amoblado: 'S',
+    banoPrivado: 'N',
+  });
+
+  const [datosOriginales, setDatosOriginales] = useState({
+    nombre: '',
+    apellidoPaterno: '',
+    apellidoMaterno: '',
+    telefono: '',
+    email: '',
+    carnet: '',
+    fechaInicio: '',
+    fechaFin: '',
+    cantidadPersonas: '',
+    amoblado: 'S',
+    banoPrivado: 'N',
   });
 
   const [errores, setErrores] = useState<Record<string, string | null>>({});
@@ -72,25 +88,36 @@ export default function EditHospedajeModal({ isOpen, onClose, reserva, onSave }:
   // Cargar datos de la reserva cuando el modal se abre
   useEffect(() => {
     if (reserva) {
-      setFormData({
-        nombre: reserva.nombre || '',
-        apellidoPaterno: reserva.apellidoPaterno || '',
-        apellidoMaterno: reserva.apellidoMaterno || '',
-        telefono: reserva.telefono || '',
-        email: reserva.email || '',
-        carnet: reserva.carnet || '',
-        fechaInicio: reserva.fechaInicio || '',
-        fechaFin: reserva.fechaFin || '',
-        cantidadPersonas: reserva.cantidadPersonas || '',
-        amoblado: reserva.amoblado || 'si',
-        banoPrivado: reserva.banoPrivado || 'no',
-      });
-      
-      if (reserva.montoTotal) {
-        setMontoTotal(reserva.montoTotal);
+      const datosCliente = getDatosCliente(reserva.datos_cliente);
+
+      const nuevosDatos = {
+        nombre: datosCliente.nombre || '',
+        apellidoPaterno: datosCliente.app_paterno || '',
+        apellidoMaterno: datosCliente.app_materno || '',
+        telefono: datosCliente.telefono?.toString() || '',
+        email: datosCliente.email || '',
+        carnet: datosCliente.ci?.toString() || '',
+        fechaInicio: reserva.fecha_ini || '',
+        fechaFin: reserva.fecha_fin || '',
+        cantidadPersonas: reserva.cant_personas?.toString() || '',
+        amoblado: reserva.amoblado || 'S',
+        banoPrivado: reserva.baño_priv || 'N',
+      };
+
+      setFormData(nuevosDatos);
+      setDatosOriginales(nuevosDatos);
+
+      // Calcular monto inicial
+      if (reserva.fecha_ini && reserva.fecha_fin && reserva.cant_personas) {
+        const inicio = new Date(reserva.fecha_ini);
+        const fin = new Date(reserva.fecha_fin);
+        const diff = fin.getTime() - inicio.getTime();
+        const dias = Math.ceil(diff / (1000 * 60 * 60 * 24)) + 1;
+        setCantidadDias(dias > 0 ? dias : 0);
+        setMontoTotal(precioPorPersona * reserva.cant_personas * dias);
       }
     }
-  }, [reserva]);
+  }, [reserva, precioPorPersona]);
 
   // --- CALCULO DIAS ---
   useEffect(() => {
@@ -108,12 +135,10 @@ export default function EditHospedajeModal({ isOpen, onClose, reserva, onSave }:
     if (formData.cantidadPersonas && cantidadDias > 0) {
       const cantidad = parseInt(formData.cantidadPersonas);
       setMontoTotal(!isNaN(cantidad) && cantidad > 0 ? precioPorPersona * cantidad * cantidadDias : 0);
-    } else if (reserva?.montoTotal) {
-      setMontoTotal(reserva.montoTotal);
     } else {
       setMontoTotal(0);
     }
-  }, [formData.cantidadPersonas, cantidadDias, precioPorPersona, reserva]);
+  }, [formData.cantidadPersonas, cantidadDias, precioPorPersona]);
 
   // --- VALIDACIONES ---
   const validarCampo = (nombre: string, valor: string) => {
@@ -128,7 +153,9 @@ export default function EditHospedajeModal({ isOpen, onClose, reserva, onSave }:
         const errs = validarApellidos(formData.apellidoPaterno, formData.apellidoMaterno);
         error = nombre === 'apellidoPaterno' ? errs.paterno : errs.materno;
         break;
-      case 'telefono': error = validarTelefonoHospedaje(valor); break;
+      case 'telefono':
+        error = validarTelefonoHospedaje(valor);
+        break;
       case 'email': error = validarEmailHospedaje(valor); break;
       case 'carnet': error = validarCarnetHospedaje(valor); break;
       case 'cantidadPersonas': error = validarCantidadPersonas(valor); break;
@@ -156,7 +183,9 @@ export default function EditHospedajeModal({ isOpen, onClose, reserva, onSave }:
     if (name === 'cantidadPersonas') val = val.replace(/\D/g, '').slice(0, 1);
 
     setFormData(prev => ({ ...prev, [name]: val }));
-    if (touched[name]) setErrores(prev => ({ ...prev, [name]: validarCampo(name, val) }));
+    if (touched[name]) {
+      setErrores(prev => ({ ...prev, [name]: validarCampo(name, val) }));
+    }
   };
 
   const handleBlur = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -171,7 +200,7 @@ export default function EditHospedajeModal({ isOpen, onClose, reserva, onSave }:
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  // Funciones para el calendario
+  // Funciones para el calendario (mantener igual)
   const getDaysInMonth = (date: Date) => {
     return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
   };
@@ -181,25 +210,23 @@ export default function EditHospedajeModal({ isOpen, onClose, reserva, onSave }:
   };
 
   const handleDateSelect = (date: string, type: 'inicio' | 'fin') => {
-    const nuevaFechaInicio = type === 'inicio' ? date : formData.fechaInicio;
-    const nuevaFechaFin = type === 'fin' ? date : formData.fechaFin;
-    
-    setFormData(prev => ({ 
-      ...prev, 
-      [type === 'inicio' ? 'fechaInicio' : 'fechaFin']: date 
+    setFormData(prev => ({
+      ...prev,
+      [type === 'inicio' ? 'fechaInicio' : 'fechaFin']: date
     }));
-    
-    // Cerrar calendario
+
     if (type === 'inicio') {
       setShowCalendarInicio(false);
     } else {
       setShowCalendarFin(false);
     }
-    
-    // Validar fechas
-    const erroresFechas = validarFechas(nuevaFechaInicio, nuevaFechaFin);
-    setErrores(prev => ({ 
-      ...prev, 
+
+    const erroresFechas = validarFechas(
+      type === 'inicio' ? date : formData.fechaInicio,
+      type === 'fin' ? date : formData.fechaFin
+    );
+    setErrores(prev => ({
+      ...prev,
       fechaInicio: erroresFechas.inicio,
       fechaFin: erroresFechas.fin
     }));
@@ -208,7 +235,7 @@ export default function EditHospedajeModal({ isOpen, onClose, reserva, onSave }:
   const renderCalendar = (type: 'inicio' | 'fin') => {
     const currentMonth = type === 'inicio' ? currentMonthInicio : currentMonthFin;
     const setCurrentMonth = type === 'inicio' ? setCurrentMonthInicio : setCurrentMonthFin;
-    
+
     const daysInMonth = getDaysInMonth(currentMonth);
     const firstDay = getFirstDayOfMonth(currentMonth);
     const days = [];
@@ -223,8 +250,7 @@ export default function EditHospedajeModal({ isOpen, onClose, reserva, onSave }:
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
-    // Fecha máxima: 3 años desde hoy
+
     const maxInicio = new Date(today);
     maxInicio.setFullYear(maxInicio.getFullYear() + 3);
 
@@ -235,9 +261,9 @@ export default function EditHospedajeModal({ isOpen, onClose, reserva, onSave }:
     return (
       <div className="absolute top-full left-0 mt-1 z-50 bg-white dark:bg-gray-800 border border-teal-300 dark:border-teal-600 rounded-lg shadow-lg p-4 w-80">
         <div className="flex justify-between items-center mb-4">
-          <button 
-            type="button" 
-            onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))} 
+          <button
+            type="button"
+            onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))}
             className="p-2 hover:bg-teal-50 dark:hover:bg-teal-900/20 rounded text-teal-600 dark:text-teal-400"
           >
             <FaChevronLeft className="w-4 h-4" />
@@ -245,9 +271,9 @@ export default function EditHospedajeModal({ isOpen, onClose, reserva, onSave }:
           <span className="font-semibold text-teal-700 dark:text-teal-400">
             {currentMonth.toLocaleString('es-ES', { month: 'long', year: 'numeric' })}
           </span>
-          <button 
-            type="button" 
-            onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))} 
+          <button
+            type="button"
+            onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))}
             className="p-2 hover:bg-teal-50 dark:hover:bg-teal-900/20 rounded text-teal-600 dark:text-teal-400"
           >
             <FaChevronRight className="w-4 h-4" />
@@ -269,44 +295,41 @@ export default function EditHospedajeModal({ isOpen, onClose, reserva, onSave }:
             const dateStr = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
             const dateObj = new Date(dateStr);
             dateObj.setHours(0, 0, 0, 0);
-            
+
             const isToday = isCurrentMonth && day === today.getDate();
-            const isSelected = (type === 'inicio' && formData.fechaInicio === dateStr) || 
-                              (type === 'fin' && formData.fechaFin === dateStr);
-            
+            const isSelected = (type === 'inicio' && formData.fechaInicio === dateStr) ||
+              (type === 'fin' && formData.fechaFin === dateStr);
+
             let isDisabled = false;
             if (type === 'inicio') {
-              // Para inicio: deshabilitar fechas anteriores a hoy
               isDisabled = dateObj < today || dateObj > maxInicio;
             } else {
-              // Para fin: validar según fecha de inicio si existe
               if (formData.fechaInicio) {
                 const inicioDate = new Date(formData.fechaInicio);
                 inicioDate.setHours(0, 0, 0, 0);
                 const maxFin = new Date(inicioDate);
                 maxFin.setFullYear(maxFin.getFullYear() + 3);
-                
+
                 isDisabled = dateObj <= inicioDate || dateObj > maxFin;
               } else {
-                // Si no hay fecha de inicio, deshabilitar hoy y fechas pasadas
                 isDisabled = dateObj <= today;
               }
             }
 
             return (
-              <button 
-                key={day} 
-                type="button" 
-                onClick={() => !isDisabled && handleDateSelect(dateStr, type)} 
-                disabled={isDisabled} 
+              <button
+                key={day}
+                type="button"
+                onClick={() => !isDisabled && handleDateSelect(dateStr, type)}
+                disabled={isDisabled}
                 className={`
                   w-8 h-8 rounded text-sm font-medium transition
-                  ${isSelected 
-                    ? 'bg-teal-600 text-white' 
-                    : isToday 
-                      ? 'bg-teal-100 text-teal-700 border border-teal-600 dark:bg-teal-900 dark:text-teal-300' 
-                      : isDisabled 
-                        ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed' 
+                  ${isSelected
+                    ? 'bg-teal-600 text-white'
+                    : isToday
+                      ? 'bg-teal-100 text-teal-700 border border-teal-600 dark:bg-teal-900 dark:text-teal-300'
+                      : isDisabled
+                        ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
                         : 'hover:bg-teal-50 dark:hover:bg-teal-900/20 text-gray-700 dark:text-gray-300'
                   }
                 `}
@@ -320,43 +343,141 @@ export default function EditHospedajeModal({ isOpen, onClose, reserva, onSave }:
     );
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Función para detectar qué campos cambiaron - CORREGIDA
+  const detectarCambios = () => {
+    const cambios: any = {};
+
+    // Comparar cada campo y solo agregar si cambió
+    if (formData.nombre !== datosOriginales.nombre && formData.nombre !== '') {
+      cambios.nombre = formData.nombre;
+    }
+    if (formData.apellidoPaterno !== datosOriginales.apellidoPaterno && formData.apellidoPaterno !== '') {
+      cambios.app_paterno = formData.apellidoPaterno;
+    }
+    if (formData.apellidoMaterno !== datosOriginales.apellidoMaterno && formData.apellidoMaterno !== '') {
+      cambios.app_materno = formData.apellidoMaterno;
+    }
+    if (formData.telefono !== datosOriginales.telefono && formData.telefono !== '') {
+      cambios.telefono = parseInt(formData.telefono) || 0;
+    }
+    if (formData.carnet !== datosOriginales.carnet && formData.carnet !== '') {
+      cambios.ci = parseInt(formData.carnet) || 0;
+    }
+    if (formData.email !== datosOriginales.email && formData.email !== '') {
+      cambios.email = formData.email;
+    }
+    if (formData.cantidadPersonas !== datosOriginales.cantidadPersonas && formData.cantidadPersonas !== '') {
+      cambios.cant_personas = parseInt(formData.cantidadPersonas) || 1;
+    }
+    if (formData.fechaInicio !== datosOriginales.fechaInicio && formData.fechaInicio !== '') {
+      cambios.fecha_ini = formData.fechaInicio;
+    }
+    if (formData.fechaFin !== datosOriginales.fechaFin && formData.fechaFin !== '') {
+      cambios.fecha_fin = formData.fechaFin;
+    }
+    if (formData.amoblado !== datosOriginales.amoblado) {
+      cambios.amoblado = formData.amoblado;
+    }
+    if (formData.banoPrivado !== datosOriginales.banoPrivado) {
+      cambios.baño_priv = formData.banoPrivado;
+    }
+
+    return cambios;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!reserva || !reserva.id_reserva_hotel) {
+      console.error('No hay reserva válida para editar');
+      return;
+    }
+
     const allTouched = Object.keys(formData).reduce((acc, key) => ({ ...acc, [key]: true }), {});
     setTouched(allTouched);
 
-    const erroresValidacion = validarFormularioHospedaje(formData);
+    // Validar el formulario
+    const formDataParaValidar = {
+      ...formData,
+      telefono: formData.telefono.toString(),
+      carnet: formData.carnet.toString()
+    };
+
+    const erroresValidacion = validarFormularioHospedaje(formDataParaValidar);
     setErrores(erroresValidacion);
+
     if (Object.values(erroresValidacion).some(err => err)) return;
 
-    // Guardar cambios
-    if (reserva) {
-      const reservaActualizada: ReservaHospedaje = {
+    try {
+      // Detectar qué campos realmente cambiaron
+      const cambios = detectarCambios();
+
+      console.log('📊 Campos que cambiaron:', cambios);
+
+      // Si no hay cambios, mostrar mensaje
+      if (Object.keys(cambios).length === 0) {
+        setErrores({ general: 'No se realizaron cambios en los datos' });
+        return;
+      }
+
+      // Obtener IDs relacionados de forma segura
+      const datosCliente = getDatosCliente(reserva.datos_cliente);
+      const datosClienteId = datosCliente.id_datos_cliente;
+
+      const reservasGenId = typeof reserva.reservas_gen === 'object'
+        ? reserva.reservas_gen.id_reservas_gen
+        : reserva.reservas_gen;
+
+      const habitacionId = typeof reserva.habitacion === 'object'
+        ? reserva.habitacion.id_habitacion
+        : reserva.habitacion;
+
+      // Crear objeto con todos los datos necesarios
+      const reservaParaActualizar = {
+        // Campos base de la reserva
         ...reserva,
-        ...formData,
-        montoTotal,
-        cantidadPersonas: formData.cantidadPersonas,
+        // Campos que cambiaron
+        ...cambios,
+        // IDs necesarios
+        datos_cliente: datosClienteId,
+        reservas_gen: reservasGenId,
+        habitacion: habitacionId
       };
-      onSave(reservaActualizada);
-      onClose();
+
+      console.log('🚀 Enviando datos para actualizar:', reservaParaActualizar);
+
+      // Llamar al hook para actualizar
+      const resultado = await updateReservaHotel(reservaParaActualizar);
+
+      if (resultado) {
+        onSave(resultado);
+        onClose();
+      }
+    } catch (err) {
+      console.error('Error al actualizar reserva:', err);
     }
   };
 
   const resetearFormulario = () => {
     if (reserva) {
-      setFormData({
-        nombre: reserva.nombre || '',
-        apellidoPaterno: reserva.apellidoPaterno || '',
-        apellidoMaterno: reserva.apellidoMaterno || '',
-        telefono: reserva.telefono || '',
-        email: reserva.email || '',
-        carnet: reserva.carnet || '',
-        fechaInicio: reserva.fechaInicio || '',
-        fechaFin: reserva.fechaFin || '',
-        cantidadPersonas: reserva.cantidadPersonas || '',
-        amoblado: reserva.amoblado || 'si',
-        banoPrivado: reserva.banoPrivado || 'no',
-      });
+      const datosCliente = getDatosCliente(reserva.datos_cliente);
+
+      const nuevosDatos = {
+        nombre: datosCliente.nombre || '',
+        apellidoPaterno: datosCliente.app_paterno || '',
+        apellidoMaterno: datosCliente.app_materno || '',
+        telefono: datosCliente.telefono?.toString() || '',
+        email: datosCliente.email || '',
+        carnet: datosCliente.ci?.toString() || '',
+        fechaInicio: reserva.fecha_ini || '',
+        fechaFin: reserva.fecha_fin || '',
+        cantidadPersonas: reserva.cant_personas?.toString() || '',
+        amoblado: reserva.amoblado || 'S',
+        banoPrivado: reserva.baño_priv || 'N',
+      };
+
+      setFormData(nuevosDatos);
+      setDatosOriginales(nuevosDatos);
     }
     setErrores({});
     setTouched({});
@@ -386,21 +507,37 @@ export default function EditHospedajeModal({ isOpen, onClose, reserva, onSave }:
   return (
     <Modal isOpen={isOpen} onClose={handleClose} className="max-w-2xl m-4">
       <div className="relative w-full p-6 bg-white rounded-2xl dark:bg-gray-900 max-h-[90vh] overflow-y-auto">
-        {/* Header - ESPECÍFICO PARA EDITAR */}
+        {/* Header */}
         <div className="flex items-center justify-between border-b px-4 py-3 rounded-t-2xl bg-teal-500 dark:bg-teal-600 mb-4">
           <div className="flex items-center gap-2">
             <FaEdit className="text-white" />
-            <h2 className="text-xl font-bold text-white">Editar Reserva</h2>
+            <h2 className="text-xl font-bold text-white">
+              Editar Reserva {reserva?.id_reserva_hotel ? `RES${reserva.id_reserva_hotel}` : ''}
+            </h2>
           </div>
-          <button 
-            onClick={handleClose} 
+          <button
+            onClick={handleClose}
             className="p-2 text-white hover:bg-teal-600 dark:hover:bg-teal-700 rounded-lg transition-colors"
           >
             <FaTimes className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Body - SOLO FORMULARIO (sin pasos de pago) */}
+        {/* Mostrar error del hook si existe */}
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+            <p className="text-red-700 dark:text-red-300 text-sm">{error}</p>
+          </div>
+        )}
+
+        {/* Mostrar error de no cambios */}
+        {errores.general && (
+          <div className="mb-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+            <p className="text-yellow-700 dark:text-yellow-300 text-sm">{errores.general}</p>
+          </div>
+        )}
+
+        {/* Body - FORMULARIO */}
         <div className="mt-4">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Datos Personales */}
@@ -408,7 +545,7 @@ export default function EditHospedajeModal({ isOpen, onClose, reserva, onSave }:
               <h3 className="text-lg font-semibold text-teal-700 dark:text-teal-400 border-b pb-2 border-teal-200 dark:border-teal-700">
                 Datos Personales
               </h3>
-              
+
               {/* Nombre y Apellidos */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
@@ -492,14 +629,13 @@ export default function EditHospedajeModal({ isOpen, onClose, reserva, onSave }:
                     type="text"
                     name="carnet"
                     value={formData.carnet}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    onKeyDown={soloNumeros}
-                    maxLength={9}
-                    className="w-full rounded-lg border border-teal-300 dark:border-teal-600 px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                    readOnly // ← Esto hace que sea de solo lectura
+                    className="w-full rounded-lg border border-teal-300 dark:border-teal-600 px-3 py-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed" // ← Cambia estilos para indicar que es solo lectura
                     placeholder="XXXXXXXXX"
                   />
-                  {errores.carnet && <p className="text-xs text-red-500 mt-1">{errores.carnet}</p>}
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    El carnet no se puede modificar
+                  </p>
                 </div>
               </div>
 
@@ -543,8 +679,8 @@ export default function EditHospedajeModal({ isOpen, onClose, reserva, onSave }:
                       type="text"
                       readOnly
                       value={formData.fechaInicio ? new Date(formData.fechaInicio).toLocaleDateString('es-ES') : ''}
-                      onClick={() => { 
-                        setShowCalendarInicio(true); 
+                      onClick={() => {
+                        setShowCalendarInicio(true);
                         setShowCalendarFin(false);
                       }}
                       className="w-full rounded-lg border border-teal-300 dark:border-teal-600 px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500 cursor-pointer pr-10"
@@ -565,8 +701,8 @@ export default function EditHospedajeModal({ isOpen, onClose, reserva, onSave }:
                       type="text"
                       readOnly
                       value={formData.fechaFin ? new Date(formData.fechaFin).toLocaleDateString('es-ES') : ''}
-                      onClick={() => { 
-                        setShowCalendarFin(true); 
+                      onClick={() => {
+                        setShowCalendarFin(true);
                         setShowCalendarInicio(false);
                       }}
                       className="w-full rounded-lg border border-teal-300 dark:border-teal-600 px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500 cursor-pointer pr-10"
@@ -587,24 +723,24 @@ export default function EditHospedajeModal({ isOpen, onClose, reserva, onSave }:
                   </p>
                   <div className="flex space-x-4">
                     <label className="flex items-center space-x-2">
-                      <input 
-                        type="radio" 
-                        name="amoblado" 
-                        value="si" 
-                        checked={formData.amoblado === 'si'} 
-                        onChange={(e) => handleCheckboxChange('amoblado', e.target.value)} 
-                        className="w-4 h-4 text-teal-600 border-teal-300 rounded focus:ring-teal-500 dark:bg-gray-800 dark:border-teal-600" 
+                      <input
+                        type="radio"
+                        name="amoblado"
+                        value="S"
+                        checked={formData.amoblado === 'S'}
+                        onChange={(e) => handleCheckboxChange('amoblado', e.target.value)}
+                        className="w-4 h-4 text-teal-600 border-teal-300 rounded focus:ring-teal-500 dark:bg-gray-800 dark:border-teal-600"
                       />
                       <span className="text-sm text-teal-700 dark:text-teal-300">Sí</span>
                     </label>
                     <label className="flex items-center space-x-2">
-                      <input 
-                        type="radio" 
-                        name="amoblado" 
-                        value="no" 
-                        checked={formData.amoblado === 'no'} 
-                        onChange={(e) => handleCheckboxChange('amoblado', e.target.value)} 
-                        className="w-4 h-4 text-teal-600 border-teal-300 rounded focus:ring-teal-500 dark:bg-gray-800 dark:border-teal-600" 
+                      <input
+                        type="radio"
+                        name="amoblado"
+                        value="N"
+                        checked={formData.amoblado === 'N'}
+                        onChange={(e) => handleCheckboxChange('amoblado', e.target.value)}
+                        className="w-4 h-4 text-teal-600 border-teal-300 rounded focus:ring-teal-500 dark:bg-gray-800 dark:border-teal-600"
                       />
                       <span className="text-sm text-teal-700 dark:text-teal-300">No</span>
                     </label>
@@ -617,24 +753,24 @@ export default function EditHospedajeModal({ isOpen, onClose, reserva, onSave }:
                   </p>
                   <div className="flex space-x-4">
                     <label className="flex items-center space-x-2">
-                      <input 
-                        type="radio" 
-                        name="banoPrivado" 
-                        value="si" 
-                        checked={formData.banoPrivado === 'si'} 
-                        onChange={(e) => handleCheckboxChange('banoPrivado', e.target.value)} 
-                        className="w-4 h-4 text-teal-600 border-teal-300 rounded focus:ring-teal-500 dark:bg-gray-800 dark:border-teal-600" 
+                      <input
+                        type="radio"
+                        name="banoPrivado"
+                        value="S"
+                        checked={formData.banoPrivado === 'S'}
+                        onChange={(e) => handleCheckboxChange('banoPrivado', e.target.value)}
+                        className="w-4 h-4 text-teal-600 border-teal-300 rounded focus:ring-teal-500 dark:bg-gray-800 dark:border-teal-600"
                       />
                       <span className="text-sm text-teal-700 dark:text-teal-300">Sí</span>
                     </label>
                     <label className="flex items-center space-x-2">
-                      <input 
-                        type="radio" 
-                        name="banoPrivado" 
-                        value="no" 
-                        checked={formData.banoPrivado === 'no'} 
-                        onChange={(e) => handleCheckboxChange('banoPrivado', e.target.value)} 
-                        className="w-4 h-4 text-teal-600 border-teal-300 rounded focus:ring-teal-500 dark:bg-gray-800 dark:border-teal-600" 
+                      <input
+                        type="radio"
+                        name="banoPrivado"
+                        value="N"
+                        checked={formData.banoPrivado === 'N'}
+                        onChange={(e) => handleCheckboxChange('banoPrivado', e.target.value)}
+                        className="w-4 h-4 text-teal-600 border-teal-300 rounded focus:ring-teal-500 dark:bg-gray-800 dark:border-teal-600"
                       />
                       <span className="text-sm text-teal-700 dark:text-teal-300">No</span>
                     </label>
@@ -663,7 +799,7 @@ export default function EditHospedajeModal({ isOpen, onClose, reserva, onSave }:
                 {errores.cantidadPersonas && <p className="text-xs text-red-500 mt-1">{errores.cantidadPersonas}</p>}
               </div>
 
-              {/* Resumen de Monto - SE ACTUALIZA AUTOMÁTICAMENTE */}
+              {/* Resumen de Monto */}
               <div className="bg-teal-50 dark:bg-teal-900/20 rounded-xl p-4 border border-teal-200 dark:border-teal-700">
                 <div className="flex items-center justify-between">
                   <div>
@@ -686,17 +822,24 @@ export default function EditHospedajeModal({ isOpen, onClose, reserva, onSave }:
               </div>
             </div>
 
-            {/* Botones - ESPECÍFICOS PARA EDITAR */}
+            {/* Botones */}
             <div className="flex justify-end gap-3 pt-4">
-              <Button variant="outline" onClick={handleClose}>
+              <Button variant="outline" onClick={handleClose} disabled={isUpdating}>
                 Cancelar
               </Button>
-              <Button 
-                variant="primary" 
+              <Button
+                variant="primary"
                 type="submit"
-                disabled={montoTotal === 0}
+                disabled={montoTotal === 0 || isUpdating}
               >
-                Guardar Cambios
+                {isUpdating ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span>Actualizando...</span>
+                  </div>
+                ) : (
+                  'Guardar Cambios'
+                )}
               </Button>
             </div>
           </form>
