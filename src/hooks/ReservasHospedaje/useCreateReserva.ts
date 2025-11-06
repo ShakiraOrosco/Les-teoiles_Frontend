@@ -68,17 +68,119 @@ export const useCreateReserva = (): UseCreateReservaReturn => {
         body: JSON.stringify(datosParaBackend),
       });
 
+      // 🔹 CAPTURAR EL ERROR COMPLETO DEL BACKEND
       if (!response.ok) {
         const contentType = response.headers.get('content-type');
+        
+        // Si el servidor devolvió HTML en lugar de JSON
         if (contentType && contentType.includes('text/html')) {
-          throw new Error(`Error del servidor: ${response.status} ${response.statusText}`);
+          throw new Error(`Error del servidor (${response.status}): No se pudo procesar la solicitud`);
         }
         
+        // Intentar parsear la respuesta JSON del backend
         try {
           const errorData = await response.json();
-          throw new Error(errorData.error || errorData.message || `Error ${response.status}`);
+          
+          // 🔹 CONSTRUIR MENSAJE DE ERROR AMIGABLE Y COMPLETO
+          let mensajeError = '';
+          
+          // 1. Capturar el mensaje principal del error
+          if (errorData.error) {
+            mensajeError = errorData.error;
+          } else if (errorData.message) {
+            mensajeError = errorData.message;
+          } else if (errorData.detail) {
+            mensajeError = errorData.detail;
+          } else {
+            // Si no hay mensaje específico, dar uno genérico basado en el código
+            switch (response.status) {
+              case 400:
+                mensajeError = 'Los datos enviados no son válidos';
+                break;
+              case 404:
+                mensajeError = 'No hay habitaciones disponibles con las características seleccionadas';
+                break;
+              case 409:
+                mensajeError = 'La habitación no está disponible para las fechas solicitadas';
+                break;
+              case 408:
+                mensajeError = 'Tiempo de espera agotado. Por favor, intenta nuevamente';
+                break;
+              default:
+                mensajeError = 'Error al procesar la reserva';
+            }
+          }
+          
+          // 2. Agregar detalles adicionales si existen
+          if (errorData.detalle && typeof errorData.detalle === 'string') {
+            mensajeError += `\n\n${errorData.detalle}`;
+          }
+          
+          // 3. Agregar información de debug si existe (solo en desarrollo)
+          if (errorData.info_debug) {
+            mensajeError += '\n\nInformación adicional:';
+            if (errorData.info_debug.mensaje) {
+              mensajeError += `\n• ${errorData.info_debug.mensaje}`;
+            }
+            if (errorData.info_debug.solicitudes_conflictivas !== undefined) {
+              mensajeError += `\n• Solicitudes en competencia: ${errorData.info_debug.solicitudes_conflictivas}`;
+            }
+            if (errorData.info_debug.tu_prioridad !== undefined) {
+              mensajeError += `\n• Tu prioridad: ${errorData.info_debug.tu_prioridad}`;
+            }
+            if (errorData.info_debug.prioridad_ganadora !== undefined && errorData.info_debug.prioridad_ganadora !== null) {
+              mensajeError += `\n• Prioridad ganadora: ${errorData.info_debug.prioridad_ganadora}`;
+            }
+          }
+          
+          // 4. Agregar información del detalle del rechazo si existe
+          if (errorData.detalle && typeof errorData.detalle === 'object') {
+            if (errorData.detalle.prioridad_ganadora !== undefined) {
+              mensajeError += `\n\nOtra reserva con mayor prioridad fue aceptada:`;
+              mensajeError += `\n• Prioridad ganadora: ${errorData.detalle.prioridad_ganadora}`;
+              mensajeError += `\n• Tu prioridad: ${errorData.detalle.prioridad_perdedora}`;
+              if (errorData.detalle.diferencia_prioridad !== undefined) {
+                mensajeError += `\n• Diferencia: ${errorData.detalle.diferencia_prioridad} puntos`;
+              }
+            }
+          }
+          
+          // 5. NO incluir el código de error en el mensaje principal
+          // Solo agregarlo como contexto si es necesario
+          console.error('Código de error:', response.status);
+          console.error('Código interno:', errorData.codigo);
+          
+          throw new Error(mensajeError);
+          
         } catch (jsonError) {
-          throw new Error(`Error ${response.status}: ${response.statusText}`);
+          // Si no se puede parsear el JSON, usar mensaje genérico mejorado
+          if (jsonError instanceof Error && jsonError.message && !jsonError.message.includes('JSON')) {
+            throw jsonError; // Re-lanzar el error construido arriba
+          }
+          
+          // Error al parsear JSON - dar mensaje más amigable
+          let mensajeGenerico = '';
+          switch (response.status) {
+            case 400:
+              mensajeGenerico = 'Los datos enviados no son válidos. Por favor, verifica la información ingresada.';
+              break;
+            case 404:
+              mensajeGenerico = 'No hay habitaciones disponibles con las características seleccionadas para las fechas indicadas.';
+              break;
+            case 409:
+              mensajeGenerico = 'La habitación no está disponible para las fechas solicitadas. Por favor, intenta con otras fechas.';
+              break;
+            case 408:
+              mensajeGenerico = 'El tiempo de espera se agotó. Por favor, intenta realizar la reserva nuevamente.';
+              break;
+            case 500:
+              mensajeGenerico = 'Error interno del servidor. Por favor, contacta con soporte.';
+              break;
+            default:
+              mensajeGenerico = `Error al procesar la solicitud. Por favor, intenta nuevamente.`;
+          }
+          
+          throw new Error(mensajeGenerico);
         }
       }
 
@@ -91,7 +193,7 @@ export const useCreateReserva = (): UseCreateReservaReturn => {
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido al crear la reserva';
       setError(errorMessage);
       console.error('Error creating reservation:', err);
-      throw err;
+      throw err; // Re-lanzar para que el componente pueda capturarlo
     } finally {
       setIsLoading(false);
     }
