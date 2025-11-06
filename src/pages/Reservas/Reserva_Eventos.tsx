@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Sparkles, CheckCircle, Copy, X, Upload, Check, ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
+import { Sparkles, CheckCircle, Copy, X, Upload, Check, ChevronLeft, ChevronRight, Calendar, AlertCircle } from 'lucide-react';
 import { useCreateReservaEvento } from '../../hooks/ReservaEvento/useCreateReservaEvento';
 import { useUploadComprobanteEvento } from '../../hooks/ReservaEvento/useUploadComprobanteEvento';
 import { useServiciosAdicionales } from '../../hooks/ReservaEvento/useServiciosAdicionales';
@@ -42,8 +42,8 @@ export default function Eventos() {
 
   const [errores, setErrores] = useState<Record<string, string | null>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
-  const [step, setStep] = useState<'form' | 'waiting' | 'payment' | 'success'>('form');
-  const [segundos, setSegundos] = useState(30);
+  const [step, setStep] = useState<'form' | 'waiting' | 'payment' | 'success' | 'error'>('form');
+  const [segundos, setSegundos] = useState(20);
   const [reservaGenId, setReservaGenId] = useState<number | null>(null);
   const [codigoReserva, setCodigoReserva] = useState('');
   const [comprobante, setComprobante] = useState<File | null>(null);
@@ -51,8 +51,8 @@ export default function Eventos() {
   const [mostrarCalendario, setMostrarCalendario] = useState(false);
   const [mesActual, setMesActual] = useState(new Date());
   const [fechaSeleccionada, setFechaSeleccionada] = useState<Date | null>(null);
-
   const [comprobanteError, setComprobanteError] = useState<string | null>(null);
+  const [errorDetallado, setErrorDetallado] = useState<string>('');
 
   // Validación en tiempo real para cada campo
   const validarCampo = (nombre: string, valor: string) => {
@@ -126,8 +126,6 @@ export default function Eventos() {
       if (servicio.tipo === 'A') {
         const cantidadPersonas = parseInt(formData.cantidadPersonas) || 1;
         total += servicio.precio * cantidadPersonas;
-      } else if (servicio.tipo === 'E') {
-        total += servicio.precio;
       } else {
         total += servicio.precio;
       }
@@ -155,70 +153,53 @@ export default function Eventos() {
     }
   }, [step, segundos]);
 
- const handleBlur = (field: string) => {
-  // ✅ Limpiar espacios al final cuando pierde el foco
-  let valorLimpio = formData[field as keyof typeof formData] as string;
-  
-  if (field === 'nombre' || field === 'apellidoPaterno' || field === 'apellidoMaterno') {
-    valorLimpio = valorLimpio.trim(); // Elimina espacios al inicio Y al final
-    // Actualizar el formData con el valor limpio
-    setFormData(prev => ({ ...prev, [field]: valorLimpio }));
-  }
-
-
-  
-  setTouched(prev => ({ ...prev, [field]: true }));
-  
-  // Validar el campo específico cuando pierde el foco
-  const error = validarCampo(field, valorLimpio);
-  setErrores(prev => ({ ...prev, [field]: error }));
-};
-const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-  const { name, value } = e.target;
-  let valorFinal = value;
-  
-  // ✅ Limpieza de espacios para campos de texto (nombre y apellidos)
-  if (name === 'nombre' || name === 'apellidoPaterno' || name === 'apellidoMaterno') {
-    // Eliminar espacios al inicio
-    valorFinal = value.replace(/^\s+/, '');
-    // Reemplazar múltiples espacios consecutivos por uno solo
-    valorFinal = valorFinal.replace(/\s{2,}/g, ' ');
-  }
-  
-  // Limitar longitud de teléfono y carnet
-  if (name === 'telefono' && valorFinal.length > 8) {
-    valorFinal = valorFinal.slice(0, 8);
-  }
-  if (name === 'carnet' && valorFinal.length > 9) {
-    valorFinal = valorFinal.slice(0, 9);
-
-  }
-    if (name === 'email') {
-    valorFinal = value.replace(/\s/g, ''); // Remover todos los espacios
-  }
-
-  // Para cantidad de personas, solo permitir números y prevenir ceros a la izquierda
-  if (name === 'cantidadPersonas') {
-    // Remover cualquier caracter no numérico
-    valorFinal = value.replace(/\D/g, '');
+  const handleBlur = (field: string) => {
+    let valorLimpio = formData[field as keyof typeof formData] as string;
     
-    // Si empieza con 0 y tiene más de 1 dígito, quitar el cero
-    if (valorFinal.length > 1 && valorFinal.startsWith('0')) {
-      valorFinal = valorFinal.replace(/^0+/, '');
+    if (field === 'nombre' || field === 'apellidoPaterno' || field === 'apellidoMaterno') {
+      valorLimpio = valorLimpio.trim();
+      setFormData(prev => ({ ...prev, [field]: valorLimpio }));
     }
     
-    // Limitar a 3 dígitos
-    valorFinal = valorFinal.slice(0, 3);
+    setTouched(prev => ({ ...prev, [field]: true }));
+    const error = validarCampo(field, valorLimpio);
+    setErrores(prev => ({ ...prev, [field]: error }));
+  };
 
-  }
-  setFormData(prev => ({ ...prev, [name]: valorFinal }));
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    let valorFinal = value;
+    
+    if (name === 'nombre' || name === 'apellidoPaterno' || name === 'apellidoMaterno') {
+      valorFinal = value.replace(/^\s+/, '');
+      valorFinal = valorFinal.replace(/\s{2,}/g, ' ');
+    }
+    
+    if (name === 'telefono' && valorFinal.length > 8) {
+      valorFinal = valorFinal.slice(0, 8);
+    }
+    if (name === 'carnet' && valorFinal.length > 9) {
+      valorFinal = valorFinal.slice(0, 9);
+    }
+    if (name === 'email') {
+      valorFinal = value.replace(/\s/g, '');
+    }
 
-  // Si el campo ya ha sido tocado, validar en tiempo real mientras escribe
-  if (touched[name]) {
-    const error = validarCampo(name, valorFinal);
-    setErrores(prev => ({ ...prev, [name]: error }));
-  }
-};
+    if (name === 'cantidadPersonas') {
+      valorFinal = value.replace(/\D/g, '');
+      if (valorFinal.length > 1 && valorFinal.startsWith('0')) {
+        valorFinal = valorFinal.replace(/^0+/, '');
+      }
+      valorFinal = valorFinal.slice(0, 3);
+    }
+
+    setFormData(prev => ({ ...prev, [name]: valorFinal }));
+
+    if (touched[name]) {
+      const error = validarCampo(name, valorFinal);
+      setErrores(prev => ({ ...prev, [name]: error }));
+    }
+  };
 
   const handleCheckboxChange = (servicioId: number) => {
     setFormData(prev => ({
@@ -229,37 +210,31 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
     }));
   };
 
-const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-  const file = event.target.files?.[0];
-  
-  // Limpiar error previo
-  setComprobanteError(null);
-  
-  if (!file) {
-    setComprobante(null);
-    return;
-  }
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    setComprobanteError(null);
+    
+    if (!file) {
+      setComprobante(null);
+      return;
+    }
 
-  // Usar la validación separada
-  const error = validarComprobante(file);
-  
-  if (error) {
-    setComprobanteError(error);
-    event.target.value = ''; // Limpiar el input
-    setComprobante(null);
-    return;
-  }
+    const error = validarComprobante(file);
+    
+    if (error) {
+      setComprobanteError(error);
+      event.target.value = '';
+      setComprobante(null);
+      return;
+    }
 
-  // Si pasa la validación, guardar el archivo y limpiar error
-  setComprobante(file);
-  setComprobanteError(null);
-};
-
+    setComprobante(file);
+    setComprobanteError(null);
+  };
 
   const handleContinuarPago = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Marcar todos los campos como tocados para mostrar todos los errores
     const todosLosCampos = {
       nombre: true,
       apellidoPaterno: true,
@@ -275,15 +250,12 @@ const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     };
     setTouched(todosLosCampos);
 
-    // Validar todo el formulario
     const erroresValidacion = validarFormularioEvento(formData);
     setErrores(erroresValidacion);
 
-    // Verificar si hay errores
     const hayErrores = Object.values(erroresValidacion).some(error => error !== null);
     
     if (hayErrores) {
-      // Enfocar el primer campo con error
       const primerCampoConError = Object.keys(erroresValidacion).find(key => erroresValidacion[key]);
       if (primerCampoConError) {
         const elemento = document.querySelector(`[name="${primerCampoConError}"]`) as HTMLElement;
@@ -292,9 +264,8 @@ const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
       return;
     }
 
-    // Si no hay errores, continuar con el pago
     setStep('waiting');
-    setSegundos(30);
+    setSegundos(20);
 
     try {
       const result = await crearReservaEvento(formData);
@@ -305,7 +276,9 @@ const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
       }
     } catch (err) {
       console.error('Error en el submit:', err);
-      setStep('form');
+      const errorMsg = err instanceof Error ? err.message : 'Error desconocido al procesar la reserva';
+      setErrorDetallado(errorMsg);
+      setStep('error');
     }
   };
 
@@ -354,6 +327,7 @@ const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setCopiado(false);
     setMostrarCalendario(false);
     setFechaSeleccionada(null);
+    setErrorDetallado('');
     resetState();
   };
 
@@ -418,6 +392,46 @@ const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
 
   const diasSemana = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
+  // Pantalla de error
+  if (step === 'error') {
+    return (
+      <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
+        <div className="max-w-lg w-full bg-white rounded-2xl shadow-xl p-8 text-center relative">
+          <button onClick={resetearFormulario} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600" title="Cerrar">
+            <X className="w-6 h-6" />
+          </button>
+
+          <div className="bg-red-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
+            <AlertCircle className="w-12 h-12 text-red-600" />
+          </div>
+
+          <h2 className="text-3xl font-bold text-red-800 mb-2">No se pudo procesar tu reserva</h2>
+          <p className="text-gray-600 mb-6">Lo sentimos, ha ocurrido un problema</p>
+
+          <div className="bg-red-50 rounded-lg p-6 mb-4 text-left">
+            <p className="text-sm text-red-900 font-semibold mb-2">Detalles del error:</p>
+            <p className="text-sm text-red-700 whitespace-pre-wrap">{errorDetallado}</p>
+          </div>
+
+          <div className="bg-blue-50 border-l-4 border-blue-400 p-4 text-left mb-6">
+            <p className="text-sm text-blue-800">
+              <strong>Sugerencias:</strong>
+              <ul className="list-disc list-inside mt-2 space-y-1">
+                <li>Verifica que los servicios seleccionados estén disponibles</li>
+                <li>Intenta con otra fecha u horario</li>
+                <li>Si el problema persiste, contacta con soporte</li>
+              </ul>
+            </p>
+          </div>
+
+          <button onClick={resetearFormulario} className="w-full bg-teal-500 hover:bg-teal-600 text-white px-8 py-3 rounded-lg transition font-semibold">
+            Volver a intentar
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (step === 'success') {
     return (
       <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
@@ -471,9 +485,15 @@ const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
           </div>
           
           <h2 className="text-2xl font-bold text-teal-800 mb-3">Analizando tu Solicitud</h2>
-          <p className="text-gray-600 mb-8">
+          <p className="text-gray-600 mb-4">
             Por favor espera mientras verificamos los requisitos y disponibilidad de los servicios solicitados.
           </p>
+          
+          <div className="bg-blue-50 border-l-4 border-blue-400 p-4 text-left mb-6">
+            <p className="text-sm text-blue-800">
+              💡 Tu reserva está siendo procesada espera un momento porfavor.
+            </p>
+          </div>
           
           <div className="text-5xl font-bold text-teal-600">{segundos}s</div>
         </div>
@@ -514,10 +534,7 @@ const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
               </div>
 
               <div className="flex flex-col justify-between">
-                {/* Resumen de precios */}
                 <div className="space-y-4 mb-6">
-                
-
                   <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-6 border border-amber-200/50">
                     <p className="text-sm text-gray-600 mb-2">Monto a pagar (50%):</p>
                     <div className="flex items-baseline gap-2 mb-2 justify-center">
@@ -531,60 +548,65 @@ const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
                 <div className="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-lg mb-6">
                   <p className="text-sm text-amber-900"><strong>Importante:</strong> El restante 50% ({precioAdelanto.toFixed(2)} Bs.) se pagará en recepción</p>
                 </div>
-                  <div className="mb-6">
-                    <label className="block text-sm font-semibold text-gray-700 mb-3">
-                      📎 Comprobante de Pago
-                    </label>
-                 <div>
-  <label className="block text-sm font-medium text-gray-700 mb-2">Comprobante de Pago *</label>
-  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-teal-400 transition cursor-pointer">
-    <input 
-      type="file" 
-      onChange={handleFileChange} 
-      accept=".jpg,.jpeg,.png,.pdf" 
-      className="hidden" 
-      id="comprobante" 
-    />
-    <label htmlFor="comprobante" className="cursor-pointer">
-      {comprobante ? (
-        <div className="text-teal-600">
-          <Check className="w-8 h-8 mx-auto mb-2" />
-          <p className="font-medium">✓ {comprobante.name}</p>
-        </div>
-      ) : (
-        <div className="text-gray-500">
-          <Upload className="w-10 h-10 mx-auto mb-2" />
-          <p className="font-medium text-teal-600">Seleccionar archivo</p>
-          <p className="text-xs mt-1">JPG, PNG o PDF (máx. 5MB)</p>
-        </div>
-      )}
-    </label>
-  </div>
-  
-  {/* Mostrar error debajo del campo */}
-  {comprobanteError && (
-    <p className="text-red-500 text-sm mt-2 flex items-center">
-      <X className="w-4 h-4 mr-1" />
-      {comprobanteError}
-    </p>
-  )}
-</div>  
-                    <div className="mt-3 flex items-start gap-2 text-sm text-gray-500">
-                      <div className="w-1 h-1 bg-gray-400 rounded-full mt-2"></div>
-                      <p>Asegúrate de que el comprobante sea legible y contenga todos los datos del pago</p>
-                    </div>
-                  </div>
 
-                <button onClick={handleUploadComprobante} disabled={!comprobante || isUploadingComprobante} className={`w-full py-4 rounded-xl font-bold text-lg transition-all duration-300 ${comprobante && !isUploadingComprobante ? 'bg-gradient-to-r from-cyan-500 to-teal-600 text-white hover:shadow-2xl hover:shadow-teal-500/40 hover:scale-[1.02] active:scale-95' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Comprobante de Pago *</label>
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-teal-400 transition cursor-pointer">
+                    <input 
+                      type="file" 
+                      onChange={handleFileChange} 
+                      accept=".jpg,.jpeg,.png,.pdf" 
+                      className="hidden" 
+                      id="comprobante" 
+                    />
+                    <label htmlFor="comprobante" className="cursor-pointer">
+                      {comprobante ? (
+                        <div className="text-teal-600">
+                          <Check className="w-8 h-8 mx-auto mb-2" />
+                          <p className="font-medium">✓ {comprobante.name}</p>
+                        </div>
+                      ) : (
+                        <div className="text-gray-500">
+                          <Upload className="w-10 h-10 mx-auto mb-2" />
+                          <p className="font-medium text-teal-600">Seleccionar archivo</p>
+                          <p className="text-xs mt-1">JPG, PNG o PDF (máx. 5MB)</p>
+                        </div>
+                      )}
+                    </label>
+                  </div>
                   
+                  {comprobanteError && (
+                    <p className="text-red-500 text-sm mt-2 flex items-center">
+                      <X className="w-4 h-4 mr-1" />
+                      {comprobanteError}
+                    </p>
+                  )}
+                  
+                  <div className="mt-3 flex items-start gap-2 text-sm text-gray-500">
+                    <div className="w-1 h-1 bg-gray-400 rounded-full mt-2"></div>
+                    <p>Asegúrate de que el comprobante sea legible y contenga todos los datos del pago</p>
+                  </div>
+                </div>
+
+                <button 
+                  onClick={handleUploadComprobante} 
+                  disabled={!comprobante || isUploadingComprobante} 
+                  className={`w-full py-4 rounded-xl font-bold text-lg transition-all duration-300 ${
+                    comprobante && !isUploadingComprobante 
+                      ? 'bg-gradient-to-r from-cyan-500 to-teal-600 text-white hover:shadow-2xl hover:shadow-teal-500/40 hover:scale-[1.02] active:scale-95' 
+                      : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                  }`}
+                >
+                  {isUploadingComprobante ? (
                     <div className="flex items-center justify-center gap-2">
                       <div className="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
                       Procesando...
                     </div>
-              
+                  ) : (
+                    'Confirmar Pago'
+                  )}
                 </button>
-
-                </div>
+              </div>
             </div>
 
             <div className="bg-gradient-to-r from-cyan-50 to-teal-50 px-8 py-4 text-center border-t border-gray-100">
@@ -607,7 +629,17 @@ const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
           <p className="text-gray-600 mt-2">Completa el formulario para realizar tu solicitud</p>
         </div>
 
-        {error && <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">Error: {error}</div>}
+        {error && (
+          <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="font-semibold">Error al procesar la reserva</p>
+                <p className="text-sm mt-1">{error}</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         <form onSubmit={handleContinuarPago} className="space-y-6">
           <div className="space-y-4">
@@ -739,14 +771,13 @@ const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Correo Electrónico *
               </label>
-             <input
+              <input
                 type="email"
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
                 onBlur={() => handleBlur('email')}
                 onKeyDown={(e) => {
-                  // Prevenir la tecla espacio
                   if (e.key === ' ') {
                     e.preventDefault();
                   }
@@ -826,7 +857,6 @@ const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
 
                 {mostrarCalendario && (
                   <div className="absolute z-50 mt-2 bg-white rounded-xl shadow-2xl border border-gray-200 p-4 w-full md:w-96">
-                    {/* Header del calendario */}
                     <div className="flex items-center justify-between mb-4">
                       <button
                         type="button"
@@ -849,7 +879,6 @@ const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
                       </button>
                     </div>
 
-                    {/* Días de la semana */}
                     <div className="grid grid-cols-7 gap-1 mb-2">
                       {diasSemana.map(dia => (
                         <div key={dia} className="text-center text-xs font-semibold text-gray-600 py-2">
@@ -858,7 +887,6 @@ const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
                       ))}
                     </div>
 
-                    {/* Días del mes */}
                     <div className="grid grid-cols-7 gap-1">
                       {obtenerDiasDelMes(mesActual).map((dia, index) => (
                         <div key={index} className="aspect-square">
@@ -884,7 +912,6 @@ const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
                       ))}
                     </div>
 
-                    {/* Botón cerrar */}
                     <button
                       type="button"
                       onClick={() => setMostrarCalendario(false)}
@@ -939,47 +966,45 @@ const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
               </div>
             </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Cantidad de Personas *
-            </label>
-            <input
-              type="text" // Cambiado de "number" a "text"
-              name="cantidadPersonas"
-              value={formData.cantidadPersonas}
-              onChange={handleChange}
-              onBlur={() => handleBlur('cantidadPersonas')}
-              onKeyDown={(e) => {
-                // Solo permitir números y teclas de control
-                if (
-                  !/^[0-9]$/.test(e.key) && // No es un número del 0-9
-                  ![
-                    'Backspace', 'Delete', 'Tab', 'Escape', 'Enter',
-                    'ArrowLeft', 'ArrowRight', 'Home', 'End'
-                  ].includes(e.key)
-                ) {
-                  e.preventDefault();
-                }
-              }}
-              onPaste={(e) => {
-                // Validar contenido pegado
-                const pastedText = e.clipboardData.getData('text');
-                if (!/^\d*$/.test(pastedText)) {
-                  e.preventDefault();
-                }
-              }}
-              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent ${
-                errores.cantidadPersonas ? 'border-red-500' : 'border-gray-300'
-              }`}
-              placeholder="Ej: 50"
-              inputMode="numeric" // Muestra teclado numérico en móviles
-              maxLength={3} // Máximo 3 dígitos (para números hasta 250)
-              required
-            />
-            {errores.cantidadPersonas && (
-              <p className="text-red-500 text-xs mt-1">{errores.cantidadPersonas}</p>
-            )}
-          </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Cantidad de Personas *
+              </label>
+              <input
+                type="text"
+                name="cantidadPersonas"
+                value={formData.cantidadPersonas}
+                onChange={handleChange}
+                onBlur={() => handleBlur('cantidadPersonas')}
+                onKeyDown={(e) => {
+                  if (
+                    !/^[0-9]$/.test(e.key) &&
+                    ![
+                      'Backspace', 'Delete', 'Tab', 'Escape', 'Enter',
+                      'ArrowLeft', 'ArrowRight', 'Home', 'End'
+                    ].includes(e.key)
+                  ) {
+                    e.preventDefault();
+                  }
+                }}
+                onPaste={(e) => {
+                  const pastedText = e.clipboardData.getData('text');
+                  if (!/^\d*$/.test(pastedText)) {
+                    e.preventDefault();
+                  }
+                }}
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent ${
+                  errores.cantidadPersonas ? 'border-red-500' : 'border-gray-300'
+                }`}
+                placeholder="Ej: 50"
+                inputMode="numeric"
+                maxLength={3}
+                required
+              />
+              {errores.cantidadPersonas && (
+                <p className="text-red-500 text-xs mt-1">{errores.cantidadPersonas}</p>
+              )}
+            </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -1015,7 +1040,7 @@ const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
             </div>
           </div>
 
-          {/* Resumen de precios - Diseño mejorado */}
+          {/* Resumen de precios */}
           <div className="bg-white rounded-2xl border-2 border-teal-100 shadow-lg overflow-hidden">
             <div className="bg-gradient-to-r from-teal-500 to-cyan-500 px-6 py-4">
               <h3 className="text-xl font-bold text-white text-center flex items-center justify-center gap-2">
@@ -1026,7 +1051,6 @@ const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
             
             {serviciosSeleccionados.length > 0 ? (
               <div className="p-6 space-y-4">
-                {/* Lista de servicios con detalles de cálculo */}
                 <div className="space-y-3">
                   {serviciosSeleccionados.map(servicio => (
                     <div key={servicio.id_servicios_adicionales} className="flex justify-between items-start gap-4 p-3 bg-gray-50 rounded-lg">
@@ -1053,7 +1077,6 @@ const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
                   ))}
                 </div>
                 
-                {/* Totales */}
                 <div className="space-y-3 pt-4 border-t-2 border-dashed border-gray-200">
                   <div className="flex justify-between items-center p-4 bg-teal-50 rounded-xl">
                     <span className="text-gray-700 font-semibold">Total de servicios:</span>
