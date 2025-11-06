@@ -22,7 +22,7 @@ import {
 
 export default function Eventos() {
   const { crearReservaEvento, isLoading, error, resetState } = useCreateReservaEvento();
-  const { subirComprobante, isLoading: isUploadingComprobante, error: uploadError } = useUploadComprobanteEvento();
+  const { subirComprobante, isLoading: isUploadingComprobante } = useUploadComprobanteEvento();
   const { servicios, isLoading: isLoadingServicios } = useServiciosAdicionales();
 
   const [formData, setFormData] = useState({

@@ -8,64 +8,93 @@ import {
 import Button from "../../../ui/button/Button";
 import Badge from "../../../ui/badge/Badge";
 import { Eye } from "lucide-react";
-import { ReservaEvento, EstadoReservaEvento } from "../../../../types/AdReserva/Reservas_Eventos/eventos";
+import { ReservaEvento } from "../../../../types/AdReserva/Reservas_Eventos/eventos";
 
 interface ReservasEventoTableProps {
   reservas: ReservaEvento[];
   onEdit?: (reserva: ReservaEvento) => void;
   onCancel?: (reserva: ReservaEvento) => void;
+  onView?: (reserva: ReservaEvento) => void;
 }
 
-export default function ReservasEventoTable({ reservas, onEdit, onCancel }: ReservasEventoTableProps) {
-  // 🔹 Fecha y hora actual
+export default function ReservasEventoTable({ 
+  reservas, 
+  onEdit, 
+  onCancel, 
+  onView 
+}: ReservasEventoTableProps) {
+  // 🔹 Fecha actual
   const hoy = new Date();
 
   // 🔹 Filtrado por estado y fecha
-  const activasYPendientes = reservas.filter((r) => 
-    r.estado === "A" || r.estado === "P"
-  );
-  
-  const finalizadasYCanceladas = reservas.filter((r) => 
-    r.estado === "F" || r.estado === "C"
-  );
+  const futuras = reservas.filter((r) => {
+    const fechaEvento = new Date(r.fecha);
+    return fechaEvento > hoy && r.estado !== 'C' && r.estado !== 'F';
+  });
 
-  // ✅ Función segura para obtener información del cliente
-  const getClienteInfo = (reserva: ReservaEvento) => {
-    if (typeof reserva.datos_cliente === 'object' && reserva.datos_cliente !== null) {
-      const cliente = reserva.datos_cliente;
-      return `${cliente.nombre || ''} ${cliente.app_paterno || ''} ${cliente.app_materno || ''}`.trim() || 'Cliente no disponible';
-    }
-    return 'Cliente no disponible';
-  };
+  const pasadas = reservas.filter((r) => {
+    const fechaEvento = new Date(r.fecha);
+    return fechaEvento <= hoy || r.estado === 'F' || r.estado === 'C';
+  });
 
   // ✅ Función para obtener servicios como string
   const getServiciosInfo = (reserva: ReservaEvento) => {
     if (reserva.servicios_adicionales && reserva.servicios_adicionales.length > 0) {
-      return reserva.servicios_adicionales.map(serv => serv.nombre).join(', ');
+      return reserva.servicios_adicionales.map(s => s.nombre).join(', ');
     }
     return 'Sin servicios';
   };
 
-  // ✅ Formatear fecha y hora
-  const formatDateTime = (fecha: string, hora?: string) => {
-    const date = new Date(fecha);
-    if (hora) {
-      const time = new Date(hora);
-      return `${date.toLocaleDateString()} ${time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+  // ✅ Función para formatear hora
+  const formatHora = (horaISO: string) => {
+    try {
+      const fecha = new Date(horaISO);
+      return fecha.toLocaleTimeString('es-ES', { 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      });
+    } catch {
+      return '-';
     }
-    return date.toLocaleDateString();
+  };
+
+  // ✅ Función para formatear fecha
+  const formatFecha = (fechaStr: string) => {
+    try {
+      const fecha = new Date(fechaStr);
+      return fecha.toLocaleDateString('es-ES', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      });
+    } catch {
+      return '-';
+    }
   };
 
   // ✅ Etiquetas visuales de estado
   const getEstadoLabel = (reserva: ReservaEvento) => {
-    const estadoMap: Record<EstadoReservaEvento, { label: string; color: string }> = {
-      "A": { label: "Activa", color: "success" },
-      "P": { label: "Pendiente", color: "warning" },
-      "C": { label: "Cancelada", color: "danger" },
-      "F": { label: "Finalizada", color: "gray" }
-    };
+    const fechaEvento = new Date(reserva.fecha);
+    const estado = reserva.estado;
 
-    return estadoMap[reserva.estado] || { label: "Desconocido", color: "gray" };
+    switch (estado) {
+      case 'C':
+        return { label: "Cancelado", color: "error" as const };
+      case 'F':
+        return { label: "Finalizado", color: "info" as const };
+      case 'P':
+        return { label: "Pendiente", color: "warning" as const };
+      case 'A':
+        if (fechaEvento > hoy) {
+          return { label: "Confirmado", color: "success" as const };
+        } else if (fechaEvento.toDateString() === hoy.toDateString()) {
+          return { label: "Hoy", color: "primary" as const };
+        } else {
+          return { label: "En Curso", color: "success" as const };
+        }
+      default:
+        return { label: "Desconocido", color: "warning" as const };
+    }
   };
 
   const renderTable = (
@@ -85,22 +114,19 @@ export default function ReservasEventoTable({ reservas, onEdit, onCancel }: Rese
                 Código
               </TableCell>
               <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">
-                Cliente
-              </TableCell>
-              <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">
                 Fecha Evento
               </TableCell>
               <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">
                 Horario
               </TableCell>
               <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">
-                Duración
-              </TableCell>
-              <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">
                 Personas
               </TableCell>
               <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">
                 Servicios
+              </TableCell>
+              <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">
+                Duración
               </TableCell>
               <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">
                 Estado
@@ -119,7 +145,7 @@ export default function ReservasEventoTable({ reservas, onEdit, onCancel }: Rese
           <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
             {data.length === 0 ? (
               <TableRow>
-                <TableCell
+                <TableCell 
                   className="text-center py-8 text-gray-400"
                 >
                   No hay reservas en esta categoría
@@ -128,8 +154,7 @@ export default function ReservasEventoTable({ reservas, onEdit, onCancel }: Rese
             ) : (
               data.map((reserva) => {
                 const estado = getEstadoLabel(reserva);
-                const codigoReserva = `EVT${reserva.id_reservas_evento}`;
-                const clienteInfo = getClienteInfo(reserva);
+                const codigoReserva = `EVT${reserva.id_reservas_evento.toString().padStart(4, '0')}`;
                 const serviciosInfo = getServiciosInfo(reserva);
 
                 return (
@@ -142,48 +167,46 @@ export default function ReservasEventoTable({ reservas, onEdit, onCancel }: Rese
                       {codigoReserva}
                     </TableCell>
 
-                    {/* Cliente */}
-                    <TableCell className="px-4 py-4 sm:px-6 text-start text-gray-800 dark:text-gray-200">
-                      {clienteInfo}
-                    </TableCell>
-
                     {/* Fecha del Evento */}
                     <TableCell className="px-4 py-4 sm:px-6 text-start text-gray-800 dark:text-gray-200">
-                      {reserva.fecha ? (
-                        new Date(reserva.fecha).toLocaleDateString()
-                      ) : (
-                        <span className="italic text-gray-400">Sin fecha</span>
-                      )}
+                      {formatFecha(reserva.fecha)}
                     </TableCell>
 
                     {/* Horario */}
                     <TableCell className="px-4 py-4 sm:px-6 text-start text-gray-800 dark:text-gray-200">
-                      <div className="flex flex-col">
-                        <span>Inicio: {reserva.hora_ini ? new Date(reserva.hora_ini).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}</span>
-                        <span>Fin: {reserva.hora_fin ? new Date(reserva.hora_fin).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}</span>
+                      <div className="flex flex-col text-sm">
+                        <span>Inicio: {formatHora(reserva.hora_ini)}</span>
+                        <span>Fin: {formatHora(reserva.hora_fin)}</span>
                       </div>
-                    </TableCell>
-
-                    {/* Duración */}
-                    <TableCell className="px-4 py-4 sm:px-6 text-start text-gray-800 dark:text-gray-200">
-                      {reserva.duracion_horas} h
                     </TableCell>
 
                     {/* Cantidad de Personas */}
                     <TableCell className="px-4 py-4 sm:px-6 text-start text-gray-800 dark:text-gray-200">
-                      {reserva.cant_personas}
+                      <div className="flex items-center gap-1">
+                        <span>{reserva.cant_personas}</span>
+                      </div>
                     </TableCell>
 
-                    {/* Servicios */}
+                    {/* Servicios Adicionales */}
                     <TableCell className="px-4 py-4 sm:px-6 text-start text-gray-800 dark:text-gray-200">
-                      <div className="max-w-[200px] truncate" title={serviciosInfo}>
+                      <div className="max-w-[150px] truncate" title={serviciosInfo}>
                         {serviciosInfo}
                       </div>
+                      {reserva.total_servicios}
+                    </TableCell>
+
+                    {/* Duración */}
+                    <TableCell className="px-4 py-4 sm:px-6 text-start text-gray-800 dark:text-gray-200">
+                      {reserva.duracion_horas ? (
+                        <span>{reserva.duracion_horas.toFixed(1)}h</span>
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )}
                     </TableCell>
 
                     {/* Estado */}
                     <TableCell className="px-4 py-4 sm:px-6 text-start">
-                      <Badge size="sm" color={estado.color as any}>
+                      <Badge size="sm" color={estado.color}>
                         {estado.label}
                       </Badge>
                     </TableCell>
@@ -194,12 +217,13 @@ export default function ReservasEventoTable({ reservas, onEdit, onCancel }: Rese
                         variant="outline"
                         size="sm"
                         className="text-[#26a5b9] flex items-center justify-center"
+                        onClick={() => onView?.(reserva)}
                       >
                         <Eye className="w-4 h-4" />
                       </Button>
                     </TableCell>
 
-                    {/* ✏️ / ❌ Acciones solo en tabla de activas y pendientes */}
+                    {/* ✏️ / ❌ Acciones solo en tabla de futuras */}
                     {withActions && (
                       <TableCell className="px-4 py-4 sm:px-6 text-center">
                         <div className="flex items-center justify-center gap-2">
@@ -211,14 +235,16 @@ export default function ReservasEventoTable({ reservas, onEdit, onCancel }: Rese
                           >
                             Editar
                           </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-red-600"
-                            onClick={() => onCancel?.(reserva)}
-                          >
-                            Cancelar
-                          </Button>
+                          {reserva.estado !== 'C' && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-red-600"
+                              onClick={() => onCancel?.(reserva)}
+                            >
+                              Cancelar
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     )}
@@ -234,10 +260,11 @@ export default function ReservasEventoTable({ reservas, onEdit, onCancel }: Rese
 
   return (
     <div className="space-y-10">
-      {/* 🟡 Con acciones - Activas y Pendientes */}
-      {renderTable(activasYPendientes, "Reservas Activas y Pendientes", true)}
-      {/* 🟢 Sin acciones - Finalizadas y Canceladas */}
-      {renderTable(finalizadasYCanceladas, "Reservas Finalizadas y Canceladas")}
+      {/* 🟡 Reservas futuras con acciones */}
+      {renderTable(futuras, "Eventos Próximos", true)}
+      
+      {/* 🟢 Reservas pasadas sin acciones */}
+      {renderTable(pasadas, "Eventos Pasados o Finalizados")}
     </div>
   );
 }
