@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+/*import { useState, useEffect, useMemo } from 'react';
 import { Sparkles, CheckCircle, Copy, X, Upload, Check, ChevronLeft, ChevronRight, Calendar, AlertCircle } from 'lucide-react';
 import { Modal } from '../../../ui/modal';
 import Button from '../../../ui/button/Button';
@@ -1054,7 +1054,7 @@ export default function EventoModal({ isOpen, onClose, onSuccess }: EventoModalP
             </div>
           </div>
 
-          {/* Resumen de precios */}
+          {/* Resumen de precios *//*}
           <div className="bg-white rounded-2xl border-2 border-teal-100 shadow-lg overflow-hidden">
             <div className="bg-gradient-to-r from-teal-500 to-cyan-500 px-6 py-4">
               <h3 className="text-xl font-bold text-white text-center flex items-center justify-center gap-2">
@@ -1140,4 +1140,4 @@ export default function EventoModal({ isOpen, onClose, onSuccess }: EventoModalP
       </div>
     </Modal>
   );
-}
+}/*/  
