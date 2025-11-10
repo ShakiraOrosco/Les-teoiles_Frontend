@@ -22,12 +22,12 @@ import { Toaster } from "sonner";
 import ServiciosAdicionalesPage from "./pages/Bienes/Servicios/ServiciosAdicionales";
 import HabitacionPage from "./pages/Bienes/Habitacion/Habitaciones";
 
-
 // Páginas Informativas
 import Homes from "./pages/Informativa/Homes";
 import Contactanos from "./pages/Informativa/Contactanos";
 import SobreNosotros from "./pages/Informativa/SobreNosotros";
 import ProtectedRoute from "./components/routes/ProtectedRoute";
+import RoleProtectedRoute from "./components/routes/RolProtectedRoute";
 
 import Reserva from "./pages/Reservas/Reservas";
 import ReservaHospedaje from "./pages/Reservas/Reserva_Hospedaje";
@@ -51,10 +51,12 @@ export default function App() {
           <Route path="/reservas/hospedaje" element={<ReservaHospedaje />} />
           <Route path="/reservas/eventos" element={<ReservaEventos />} />
 
-          {/* Dashboard Layout */}
+          {/* Dashboard Layout - Solo Administradores */}
           <Route element={
             <ProtectedRoute>
-              <AppLayout />
+              <RoleProtectedRoute allowedRoles={["administrador"]}>
+                <AppLayout />
+              </RoleProtectedRoute>
             </ProtectedRoute>}>
             <Route path="/dashboard" element={<Home />} />  {/* Dashboard ahora en /dashboard */}
 
