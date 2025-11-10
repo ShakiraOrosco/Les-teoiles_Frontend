@@ -22,3 +22,9 @@ export const editUsuario = async (id: number, data: Partial<Usuario>): Promise<U
   );
   return response.data.usuario;
 };
+
+// * === SERVICIO PARA OBTENER EL USUARIO AUTENTICADO === * //
+export const getUsuarioAutenticado = async (): Promise<Usuario> => {
+    const response = await api.get<Usuario>("/mi-perfil/");
+    return response.data;
+};
