@@ -1,5 +1,5 @@
-/*import { useState, useEffect, useMemo } from 'react';
-import { Sparkles, CheckCircle, Copy, X, Upload, Check, ChevronLeft, ChevronRight, Calendar, AlertCircle } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Sparkles, CheckCircle, Copy, X, Upload, Check, ChevronLeft, ChevronRight, Calendar, AlertCircle, User, Clock, CreditCard } from 'lucide-react';
 import { Modal } from '../../../ui/modal';
 import Button from '../../../ui/button/Button';
 import { useCreateReservaEvento } from '../../../../hooks/ReservaEvento/useCreateReservaEvento';
@@ -20,13 +20,15 @@ import {
   soloLetrasEvento,
   bloquearCaracteresEspecialesEvento,
   validarComprobante
-} from '../../components/utils/validaciones';
+} from '../../../../components/utils/validaciones';
 
 interface EventoModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: () => void;
 }
+
+type Step = 'cliente' | 'evento' | 'servicios' | 'resumen' | 'waiting' | 'payment' | 'success' | 'error';
 
 export default function EventoModal({ isOpen, onClose, onSuccess }: EventoModalProps) {
   const { crearReservaEvento, isLoading, error, resetState } = useCreateReservaEvento();
@@ -50,7 +52,7 @@ export default function EventoModal({ isOpen, onClose, onSuccess }: EventoModalP
 
   const [errores, setErrores] = useState<Record<string, string | null>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
-  const [step, setStep] = useState<'form' | 'waiting' | 'payment' | 'success' | 'error'>('form');
+  const [step, setStep] = useState<Step>('cliente');
   const [segundos, setSegundos] = useState(20);
   const [reservaGenId, setReservaGenId] = useState<number | null>(null);
   const [codigoReserva, setCodigoReserva] = useState('');
@@ -63,7 +65,7 @@ export default function EventoModal({ isOpen, onClose, onSuccess }: EventoModalP
   const [errorDetallado, setErrorDetallado] = useState<string>('');
 
   // Validación en tiempo real para cada campo
-  const validarCampo = (nombre: string, valor: string) => {
+  const validarCampo = (nombre: string, valor: string): string | null => {
     let error: string | null = null;
 
     switch (nombre) {
@@ -240,9 +242,85 @@ export default function EventoModal({ isOpen, onClose, onSuccess }: EventoModalP
     setComprobanteError(null);
   };
 
-  const handleContinuarPago = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const validarStep = (step: Step): boolean => {
+    switch (step) {
+      case 'cliente':
+        return !errores.nombre && !errores.apellidoPaterno && !errores.telefono && 
+               !errores.email && !errores.carnet && 
+               !!formData.nombre && !!formData.apellidoPaterno && !!formData.telefono && 
+               !!formData.email && !!formData.carnet;
+      
+      case 'evento':
+        return !errores.tipoReserva && !errores.fechaEvento && !errores.horaInicio && 
+               !errores.horaFin && !errores.cantidadPersonas &&
+               !!formData.tipoReserva && !!formData.fechaEvento && !!formData.horaInicio && 
+               !!formData.horaFin && !!formData.cantidadPersonas;
+      
+      case 'servicios':
+        return true; // Los servicios son opcionales
+      
+      case 'resumen':
+        return true;
+      
+      default:
+        return false;
+    }
+  };
+
+  const handleSiguiente = () => {
+    // Validar campos del step actual
+    const camposStep: Record<Step, string[]> = {
+      cliente: ['nombre', 'apellidoPaterno', 'telefono', 'email', 'carnet'],
+      evento: ['tipoReserva', 'fechaEvento', 'horaInicio', 'horaFin', 'cantidadPersonas'],
+      servicios: [],
+      resumen: [],
+      waiting: [],
+      payment: [],
+      success: [],
+      error: []
+    };
+
+    const camposAValidar = camposStep[step];
+    const nuevosTouched = { ...touched };
+    const nuevosErrores = { ...errores };
+
+    camposAValidar.forEach(campo => {
+      nuevosTouched[campo] = true;
+      nuevosErrores[campo] = validarCampo(campo, formData[campo as keyof typeof formData] as string);
+    });
+
+    setTouched(nuevosTouched);
+    setErrores(nuevosErrores);
+
+    // Verificar si hay errores
+    const hayErrores = camposAValidar.some(campo => nuevosErrores[campo]);
     
+    if (hayErrores) {
+      const primerCampoConError = camposAValidar.find(campo => nuevosErrores[campo]);
+      if (primerCampoConError) {
+        const elemento = document.querySelector(`[name="${primerCampoConError}"]`) as HTMLElement;
+        if (elemento) elemento.focus();
+      }
+      return;
+    }
+
+    // Avanzar al siguiente step
+    const steps: Step[] = ['cliente', 'evento', 'servicios', 'resumen'];
+    const currentIndex = steps.indexOf(step);
+    if (currentIndex < steps.length - 1) {
+      setStep(steps[currentIndex + 1]);
+    }
+  };
+
+  const handleAnterior = () => {
+    const steps: Step[] = ['cliente', 'evento', 'servicios', 'resumen'];
+    const currentIndex = steps.indexOf(step);
+    if (currentIndex > 0) {
+      setStep(steps[currentIndex - 1]);
+    }
+  };
+
+  const handleContinuarPago = async () => {
     const todosLosCampos = {
       nombre: true,
       apellidoPaterno: true,
@@ -332,7 +410,7 @@ export default function EventoModal({ isOpen, onClose, onSuccess }: EventoModalP
     });
     setErrores({});
     setTouched({});
-    setStep('form');
+    setStep('cliente');
     setComprobante(null);
     setReservaGenId(null);
     setCodigoReserva('');
@@ -519,7 +597,7 @@ export default function EventoModal({ isOpen, onClose, onSuccess }: EventoModalP
     return (
       <Modal isOpen={isOpen} onClose={onClose} className="max-w-2xl">
         <div className="w-full relative">
-          <button onClick={() => setStep('form')} className="absolute -top-10 right-0 text-gray-400 hover:text-gray-600 transition z-50">
+          <button onClick={() => setStep('resumen')} className="absolute -top-10 right-0 text-gray-400 hover:text-gray-600 transition z-50">
             <X className="w-6 h-6" />
           </button>
 
@@ -632,36 +710,73 @@ export default function EventoModal({ isOpen, onClose, onSuccess }: EventoModalP
     );
   }
 
-  return (
-    <Modal isOpen={isOpen} onClose={onClose} className="max-w-4xl">
-      <div className="w-full bg-white rounded-2xl p-8">
-        <div className="text-center mb-8">
-          <div className="bg-teal-500 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Sparkles className="w-8 h-8 text-white" />
-          </div>
-          <h2 className="text-3xl font-bold text-teal-800">Reserva de Eventos</h2>
-          <p className="text-gray-600 mt-2">Completa el formulario para realizar tu solicitud</p>
-        </div>
+  // Componente de progreso
+  const ProgressSteps = () => {
+    const steps = [
+      { key: 'cliente', label: 'Cliente', icon: User },
+      { key: 'evento', label: 'Evento', icon: Clock },
+      { key: 'servicios', label: 'Servicios', icon: Sparkles },
+      { key: 'resumen', label: 'Resumen', icon: CreditCard },
+    ];
 
-        {error && (
-          <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
-            <div className="flex items-start gap-2">
-              <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="font-semibold">Error al procesar la reserva</p>
-                <p className="text-sm mt-1">{error}</p>
+    return (
+      <div className="flex justify-between items-center mb-8 relative">
+        <div className="absolute top-4 left-0 right-0 h-0.5 bg-gray-200 -z-10"></div>
+        {steps.map((stepItem, index) => {
+          const StepIcon = stepItem.icon;
+          const isActive = step === stepItem.key;
+          const isCompleted = steps.findIndex(s => s.key === step) > index;
+          
+          return (
+            <div key={stepItem.key} className="flex flex-col items-center relative z-10">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 ${
+                isActive 
+                  ? 'bg-teal-500 text-white scale-110' 
+                  : isCompleted 
+                  ? 'bg-green-500 text-white'
+                  : 'bg-gray-200 text-gray-400'
+              }`}>
+                <StepIcon className="w-4 h-4" />
               </div>
+              <span className={`text-xs mt-2 font-medium ${
+                isActive ? 'text-teal-600' : isCompleted ? 'text-green-600' : 'text-gray-400'
+              }`}>
+                {stepItem.label}
+              </span>
             </div>
-          </div>
-        )}
+          );
+        })}
+      </div>
+    );
+  };
 
-        <form onSubmit={handleContinuarPago} className="space-y-6">
-          <div className="space-y-4">
-            <h3 className="text-xl font-semibold text-teal-900 border-b pb-2">
-              Datos Personales
-            </h3>
+  // Renderizar contenido según el step
+  const renderStepContent = () => {
+    switch (step) {
+      case 'cliente':
+        return (
+          <div className="space-y-6">
+            <div className="text-center mb-6">
+              <div className="bg-teal-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3">
+                <User className="w-6 h-6 text-teal-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-teal-900">Información del Cliente</h3>
+              <p className="text-gray-600">Ingresa tus datos personales</p>
+            </div>
 
-            <div className="grid md:grid-cols-3 gap-4">
+            {error && (
+              <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="font-semibold">Error al procesar la reserva</p>
+                    <p className="text-sm mt-1">{error}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="grid md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Nombre *
@@ -673,7 +788,7 @@ export default function EventoModal({ isOpen, onClose, onSuccess }: EventoModalP
                   onChange={handleChange}
                   onBlur={() => handleBlur('nombre')}
                   onKeyDown={soloLetrasEvento}
-                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent ${
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent ${
                     errores.nombre ? 'border-red-500' : 'border-gray-300'
                   }`}
                   placeholder="Ej: Juan"
@@ -695,7 +810,7 @@ export default function EventoModal({ isOpen, onClose, onSuccess }: EventoModalP
                   onChange={handleChange}
                   onBlur={() => handleBlur('apellidoPaterno')}
                   onKeyDown={soloLetrasEvento}
-                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent ${
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent ${
                     errores.apellidoPaterno ? 'border-red-500' : 'border-gray-300'
                   }`}
                   placeholder="Ej: Pérez"
@@ -716,7 +831,7 @@ export default function EventoModal({ isOpen, onClose, onSuccess }: EventoModalP
                   onChange={handleChange}
                   onBlur={() => handleBlur('apellidoMaterno')}
                   onKeyDown={soloLetrasEvento}
-                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent ${
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent ${
                     errores.apellidoMaterno ? 'border-red-500' : 'border-gray-300'
                   }`}
                   placeholder="Ej: García"
@@ -725,9 +840,7 @@ export default function EventoModal({ isOpen, onClose, onSuccess }: EventoModalP
                   <p className="text-red-500 text-xs mt-1">{errores.apellidoMaterno}</p>
                 )}
               </div>
-            </div>
 
-            <div className="grid md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Teléfono *
@@ -742,7 +855,7 @@ export default function EventoModal({ isOpen, onClose, onSuccess }: EventoModalP
                     soloNumerosEvento(e);
                     bloquearCaracteresEspecialesEvento(e);
                   }}
-                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent ${
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent ${
                     errores.telefono ? 'border-red-500' : 'border-gray-300'
                   }`}
                   placeholder="7XXXXXXX"
@@ -768,7 +881,7 @@ export default function EventoModal({ isOpen, onClose, onSuccess }: EventoModalP
                     soloNumerosEvento(e);
                     bloquearCaracteresEspecialesEvento(e);
                   }}
-                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent ${
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent ${
                     errores.carnet ? 'border-red-500' : 'border-gray-300'
                   }`}
                   placeholder="XXXXXXXX"
@@ -779,166 +892,173 @@ export default function EventoModal({ isOpen, onClose, onSuccess }: EventoModalP
                   <p className="text-red-500 text-xs mt-1">{errores.carnet}</p>
                 )}
               </div>
-            </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Correo Electrónico *
-              </label>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                onBlur={() => handleBlur('email')}
-                onKeyDown={(e) => {
-                  if (e.key === ' ') {
-                    e.preventDefault();
-                  }
-                }}
-                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent transition ${
-                  errores.email && touched.email
-                    ? 'border-red-500 focus:ring-red-500'
-                    : 'border-gray-300 focus:ring-cyan-500'
-                }`}
-                placeholder="juan@email.com"
-              />
-              {errores.email && (
-                <p className="text-red-500 text-xs mt-1">{errores.email}</p>
-              )}
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <h3 className="text-xl font-semibold text-teal-900 border-b pb-2">
-              Detalles de la Reserva
-            </h3>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Tipo de Reserva *
-              </label>
-              <select
-                name="tipoReserva"
-                value={formData.tipoReserva}
-                onChange={handleChange}
-                onBlur={() => handleBlur('tipoReserva')}
-                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent ${
-                  errores.tipoReserva ? 'border-red-500' : 'border-gray-300'
-                }`}
-                required
-              >
-                <option value="">Seleccione un tipo de evento</option>
-                <option value="cumpleaños">Cumpleaños</option>
-                <option value="boda">Boda</option>
-                <option value="reunion">Reunión Familiar</option>
-                <option value="corporativo">Evento Corporativo</option>
-                <option value="graduacion">Graduación</option>
-                <option value="otro">Otro</option>
-              </select>
-              {errores.tipoReserva && (
-                <p className="text-red-500 text-xs mt-1">{errores.tipoReserva}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Fecha del Evento *
-              </label>
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => setMostrarCalendario(!mostrarCalendario)}
-                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-left flex items-center justify-between bg-white ${
-                    errores.fechaEvento ? 'border-red-500' : 'border-gray-300'
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Correo Electrónico *
+                </label>
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  onBlur={() => handleBlur('email')}
+                  onKeyDown={(e) => {
+                    if (e.key === ' ') {
+                      e.preventDefault();
+                    }
+                  }}
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent transition ${
+                    errores.email && touched.email
+                      ? 'border-red-500 focus:ring-red-500'
+                      : 'border-gray-300 focus:ring-cyan-500'
                   }`}
-                >
-                  <span className={formData.fechaEvento ? 'text-gray-900' : 'text-gray-500'}>
-                    {formData.fechaEvento 
-                      ? new Date(formData.fechaEvento + 'T00:00:00').toLocaleDateString('es-ES', { 
-                          weekday: 'long', 
-                          year: 'numeric', 
-                          month: 'long', 
-                          day: 'numeric' 
-                        })
-                      : 'Seleccione una fecha'}
-                  </span>
-                  <Calendar className="w-5 h-5 text-gray-400" />
-                </button>
-                {errores.fechaEvento && (
-                  <p className="text-red-500 text-xs mt-1">{errores.fechaEvento}</p>
-                )}
-
-                {mostrarCalendario && (
-                  <div className="absolute z-50 mt-2 bg-white rounded-xl shadow-2xl border border-gray-200 p-4 w-full md:w-96">
-                    <div className="flex items-center justify-between mb-4">
-                      <button
-                        type="button"
-                        onClick={() => cambiarMes(-1)}
-                        className="p-2 hover:bg-gray-100 rounded-lg transition"
-                      >
-                        <ChevronLeft className="w-5 h-5 text-gray-600" />
-                      </button>
-                      
-                      <h3 className="text-lg font-semibold text-gray-800">
-                        {mesesNombres[mesActual.getMonth()]} {mesActual.getFullYear()}
-                      </h3>
-                      
-                      <button
-                        type="button"
-                        onClick={() => cambiarMes(1)}
-                        className="p-2 hover:bg-gray-100 rounded-lg transition"
-                      >
-                        <ChevronRight className="w-5 h-5 text-gray-600" />
-                      </button>
-                    </div>
-
-                    <div className="grid grid-cols-7 gap-1 mb-2">
-                      {diasSemana.map(dia => (
-                        <div key={dia} className="text-center text-xs font-semibold text-gray-600 py-2">
-                          {dia}
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="grid grid-cols-7 gap-1">
-                      {obtenerDiasDelMes(mesActual).map((dia, index) => (
-                        <div key={index} className="aspect-square">
-                          {dia ? (
-                            <button
-                              type="button"
-                              onClick={() => !esFechaPasada(dia) && seleccionarFecha(dia)}
-                              disabled={esFechaPasada(dia)}
-                              className={`w-full h-full rounded-lg text-sm font-medium transition-all ${
-                                esFechaPasada(dia)
-                                  ? 'text-gray-300 cursor-not-allowed'
-                                  : esFechaSeleccionada(dia)
-                                  ? 'bg-teal-500 text-white shadow-lg scale-105'
-                                  : 'hover:bg-teal-50 text-gray-700 hover:text-teal-600'
-                              }`}
-                            >
-                              {dia}
-                            </button>
-                          ) : (
-                            <div></div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => setMostrarCalendario(false)}
-                      className="w-full mt-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium text-gray-700 transition"
-                    >
-                      Cerrar
-                    </button>
-                  </div>
+                  placeholder="juan@email.com"
+                />
+                {errores.email && (
+                  <p className="text-red-500 text-xs mt-1">{errores.email}</p>
                 )}
               </div>
             </div>
+          </div>
+        );
+
+      case 'evento':
+        return (
+          <div className="space-y-6">
+            <div className="text-center mb-6">
+              <div className="bg-blue-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3">
+                <Clock className="w-6 h-6 text-blue-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-teal-900">Detalles del Evento</h3>
+              <p className="text-gray-600">Configura los detalles de tu evento</p>
+            </div>
 
             <div className="grid md:grid-cols-2 gap-4">
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Tipo de Reserva *
+                </label>
+                <select
+                  name="tipoReserva"
+                  value={formData.tipoReserva}
+                  onChange={handleChange}
+                  onBlur={() => handleBlur('tipoReserva')}
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent ${
+                    errores.tipoReserva ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                  required
+                >
+                  <option value="">Seleccione un tipo de evento</option>
+                  <option value="cumpleaños">Cumpleaños</option>
+                  <option value="boda">Boda</option>
+                  <option value="reunion">Reunión Familiar</option>
+                  <option value="corporativo">Evento Corporativo</option>
+                  <option value="graduacion">Graduación</option>
+                  <option value="otro">Otro</option>
+                </select>
+                {errores.tipoReserva && (
+                  <p className="text-red-500 text-xs mt-1">{errores.tipoReserva}</p>
+                )}
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Fecha del Evento *
+                </label>
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setMostrarCalendario(!mostrarCalendario)}
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-left flex items-center justify-between bg-white ${
+                      errores.fechaEvento ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                  >
+                    <span className={formData.fechaEvento ? 'text-gray-900' : 'text-gray-500'}>
+                      {formData.fechaEvento 
+                        ? new Date(formData.fechaEvento + 'T00:00:00').toLocaleDateString('es-ES', { 
+                            weekday: 'long', 
+                            year: 'numeric', 
+                            month: 'long', 
+                            day: 'numeric' 
+                          })
+                        : 'Seleccione una fecha'}
+                    </span>
+                    <Calendar className="w-5 h-5 text-gray-400" />
+                  </button>
+                  {errores.fechaEvento && (
+                    <p className="text-red-500 text-xs mt-1">{errores.fechaEvento}</p>
+                  )}
+
+                  {mostrarCalendario && (
+                    <div className="absolute z-50 mt-2 bg-white rounded-xl shadow-2xl border border-gray-200 p-4 w-full md:w-96">
+                      <div className="flex items-center justify-between mb-4">
+                        <button
+                          type="button"
+                          onClick={() => cambiarMes(-1)}
+                          className="p-2 hover:bg-gray-100 rounded-lg transition"
+                        >
+                          <ChevronLeft className="w-5 h-5 text-gray-600" />
+                        </button>
+                        
+                        <h3 className="text-lg font-semibold text-gray-800">
+                          {mesesNombres[mesActual.getMonth()]} {mesActual.getFullYear()}
+                        </h3>
+                        
+                        <button
+                          type="button"
+                          onClick={() => cambiarMes(1)}
+                          className="p-2 hover:bg-gray-100 rounded-lg transition"
+                        >
+                          <ChevronRight className="w-5 h-5 text-gray-600" />
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-7 gap-1 mb-2">
+                        {diasSemana.map(dia => (
+                          <div key={dia} className="text-center text-xs font-semibold text-gray-600 py-2">
+                            {dia}
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="grid grid-cols-7 gap-1">
+                        {obtenerDiasDelMes(mesActual).map((dia, index) => (
+                          <div key={index} className="aspect-square">
+                            {dia ? (
+                              <button
+                                type="button"
+                                onClick={() => !esFechaPasada(dia) && seleccionarFecha(dia)}
+                                disabled={esFechaPasada(dia)}
+                                className={`w-full h-full rounded-lg text-sm font-medium transition-all ${
+                                  esFechaPasada(dia)
+                                    ? 'text-gray-300 cursor-not-allowed'
+                                    : esFechaSeleccionada(dia)
+                                    ? 'bg-teal-500 text-white shadow-lg scale-105'
+                                    : 'hover:bg-teal-50 text-gray-700 hover:text-teal-600'
+                                }`}
+                              >
+                                {dia}
+                              </button>
+                            ) : (
+                              <div></div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setMostrarCalendario(false)}
+                        className="w-full mt-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium text-gray-700 transition"
+                      >
+                        Cerrar
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Hora de Inicio *
@@ -949,7 +1069,7 @@ export default function EventoModal({ isOpen, onClose, onSuccess }: EventoModalP
                   value={formData.horaInicio}
                   onChange={handleChange}
                   onBlur={() => handleBlur('horaInicio')}
-                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent ${
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent ${
                     errores.horaInicio ? 'border-red-500' : 'border-gray-300'
                   }`}
                   required
@@ -969,7 +1089,7 @@ export default function EventoModal({ isOpen, onClose, onSuccess }: EventoModalP
                   value={formData.horaFin}
                   onChange={handleChange}
                   onBlur={() => handleBlur('horaFin')}
-                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent ${
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent ${
                     errores.horaFin ? 'border-red-500' : 'border-gray-300'
                   }`}
                   required
@@ -978,58 +1098,71 @@ export default function EventoModal({ isOpen, onClose, onSuccess }: EventoModalP
                   <p className="text-red-500 text-xs mt-1">{errores.horaFin}</p>
                 )}
               </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Cantidad de Personas *
+                </label>
+                <input
+                  type="text"
+                  name="cantidadPersonas"
+                  value={formData.cantidadPersonas}
+                  onChange={handleChange}
+                  onBlur={() => handleBlur('cantidadPersonas')}
+                  onKeyDown={(e) => {
+                    if (
+                      !/^[0-9]$/.test(e.key) &&
+                      ![
+                        'Backspace', 'Delete', 'Tab', 'Escape', 'Enter',
+                        'ArrowLeft', 'ArrowRight', 'Home', 'End'
+                      ].includes(e.key)
+                    ) {
+                      e.preventDefault();
+                    }
+                  }}
+                  onPaste={(e) => {
+                    const pastedText = e.clipboardData.getData('text');
+                    if (!/^\d*$/.test(pastedText)) {
+                      e.preventDefault();
+                    }
+                  }}
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent ${
+                    errores.cantidadPersonas ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                  placeholder="Ej: 50"
+                  inputMode="numeric"
+                  maxLength={3}
+                  required
+                />
+                {errores.cantidadPersonas && (
+                  <p className="text-red-500 text-xs mt-1">{errores.cantidadPersonas}</p>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'servicios':
+        return (
+          <div className="space-y-6">
+            <div className="text-center mb-6">
+              <div className="bg-purple-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3">
+                <Sparkles className="w-6 h-6 text-purple-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-teal-900">Servicios Adicionales</h3>
+              <p className="text-gray-600">Selecciona los servicios que deseas incluir</p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Cantidad de Personas *
-              </label>
-              <input
-                type="text"
-                name="cantidadPersonas"
-                value={formData.cantidadPersonas}
-                onChange={handleChange}
-                onBlur={() => handleBlur('cantidadPersonas')}
-                onKeyDown={(e) => {
-                  if (
-                    !/^[0-9]$/.test(e.key) &&
-                    ![
-                      'Backspace', 'Delete', 'Tab', 'Escape', 'Enter',
-                      'ArrowLeft', 'ArrowRight', 'Home', 'End'
-                    ].includes(e.key)
-                  ) {
-                    e.preventDefault();
-                  }
-                }}
-                onPaste={(e) => {
-                  const pastedText = e.clipboardData.getData('text');
-                  if (!/^\d*$/.test(pastedText)) {
-                    e.preventDefault();
-                  }
-                }}
-                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent ${
-                  errores.cantidadPersonas ? 'border-red-500' : 'border-gray-300'
-                }`}
-                placeholder="Ej: 50"
-                inputMode="numeric"
-                maxLength={3}
-                required
-              />
-              {errores.cantidadPersonas && (
-                <p className="text-red-500 text-xs mt-1">{errores.cantidadPersonas}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Servicios Adicionales
-              </label>
               {isLoadingServicios ? (
-                <p className="text-sm text-gray-500">Cargando servicios...</p>
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600 mx-auto"></div>
+                  <p className="text-gray-500 mt-2">Cargando servicios...</p>
+                </div>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
                   {servicios.map((servicio) => (
-                    <label key={servicio.id_servicios_adicionales} className="flex items-center gap-3 cursor-pointer p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition">
+                    <label key={servicio.id_servicios_adicionales} className="flex items-center gap-3 cursor-pointer p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition hover:border-teal-200">
                       <input
                         type="checkbox"
                         checked={formData.serviciosAdicionales.includes(servicio.id_servicios_adicionales)}
@@ -1038,106 +1171,251 @@ export default function EventoModal({ isOpen, onClose, onSuccess }: EventoModalP
                       />
                       <div className="flex-1">
                         <span className="text-gray-700 font-medium">{servicio.nombre}</span>
-                        <p className="text-xs text-gray-500">{servicio.descripcion}</p>
-                        <p className="text-xs text-teal-600 font-medium">
-                          Tipo: {servicio.tipo} - 
+                        <p className="text-sm text-gray-500 mt-1">{servicio.descripcion}</p>
+                        <p className="text-xs text-teal-600 font-medium mt-1">
                           {servicio.tipo === 'A' 
                             ? ` ${servicio.precio.toFixed(2)} Bs. por persona` 
                             : ` ${servicio.precio.toFixed(2)} Bs. (precio fijo)`}
                         </p>
                       </div>
-                      <span className="text-teal-600 font-semibold">{servicio.precio.toFixed(2)} Bs.</span>
+                      <span className="text-teal-600 font-semibold text-lg">{servicio.precio.toFixed(2)} Bs.</span>
                     </label>
                   ))}
                 </div>
               )}
             </div>
-          </div>
 
-          {/* Resumen de precios *//*}
-          <div className="bg-white rounded-2xl border-2 border-teal-100 shadow-lg overflow-hidden">
-            <div className="bg-gradient-to-r from-teal-500 to-cyan-500 px-6 py-4">
-              <h3 className="text-xl font-bold text-white text-center flex items-center justify-center gap-2">
-                <Sparkles className="w-5 h-5" />
-                Resumen de tu Reserva
-              </h3>
-            </div>
-            
-            {serviciosSeleccionados.length > 0 ? (
-              <div className="p-6 space-y-4">
-                <div className="space-y-3">
+            {/* Resumen de precios en tiempo real */}
+            {serviciosSeleccionados.length > 0 && (
+              <div className="bg-gradient-to-r from-teal-50 to-cyan-50 rounded-xl p-4 border border-teal-200">
+                <h4 className="font-semibold text-teal-800 mb-2">Resumen Seleccionado:</h4>
+                <div className="space-y-2">
                   {serviciosSeleccionados.map(servicio => (
-                    <div key={servicio.id_servicios_adicionales} className="flex justify-between items-start gap-4 p-3 bg-gray-50 rounded-lg">
-                      <div className="flex-1">
-                        <p className="font-semibold text-gray-800">{servicio.nombre}</p>
-                        {servicio.tipo === 'A' && formData.cantidadPersonas && (
-                          <p className="text-sm text-gray-500 mt-1">
-                            {servicio.precio.toFixed(2)} Bs. × {formData.cantidadPersonas} persona{parseInt(formData.cantidadPersonas) > 1 ? 's' : ''}
-                          </p>
-                        )}
-                        {servicio.tipo === 'E' && (
-                          <p className="text-sm text-gray-500 mt-1">Precio fijo</p>
-                        )}
-                      </div>
-                      <div className="text-right">
-                        <p className="font-bold text-teal-600">
-                          {servicio.tipo === 'A' && formData.cantidadPersonas
-                            ? `${(servicio.precio * parseInt(formData.cantidadPersonas)).toFixed(2)}`
-                            : `${servicio.precio.toFixed(2)}`
-                          } <span className="text-sm">Bs.</span>
-                        </p>
-                      </div>
+                    <div key={servicio.id_servicios_adicionales} className="flex justify-between text-sm">
+                      <span>{servicio.nombre}</span>
+                      <span className="font-medium">
+                        {servicio.tipo === 'A' && formData.cantidadPersonas
+                          ? `${(servicio.precio * parseInt(formData.cantidadPersonas)).toFixed(2)} Bs.`
+                          : `${servicio.precio.toFixed(2)} Bs.`
+                        }
+                      </span>
                     </div>
                   ))}
-                </div>
-                
-                <div className="space-y-3 pt-4 border-t-2 border-dashed border-gray-200">
-                  <div className="flex justify-between items-center p-4 bg-teal-50 rounded-xl">
-                    <span className="text-gray-700 font-semibold">Total de servicios:</span>
-                    <span className="text-2xl font-bold text-teal-700">{precioTotal.toFixed(2)} <span className="text-lg">Bs.</span></span>
-                  </div>
-                  
-                  <div className="flex justify-between items-center p-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl border-2 border-amber-200">
-                    <div>
-                      <p className="text-gray-700 font-semibold">Adelanto (50%)</p>
-                      <p className="text-xs text-gray-500">A pagar ahora</p>
+                  <div className="border-t border-teal-200 pt-2 mt-2">
+                    <div className="flex justify-between font-semibold">
+                      <span>Total:</span>
+                      <span className="text-teal-700">{precioTotal.toFixed(2)} Bs.</span>
                     </div>
-                    <span className="text-3xl font-bold text-amber-600">{precioAdelanto.toFixed(2)} <span className="text-xl">Bs.</span></span>
+                    <div className="flex justify-between text-sm text-amber-600">
+                      <span>Adelanto (50%):</span>
+                      <span>{precioAdelanto.toFixed(2)} Bs.</span>
+                    </div>
                   </div>
-                  
-                  <div className="bg-blue-50 border-l-4 border-blue-400 p-3 rounded">
-                    <p className="text-sm text-blue-800">
-                      💡 <strong>Restante:</strong> {precioAdelanto.toFixed(2)} Bs. se pagará en recepción
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="text-center py-12 px-6">
-                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Sparkles className="w-8 h-8 text-gray-400" />
-                </div>
-                <p className="text-gray-500 mb-2">Selecciona servicios adicionales</p>
-                <p className="text-sm text-gray-400">para ver el monto total de tu reserva</p>
-                <div className="mt-4 inline-block px-6 py-2 bg-gray-100 rounded-lg">
-                  <p className="text-3xl font-bold text-gray-400">0.00 <span className="text-xl">Bs.</span></p>
                 </div>
               </div>
             )}
           </div>
+        );
 
-          <div className="flex justify-end gap-3 pt-4">
-            <Button variant="outline" onClick={onClose}>Cancelar</Button>
-            <Button
-              variant="primary"
-              type="submit"
-              disabled={isLoading}
-            >
-              {isLoading ? 'Enviando...' : `Continuar al Pago - ${precioAdelanto.toFixed(2)} Bs.`}
-            </Button>
+      case 'resumen':
+        return (
+          <div className="space-y-6">
+            <div className="text-center mb-6">
+              <div className="bg-amber-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3">
+                <CreditCard className="w-6 h-6 text-amber-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-teal-900">Resumen de Reserva</h3>
+              <p className="text-gray-600">Revisa y confirma los detalles de tu reserva</p>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Información del Cliente */}
+              <div className="bg-gray-50 rounded-xl p-4">
+                <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                  <User className="w-4 h-4" />
+                  Información del Cliente
+                </h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Nombre:</span>
+                    <span className="font-medium">{formData.nombre} {formData.apellidoPaterno} {formData.apellidoMaterno}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Teléfono:</span>
+                    <span className="font-medium">{formData.telefono}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Email:</span>
+                    <span className="font-medium">{formData.email}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">CI:</span>
+                    <span className="font-medium">{formData.carnet}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Detalles del Evento */}
+              <div className="bg-gray-50 rounded-xl p-4">
+                <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                  <Clock className="w-4 h-4" />
+                  Detalles del Evento
+                </h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Tipo:</span>
+                    <span className="font-medium capitalize">{formData.tipoReserva}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Fecha:</span>
+                    <span className="font-medium">
+                      {formData.fechaEvento 
+                        ? new Date(formData.fechaEvento + 'T00:00:00').toLocaleDateString('es-ES')
+                        : '-'
+                      }
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Horario:</span>
+                    <span className="font-medium">{formData.horaInicio} - {formData.horaFin}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Personas:</span>
+                    <span className="font-medium">{formData.cantidadPersonas}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Servicios Seleccionados */}
+            <div className="bg-white rounded-2xl border-2 border-teal-100 shadow-lg overflow-hidden">
+              <div className="bg-gradient-to-r from-teal-500 to-cyan-500 px-6 py-4">
+                <h3 className="text-lg font-bold text-white text-center flex items-center justify-center gap-2">
+                  <Sparkles className="w-5 h-5" />
+                  Resumen de Servicios y Pagos
+                </h3>
+              </div>
+              
+              {serviciosSeleccionados.length > 0 ? (
+                <div className="p-6 space-y-4">
+                  <div className="space-y-3">
+                    {serviciosSeleccionados.map(servicio => (
+                      <div key={servicio.id_servicios_adicionales} className="flex justify-between items-start gap-4 p-3 bg-gray-50 rounded-lg">
+                        <div className="flex-1">
+                          <p className="font-semibold text-gray-800">{servicio.nombre}</p>
+                          {servicio.tipo === 'A' && formData.cantidadPersonas && (
+                            <p className="text-sm text-gray-500 mt-1">
+                              {servicio.precio.toFixed(2)} Bs. × {formData.cantidadPersonas} persona{parseInt(formData.cantidadPersonas) > 1 ? 's' : ''}
+                            </p>
+                          )}
+                          {servicio.tipo === 'E' && (
+                            <p className="text-sm text-gray-500 mt-1">Precio fijo</p>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold text-teal-600">
+                            {servicio.tipo === 'A' && formData.cantidadPersonas
+                              ? `${(servicio.precio * parseInt(formData.cantidadPersonas)).toFixed(2)}`
+                              : `${servicio.precio.toFixed(2)}`
+                            } <span className="text-sm">Bs.</span>
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <div className="space-y-3 pt-4 border-t-2 border-dashed border-gray-200">
+                    <div className="flex justify-between items-center p-4 bg-teal-50 rounded-xl">
+                      <span className="text-gray-700 font-semibold">Total de servicios:</span>
+                      <span className="text-2xl font-bold text-teal-700">{precioTotal.toFixed(2)} <span className="text-lg">Bs.</span></span>
+                    </div>
+                    
+                    <div className="flex justify-between items-center p-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl border-2 border-amber-200">
+                      <div>
+                        <p className="text-gray-700 font-semibold">Adelanto (50%)</p>
+                        <p className="text-xs text-gray-500">A pagar ahora</p>
+                      </div>
+                      <span className="text-3xl font-bold text-amber-600">{precioAdelanto.toFixed(2)} <span className="text-xl">Bs.</span></span>
+                    </div>
+                    
+                    <div className="bg-blue-50 border-l-4 border-blue-400 p-3 rounded">
+                      <p className="text-sm text-blue-800">
+                        💡 <strong>Restante:</strong> {precioAdelanto.toFixed(2)} Bs. se pagará en recepción
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-12 px-6">
+                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Sparkles className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <p className="text-gray-500 mb-2">No se seleccionaron servicios adicionales</p>
+                  <p className="text-sm text-gray-400">El costo total de tu reserva es</p>
+                  <div className="mt-4 inline-block px-6 py-2 bg-gray-100 rounded-lg">
+                    <p className="text-3xl font-bold text-gray-400">0.00 <span className="text-xl">Bs.</span></p>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
-        </form>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} className="max-w-4xl max-h-[90vh] overflow-hidden">
+      <div className="w-full bg-white rounded-2xl p-8 max-h-[80vh] overflow-y-auto">
+        <div className="text-center mb-6">
+          <div className="bg-teal-500 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Sparkles className="w-8 h-8 text-white" />
+          </div>
+          <h2 className="text-3xl font-bold text-teal-800">Reserva de Eventos</h2>
+          <p className="text-gray-600 mt-2">Completa el formulario paso a paso</p>
+        </div>
+
+        {/* Barra de progreso */}
+        <ProgressSteps />
+
+        {/* Contenido del step actual */}
+        <div className="min-h-[400px]">
+          {renderStepContent()}
+        </div>
+
+        {/* Botones de navegación */}
+        <div className="flex justify-between pt-6 mt-6 border-t border-gray-200">
+          <Button 
+            variant="outline" 
+            onClick={step === 'cliente' ? onClose : handleAnterior}
+            disabled={isLoading}
+          >
+            {step === 'cliente' ? 'Cancelar' : 'Anterior'}
+          </Button>
+          
+          <div className="flex gap-3">
+            {step !== 'resumen' ? (
+              <Button
+                variant="primary"
+                onClick={handleSiguiente}
+                disabled={!validarStep(step) || isLoading}
+              >
+                Siguiente
+              </Button>
+            ) : (
+              <Button
+                variant="primary"
+                onClick={handleContinuarPago}
+                disabled={isLoading}
+              >
+                {isLoading ? 'Procesando...' : `Continuar al Pago - ${precioAdelanto.toFixed(2)} Bs.`}
+              </Button>
+            )}
+          </div>
+        </div>
       </div>
     </Modal>
   );
-}/*/  
+}

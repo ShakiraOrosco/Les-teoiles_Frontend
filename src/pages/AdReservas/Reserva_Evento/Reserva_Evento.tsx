@@ -1,10 +1,9 @@
-/*import { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
 import PageMeta from "../../../components/common/PageMeta";
 import ReservasEventosTable from "../../../components/tables/AdReservas/Reserva_Eventos/ReservaEventoTable";
 import ReservaEventosFilter from "../../../components/filters/AdReservas/Reservas_Eventos/EventosFilter";
 import Button from "../../../components/ui/button/Button";
-import {Modal} from "../../../components/ui/modal/index";
 import { FaPlus } from "react-icons/fa";
 import { Pagination } from "../../../components/tables/Pagination";
 import Alert from "../../../components/ui/alert/Alert";
@@ -218,8 +217,8 @@ export default function ReservasEventosPage() {
         </thead>
         <tbody>
           ${reservasParaExportar
-                .map(
-                    (r) => `
+            .map(
+                (r) => `
                 <tr>
                   <td>${r.id_reservas_evento}</td>
                   <td>EVT${r.id_reservas_evento}</td>
@@ -231,8 +230,8 @@ export default function ReservasEventosPage() {
                   <td>${r.cant_personas}</td>
                   <td>${r.estado}</td>
                 </tr>`
-                )
-                .join("")}
+            )
+            .join("")}
         </tbody>
       </table>
     `;
@@ -293,8 +292,8 @@ export default function ReservasEventosPage() {
             <PageBreadcrumb pageTitle="Reservas de Eventos" />
 
             <div className="rounded-2xl border border-gray-200 bg-white dark:bg-gray-900 dark:border-gray-800 px-5 py-7 xl:px-10 xl:py-12 space-y-6">
-                {/* FILTROS *//*}
-                /*<ReservaEventosFilter
+                {/* FILTROS */}
+                <ReservaEventosFilter
                     filtro={filtro}
                     setFiltro={setFiltro}
                     estado={filtroEstado}
@@ -305,7 +304,7 @@ export default function ReservasEventosPage() {
                     setFechaFiltro={setFiltroFecha}
                     tiposEventoDisponibles={tiposEventoDisponibles}
                 >
-                    {/* Botones de acción *//*}
+                    {/* Botones de acción */}
                     <div className="flex flex-wrap gap-2">
                         <Button
                             size="md"
@@ -324,7 +323,7 @@ export default function ReservasEventosPage() {
                     </div>
                 </ReservaEventosFilter>
 
-                {/* Información de resultados *//*}
+                {/* Información de resultados */}
                 <div className="flex justify-between items-center">
                     <div className="text-lg font-semibold dark:text-white">
                         {loading ? "Cargando reservas..." : `Mostrando ${reservasPaginadas.length} de ${reservasArray.length} reservas`}
@@ -336,6 +335,8 @@ export default function ReservasEventosPage() {
                         </div>
                     )}
                 </div>
+
+                {/* Modal de CREAR NUEVO EVENTO */}
                 <EventoModal
                     isOpen={isModalOpen}
                     onClose={() => setIsModalOpen(false)}
@@ -350,7 +351,7 @@ export default function ReservasEventosPage() {
                     }}
                 />
 
-                {/* Modal de EDITAR *//*}
+                {/* Modal de EDITAR */}
                 <EditEventoModal
                     isOpen={isEditModalOpen}
                     onClose={() => {
@@ -361,7 +362,7 @@ export default function ReservasEventosPage() {
                     onSuccess={handleSaveEdit}
                 />
 
-                {/* Modal de ELIMINAR *//*}
+                {/* Modal de ELIMINAR */}
                 <DeleteEventoModal
                     isOpen={isDeleteModalOpen}
                     onClose={() => {
@@ -374,7 +375,7 @@ export default function ReservasEventosPage() {
                     tipo="evento"
                 />
 
-                {/* Modal de VER DETALLES *//*}
+                {/* Modal de VER DETALLES */}
                 <ViewEventoModal
                     isOpen={isViewModalOpen}
                     onClose={() => {
@@ -389,7 +390,7 @@ export default function ReservasEventosPage() {
                 )}
 
                 <div className="max-w-full space-y-6">
-                    {/* LOADING DENTRO DEL CONTENEDOR *//*}
+                    {/* LOADING DENTRO DEL CONTENEDOR */}
                     {loading ? (
                         <div className="flex flex-col items-center justify-center py-16">
                             <div
@@ -458,4 +459,4 @@ export default function ReservasEventosPage() {
             </div>
         </div>
     );
-}*/
+}
