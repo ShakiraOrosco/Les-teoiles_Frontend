@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Sparkles, CheckCircle, Copy, X, AlertCircle, Check, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Sparkles, CheckCircle, X, AlertCircle, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Modal } from '../../../ui/modal';
 import Button from '../../../ui/button/Button';
 import { useUpdateEvento } from '../../../../hooks/AdReservas/Reserva_Eventos/useUpdateEventos';
@@ -27,6 +27,15 @@ interface EventoModalEditProps {
   reservaData: any;
 }
 
+// Función helper para convertir cualquier valor a string de forma segura
+const safeString = (val: any): string => {
+  if (val === null || val === undefined) return '';
+  if (typeof val === 'string') return val;
+  if (typeof val === 'number') return val.toString();
+  if (typeof val === 'boolean') return val.toString();
+  return String(val);
+};
+
 export default function EventoModalEdit({ isOpen, onClose, onSuccess, reservaData }: EventoModalEditProps) {
   const { updateReservaEvento, isUpdating, error, resetState } = useUpdateEvento();
   const { servicios, isLoading: isLoadingServicios } = useServiciosAdicionales();
@@ -41,8 +50,8 @@ export default function EventoModalEdit({ isOpen, onClose, onSuccess, reservaDat
     fechaEvento: '',
     cantidadPersonas: '',
     tipoReserva: '',
-    horaInicio: '',
-    horaFin: '',
+    hora_ini: '',
+    hora_fin: '',
     serviciosAdicionales: [] as number[],
   });
 
@@ -51,7 +60,6 @@ export default function EventoModalEdit({ isOpen, onClose, onSuccess, reservaDat
   const [step, setStep] = useState<'form' | 'waiting' | 'success' | 'error'>('form');
   const [segundos, setSegundos] = useState(10);
   const [codigoReserva, setCodigoReserva] = useState('');
-  const [copiado, setCopiado] = useState(false);
   const [mostrarCalendario, setMostrarCalendario] = useState(false);
   const [mesActual, setMesActual] = useState(new Date());
   const [fechaSeleccionada, setFechaSeleccionada] = useState<Date | null>(null);
@@ -60,82 +68,131 @@ export default function EventoModalEdit({ isOpen, onClose, onSuccess, reservaDat
   // Cargar datos de la reserva cuando se abre el modal
   useEffect(() => {
     if (isOpen && reservaData) {
-      console.log('📥 Datos de reserva recibidos:', reservaData);
-      
-      // Extraer IDs de servicios adicionales
-      const serviciosIds = reservaData.servicios_adicionales?.map((s: any) => 
-        typeof s === 'object' ? s.id_servicios_adicionales : s
-      ) || [];
+      console.log('📥 Datos COMPLETOS de reserva:', reservaData);
 
-      setFormData({
-        nombre: reservaData.datos_cliente?.nombre || reservaData.nombre || '',
-        apellidoPaterno: reservaData.datos_cliente?.app_paterno || reservaData.apellido_paterno || '',
-        apellidoMaterno: reservaData.datos_cliente?.app_materno || reservaData.apellido_materno || '',
-        telefono: reservaData.datos_cliente?.telefono || reservaData.telefono || '',
-        email: reservaData.datos_cliente?.email || reservaData.email || '',
-        carnet: reservaData.datos_cliente?.ci || reservaData.carnet || '',
-        fechaEvento: reservaData.fecha_evento || reservaData.fecha || '',
-        cantidadPersonas: reservaData.cantidad_personas?.toString() || reservaData.cant_personas?.toString() || '',
-        tipoReserva: reservaData.tipo_reserva || '',
-        horaInicio: reservaData.hora_inicio || reservaData.hora_ini || '',
-        horaFin: reservaData.hora_fin || '',
+      // Extraer datos del cliente
+      const datosCliente = reservaData.datos_cliente || {};
+
+      // Extraer IDs de servicios adicionales - CORREGIDO
+      let serviciosIds: number[] = [];
+      if (reservaData.servicios_adicionales && Array.isArray(reservaData.servicios_adicionales)) {
+        serviciosIds = reservaData.servicios_adicionales
+          .map((s: any) => {
+            // Si es un objeto, extraer el ID, si es número, usarlo directamente
+            if (typeof s === 'object' && s !== null) {
+              return s.id_servicios_adicionales || s.id || s.servicio_id;
+            }
+            return s;
+          })
+          .filter((id: any) => id !== null && id !== undefined && !isNaN(Number(id)))
+          .map((id: any) => Number(id)); // Asegurar que sean números
+      }
+
+      console.log('🔄 IDs de servicios extraídos:', serviciosIds);
+
+      // FUNCIÓN PARA EXTRAER SOLO LA HORA DE UN DATETIME
+      const extraerHoraDeDateTime = (dateTimeString: string) => {
+        if (!dateTimeString) return '';
+        try {
+          const date = new Date(dateTimeString);
+          return date.toTimeString().slice(0, 5); // Formato "HH:MM"
+        } catch (error) {
+          console.error('Error al extraer hora:', error);
+          return '';
+        }
+      };
+
+      // Mapeo CORREGIDO para Django - asegurando que todos sean strings
+      const datosMapeados = {
+        // Datos personales - convertir explícitamente a string
+        nombre: safeString(datosCliente.nombre || reservaData.nombre),
+        apellidoPaterno: safeString(datosCliente.app_paterno || reservaData.app_paterno),
+        apellidoMaterno: safeString(datosCliente.app_materno || reservaData.app_materno),
+        telefono: safeString(datosCliente.telefono || reservaData.telefono),
+        email: safeString(datosCliente.email || reservaData.email),
+        carnet: safeString(datosCliente.ci || reservaData.ci || reservaData.carnet),
+
+        // Datos de reserva
+        fechaEvento: safeString(reservaData.fecha || reservaData.fecha_evento),
+        cantidadPersonas: safeString(reservaData.cant_personas || reservaData.cantidad_personas),
+        tipoReserva: safeString(reservaData.reservas_gen?.tipo_reserva || reservaData.tipo_reserva),
+
+        // DateTimeFields - extraer solo la hora
+        hora_ini: extraerHoraDeDateTime(reservaData.hora_ini),
+        hora_fin: extraerHoraDeDateTime(reservaData.hora_fin),
+
         serviciosAdicionales: serviciosIds,
-      });
-      
+      };
+
+      console.log('📋 Datos mapeados FINALES:', datosMapeados);
+      console.log('🎯 Servicios cargados:', datosMapeados.serviciosAdicionales);
+
+      setFormData(datosMapeados);
+
+      // Establecer código de reserva
       if (reservaData.codigo_reserva) {
         setCodigoReserva(reservaData.codigo_reserva);
       } else if (reservaData.id_reservas_evento) {
         setCodigoReserva(`EVT${reservaData.id_reservas_evento.toString().padStart(4, '0')}`);
       }
 
-      // Si hay fecha, establecer la fecha seleccionada para el calendario
-      if (reservaData.fecha_evento || reservaData.fecha) {
-        const fecha = new Date(reservaData.fecha_evento || reservaData.fecha);
-        setFechaSeleccionada(fecha);
-        setMesActual(fecha);
+      // Configurar calendario si hay fecha
+      const fechaParaCalendario = reservaData.fecha || reservaData.hora_ini;
+      if (fechaParaCalendario) {
+        try {
+          const fecha = new Date(fechaParaCalendario);
+          if (!isNaN(fecha.getTime())) {
+            setFechaSeleccionada(fecha);
+            setMesActual(fecha);
+          }
+        } catch (error) {
+          console.error('Error al parsear fecha:', error);
+        }
       }
     }
   }, [isOpen, reservaData]);
 
-  // Validación en tiempo real para cada campo
-  const validarCampo = (nombre: string, valor: string) => {
+  const validarCampo = (nombre: string, valor: any) => {
+    const valorString = safeString(valor);
+
     let error: string | null = null;
 
     switch (nombre) {
       case 'nombre':
-        error = validarNombreEvento(valor);
+        error = validarNombreEvento(valorString);
         break;
       case 'apellidoPaterno':
       case 'apellidoMaterno':
-        const erroresApellidos = validarApellidosEvento(
-          nombre === 'apellidoPaterno' ? valor : formData.apellidoPaterno,
-          nombre === 'apellidoMaterno' ? valor : formData.apellidoMaterno
-        );
+        const apellidoPaterno = nombre === 'apellidoPaterno' ? valorString : safeString(formData.apellidoPaterno);
+        const apellidoMaterno = nombre === 'apellidoMaterno' ? valorString : safeString(formData.apellidoMaterno);
+        const erroresApellidos = validarApellidosEvento(apellidoPaterno, apellidoMaterno);
         error = nombre === 'apellidoPaterno' ? erroresApellidos.paterno : erroresApellidos.materno;
         break;
       case 'telefono':
-        error = validarTelefonoEvento(valor);
+        error = validarTelefonoEvento(valorString);
         break;
       case 'email':
-        error = validarEmailEvento(valor);
+        error = validarEmailEvento(valorString);
         break;
       case 'carnet':
-        error = validarCIEvento(valor);
+        error = validarCIEvento(valorString);
         break;
       case 'fechaEvento':
-        error = validarFechaEvento(valor);
+        error = validarFechaEvento(valorString);
         break;
       case 'cantidadPersonas':
-        error = validarCantidadPersonasEvento(valor);
+        error = validarCantidadPersonasEvento(valorString);
         break;
       case 'tipoReserva':
-        error = valor ? null : "Debe seleccionar un tipo de evento";
+        error = valorString ? null : "Debe seleccionar un tipo de evento";
         break;
-      case 'horaInicio':
-        error = validarHoraInicio(valor);
+      case 'hora_ini':
+        error = validarHoraInicio(valorString);
         break;
-      case 'horaFin':
-        error = validarHoraFin(formData.horaInicio, valor, formData.fechaEvento);
+      case 'hora_fin':
+        const horaInicio = safeString(formData.hora_ini);
+        const fechaEvento = safeString(formData.fechaEvento);
+        error = validarHoraFin(horaInicio, valorString, fechaEvento);
         break;
       default:
         error = null;
@@ -147,38 +204,53 @@ export default function EventoModalEdit({ isOpen, onClose, onSuccess, reservaDat
   // Actualizar errores cuando cambia formData
   useEffect(() => {
     const nuevosErrores: Record<string, string | null> = {};
-    
-    Object.keys(touched).forEach(field => {
+
+    // Lista explícita de campos para evitar problemas de tipo
+    const campos = [
+      'nombre', 'apellidoPaterno', 'apellidoMaterno',
+      'telefono', 'email', 'carnet', 'fechaEvento',
+      'cantidadPersonas', 'tipoReserva', 'hora_ini', 'hora_fin'
+    ] as const;
+
+    campos.forEach(field => {
       if (touched[field]) {
-        nuevosErrores[field] = validarCampo(field, formData[field as keyof typeof formData] as string);
+        const valor = formData[field];
+        nuevosErrores[field] = validarCampo(field, valor);
       }
     });
-    
+
     setErrores(nuevosErrores);
   }, [formData, touched]);
 
   // Calcular el precio total en tiempo real
   const precioTotal = useMemo(() => {
     let total = 0;
-    
-    const serviciosSeleccionados = servicios.filter(servicio => 
+
+    const serviciosSeleccionados = servicios.filter(servicio =>
       formData.serviciosAdicionales.includes(servicio.id_servicios_adicionales)
     );
+
+    console.log('💰 Servicios seleccionados para cálculo:', serviciosSeleccionados);
+    console.log('👥 Cantidad de personas:', formData.cantidadPersonas);
 
     serviciosSeleccionados.forEach(servicio => {
       if (servicio.tipo === 'A') {
         const cantidadPersonas = parseInt(formData.cantidadPersonas) || 1;
-        total += servicio.precio * cantidadPersonas;
+        const subtotal = servicio.precio * cantidadPersonas;
+        total += subtotal;
+        console.log(`📊 ${servicio.nombre}: ${servicio.precio} × ${cantidadPersonas} = ${subtotal}`);
       } else {
         total += servicio.precio;
+        console.log(`📊 ${servicio.nombre}: ${servicio.precio} (precio fijo)`);
       }
     });
 
+    console.log('💰 Total calculado:', total);
     return total;
   }, [formData.serviciosAdicionales, formData.cantidadPersonas, servicios]);
 
   const serviciosSeleccionados = useMemo(() => {
-    return servicios.filter(servicio => 
+    return servicios.filter(servicio =>
       formData.serviciosAdicionales.includes(servicio.id_servicios_adicionales)
     );
   }, [formData.serviciosAdicionales, servicios]);
@@ -193,13 +265,13 @@ export default function EventoModalEdit({ isOpen, onClose, onSuccess, reservaDat
   }, [step, segundos]);
 
   const handleBlur = (field: string) => {
-    let valorLimpio = formData[field as keyof typeof formData] as string;
-    
+    let valorLimpio = safeString(formData[field as keyof typeof formData]);
+
     if (field === 'nombre' || field === 'apellidoPaterno' || field === 'apellidoMaterno') {
       valorLimpio = valorLimpio.trim();
       setFormData(prev => ({ ...prev, [field]: valorLimpio }));
     }
-    
+
     setTouched(prev => ({ ...prev, [field]: true }));
     const error = validarCampo(field, valorLimpio);
     setErrores(prev => ({ ...prev, [field]: error }));
@@ -208,12 +280,12 @@ export default function EventoModalEdit({ isOpen, onClose, onSuccess, reservaDat
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     let valorFinal = value;
-    
+
     if (name === 'nombre' || name === 'apellidoPaterno' || name === 'apellidoMaterno') {
       valorFinal = value.replace(/^\s+/, '');
       valorFinal = valorFinal.replace(/\s{2,}/g, ' ');
     }
-    
+
     if (name === 'telefono' && valorFinal.length > 8) {
       valorFinal = valorFinal.slice(0, 8);
     }
@@ -251,7 +323,7 @@ export default function EventoModalEdit({ isOpen, onClose, onSuccess, reservaDat
 
   const handleActualizarReserva = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const todosLosCampos = {
       nombre: true,
       apellidoPaterno: true,
@@ -262,18 +334,43 @@ export default function EventoModalEdit({ isOpen, onClose, onSuccess, reservaDat
       fechaEvento: true,
       cantidadPersonas: true,
       tipoReserva: true,
-      horaInicio: true,
-      horaFin: true,
+      hora_ini: true,
+      hora_fin: true,
     };
     setTouched(todosLosCampos);
 
-    const erroresValidacion = validarFormularioEvento(formData);
-    setErrores(erroresValidacion);
+    // Crear objeto temporal CONVIRTIENDO TODOS LOS CAMPOS A STRING
+    const datosParaValidar = {
+      nombre: safeString(formData.nombre),
+      apellidoPaterno: safeString(formData.apellidoPaterno),
+      apellidoMaterno: safeString(formData.apellidoMaterno),
+      telefono: safeString(formData.telefono),
+      email: safeString(formData.email),
+      carnet: safeString(formData.carnet),
+      fechaEvento: safeString(formData.fechaEvento),
+      cantidadPersonas: safeString(formData.cantidadPersonas),
+      tipoReserva: safeString(formData.tipoReserva),
+      horaInicio: safeString(formData.hora_ini),
+      horaFin: safeString(formData.hora_fin),
+    };
 
-    const hayErrores = Object.values(erroresValidacion).some(error => error !== null);
-    
+    console.log('🔍 Datos para validación:', datosParaValidar);
+
+    const erroresValidacion = validarFormularioEvento(datosParaValidar);
+
+    // Mapear los errores de vuelta a los nombres del formData
+    const erroresMapeados: Record<string, string | null> = {
+      ...erroresValidacion,
+      hora_ini: (erroresValidacion as any).horaInicio,
+      hora_fin: (erroresValidacion as any).horaFin
+    };
+
+    setErrores(erroresMapeados);
+
+    const hayErrores = Object.values(erroresMapeados).some(error => error !== null);
+
     if (hayErrores) {
-      const primerCampoConError = Object.keys(erroresValidacion).find(key => erroresValidacion[key]);
+      const primerCampoConError = Object.keys(erroresMapeados).find(key => erroresMapeados[key]);
       if (primerCampoConError) {
         const elemento = document.querySelector(`[name="${primerCampoConError}"]`) as HTMLElement;
         if (elemento) elemento.focus();
@@ -285,43 +382,68 @@ export default function EventoModalEdit({ isOpen, onClose, onSuccess, reservaDat
     setSegundos(10);
 
     try {
-      const datosActualizados = {
-        nombre: formData.nombre,
-        apellido_paterno: formData.apellidoPaterno,
-        apellido_materno: formData.apellidoMaterno,
-        telefono: formData.telefono,
-        email: formData.email,
-        carnet: formData.carnet,
-        fecha_evento: formData.fechaEvento,
-        cantidad_personas: parseInt(formData.cantidadPersonas),
-        tipo_reserva: formData.tipoReserva,
-        hora_inicio: formData.horaInicio,
-        hora_fin: formData.horaFin,
-        servicios_adicionales: formData.serviciosAdicionales
+      // RECONSTRUIR DATETIME PARA DJANGO
+      const reconstruirDateTime = (fecha: string, hora: string) => {
+        if (!fecha || !hora) return '';
+        return `${fecha}T${hora}:00`; // Formato: "YYYY-MM-DDTHH:MM:00"
       };
 
-      console.log('📤 Enviando datos actualizados:', datosActualizados);
-      const result = await updateReservaEvento(reservaData.id_reservas_evento, datosActualizados);
+      // CORREGIDO: Enviar TODOS los datos del cliente y de la reserva
+      const datosActualizados = {
+        // === DATOS DEL CLIENTE ===
+        nombre: formData.nombre,
+        app_paterno: formData.apellidoPaterno,
+        app_materno: formData.apellidoMaterno,
+        telefono: Number(formData.telefono),
+        email: formData.email,
+        ci: Number(formData.carnet),
+
+        // === DATOS DE LA RESERVA ===
+        fecha: formData.fechaEvento,
+        cant_personas: parseInt(formData.cantidadPersonas),
+        hora_ini: reconstruirDateTime(formData.fechaEvento, formData.hora_ini),
+        hora_fin: reconstruirDateTime(formData.fechaEvento, formData.hora_fin),
+        servicios_adicionales: formData.serviciosAdicionales,
+        tipo_reserva: formData.tipoReserva,
+
+        // === DATOS ADICIONALES PARA ACTUALIZACIÓN ===
+        datos_cliente_id: reservaData.datos_cliente?.id_datos_cliente, // Si necesitas el ID del cliente
+        reservas_gen_id: reservaData.reservas_gen?.id_reservas_gen // Si necesitas el ID de reservas_gen
+      };
+
+      console.log('📤 Datos COMPLETOS para enviar a Django:', datosActualizados);
+      console.log('🎯 Servicios a enviar:', datosActualizados.servicios_adicionales);
+
+      const reservaId = reservaData.id_reservas_evento;
+
+      if (!reservaId) {
+        throw new Error('No se pudo identificar el ID de la reserva');
+      }
+
+      console.log('🔄 Llamando a updateReservaEvento con ID:', reservaId);
+
+      const result = await updateReservaEvento(reservaId, datosActualizados);
+
+      console.log('✅ Resultado de updateReservaEvento:', result);
+
       if (result) {
         setStep('success');
-        if (onSuccess) {
-          onSuccess();
-        }
+        // Cerrar automáticamente después de 2 segundos
+        setTimeout(() => {
+          if (onSuccess) {
+            onSuccess();
+          }
+          onClose(); // Cerrar el modal
+        }, 2000);
       } else {
-        throw new Error('No se pudo actualizar la reserva');
+        throw new Error('No se pudo actualizar la reserva - respuesta vacía');
       }
     } catch (err) {
-      console.error('Error en la actualización:', err);
+      console.error('❌ Error en la actualización:', err);
       const errorMsg = err instanceof Error ? err.message : 'Error desconocido al actualizar la reserva';
       setErrorDetallado(errorMsg);
       setStep('error');
     }
-  };
-
-  const copiarCodigo = () => {
-    navigator.clipboard.writeText(codigoReserva);
-    setCopiado(true);
-    setTimeout(() => setCopiado(false), 2000);
   };
 
   const resetearFormulario = () => {
@@ -335,15 +457,14 @@ export default function EventoModalEdit({ isOpen, onClose, onSuccess, reservaDat
       fechaEvento: '',
       cantidadPersonas: '',
       tipoReserva: '',
-      horaInicio: '',
-      horaFin: '',
+      hora_ini: '',
+      hora_fin: '',
       serviciosAdicionales: [],
     });
     setErrores({});
     setTouched({});
     setStep('form');
     setCodigoReserva('');
-    setCopiado(false);
     setMostrarCalendario(false);
     setFechaSeleccionada(null);
     setErrorDetallado('');
@@ -358,17 +479,17 @@ export default function EventoModalEdit({ isOpen, onClose, onSuccess, reservaDat
     const ultimoDia = new Date(año, mes + 1, 0);
     const diasDelMes = ultimoDia.getDate();
     const primerDiaSemana = primerDia.getDay();
-    
+
     const dias: (number | null)[] = [];
-    
+
     for (let i = 0; i < primerDiaSemana; i++) {
       dias.push(null);
     }
-    
+
     for (let dia = 1; dia <= diasDelMes; dia++) {
       dias.push(dia);
     }
-    
+
     return dias;
   };
 
@@ -381,7 +502,7 @@ export default function EventoModalEdit({ isOpen, onClose, onSuccess, reservaDat
   const seleccionarFecha = (dia: number) => {
     const nuevaFecha = new Date(mesActual.getFullYear(), mesActual.getMonth(), dia);
     setFechaSeleccionada(nuevaFecha);
-    
+
     const fechaFormateada = nuevaFecha.toISOString().split('T')[0];
     setFormData(prev => ({ ...prev, fechaEvento: fechaFormateada }));
     setMostrarCalendario(false);
@@ -453,50 +574,6 @@ export default function EventoModalEdit({ isOpen, onClose, onSuccess, reservaDat
     );
   }
 
-  if (step === 'success') {
-    return (
-      <Modal isOpen={isOpen} onClose={onClose} className="max-w-lg">
-        <div className="w-full bg-white rounded-2xl p-8 text-center relative">
-          <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600" title="Cerrar">
-            <X className="w-6 h-6" />
-          </button>
-
-          <div className="bg-green-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
-            <CheckCircle className="w-12 h-12 text-green-600" />
-          </div>
-
-          <h2 className="text-3xl font-bold text-teal-800 mb-2">¡Reserva Actualizada!</h2>
-          <p className="text-gray-600 mb-6">Los cambios se han guardado correctamente</p>
-
-          {codigoReserva && (
-            <div className="bg-teal-50 rounded-lg p-6 mb-4">
-              <p className="text-sm text-gray-600 mb-2">Tu código de reserva es:</p>
-              <div className="flex items-center justify-center gap-3">
-                <p className="text-2xl font-mono font-bold text-teal-700">
-                  {codigoReserva}
-                </p>
-                <button onClick={copiarCodigo} className="p-2 hover:bg-teal-100 rounded-lg transition" title="Copiar código">
-                  {copiado ? <Check className="w-5 h-5 text-green-600" /> : <Copy className="w-5 h-5 text-teal-600" />}
-                </button>
-              </div>
-              {copiado && <p className="text-xs text-teal-600 mt-2">✓ Copiado</p>}
-            </div>
-          )}
-
-          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 text-left mb-6">
-            <p className="text-sm text-yellow-800 font-semibold">
-              Los cambios en tu reserva han sido procesados exitosamente.
-            </p>
-          </div>
-
-          <button onClick={onClose} className="w-full bg-teal-500 hover:bg-teal-600 text-white px-8 py-3 rounded-lg transition font-semibold">
-            Cerrar
-          </button>
-        </div>
-      </Modal>
-    );
-  }
-
   if (step === 'waiting') {
     return (
       <Modal isOpen={isOpen} onClose={onClose} className="max-w-lg">
@@ -506,12 +583,12 @@ export default function EventoModalEdit({ isOpen, onClose, onSuccess, reservaDat
               <div className="w-16 h-16 border-4 border-teal-600 border-t-transparent rounded-full animate-spin"></div>
             </div>
           </div>
-          
+
           <h2 className="text-2xl font-bold text-teal-800 mb-3">Actualizando tu Reserva</h2>
           <p className="text-gray-600 mb-4">
             Por favor espera mientras procesamos los cambios en tu reserva.
           </p>
-          
+
           <div className="text-5xl font-bold text-teal-600">{segundos}s</div>
         </div>
       </Modal>
@@ -527,6 +604,11 @@ export default function EventoModalEdit({ isOpen, onClose, onSuccess, reservaDat
           </div>
           <h2 className="text-3xl font-bold text-teal-800">Editar Reserva de Eventos</h2>
           <p className="text-gray-600 mt-2">Modifica los datos de tu reserva</p>
+          {codigoReserva && (
+            <div className="mt-2 bg-teal-100 inline-flex items-center gap-2 px-3 py-1 rounded-full">
+              <span className="text-sm font-medium text-teal-800">Código: {codigoReserva}</span>
+            </div>
+          )}
         </div>
 
         {error && (
@@ -559,9 +641,8 @@ export default function EventoModalEdit({ isOpen, onClose, onSuccess, reservaDat
                   onChange={handleChange}
                   onBlur={() => handleBlur('nombre')}
                   onKeyDown={soloLetrasEvento}
-                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition ${
-                    errores.nombre ? 'border-red-500' : 'border-gray-300'
-                  }`}
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition ${errores.nombre ? 'border-red-500' : 'border-gray-300'
+                    }`}
                   placeholder="Ej: Juan"
                   required
                 />
@@ -584,9 +665,8 @@ export default function EventoModalEdit({ isOpen, onClose, onSuccess, reservaDat
                   onChange={handleChange}
                   onBlur={() => handleBlur('apellidoPaterno')}
                   onKeyDown={soloLetrasEvento}
-                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition ${
-                    errores.apellidoPaterno ? 'border-red-500' : 'border-gray-300'
-                  }`}
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition ${errores.apellidoPaterno ? 'border-red-500' : 'border-gray-300'
+                    }`}
                   placeholder="Ej: Pérez"
                 />
                 {errores.apellidoPaterno && (
@@ -608,9 +688,8 @@ export default function EventoModalEdit({ isOpen, onClose, onSuccess, reservaDat
                   onChange={handleChange}
                   onBlur={() => handleBlur('apellidoMaterno')}
                   onKeyDown={soloLetrasEvento}
-                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition ${
-                    errores.apellidoMaterno ? 'border-red-500' : 'border-gray-300'
-                  }`}
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition ${errores.apellidoMaterno ? 'border-red-500' : 'border-gray-300'
+                    }`}
                   placeholder="Ej: García"
                 />
                 {errores.apellidoMaterno && (
@@ -637,9 +716,8 @@ export default function EventoModalEdit({ isOpen, onClose, onSuccess, reservaDat
                     soloNumerosEvento(e);
                     bloquearCaracteresEspecialesEvento(e);
                   }}
-                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition ${
-                    errores.telefono ? 'border-red-500' : 'border-gray-300'
-                  }`}
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition ${errores.telefono ? 'border-red-500' : 'border-gray-300'
+                    }`}
                   placeholder="7XXXXXXX"
                   maxLength={8}
                   required
@@ -666,12 +744,13 @@ export default function EventoModalEdit({ isOpen, onClose, onSuccess, reservaDat
                     soloNumerosEvento(e);
                     bloquearCaracteresEspecialesEvento(e);
                   }}
-                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition ${
-                    errores.carnet ? 'border-red-500' : 'border-gray-300'
-                  }`}
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition ${errores.carnet ? 'border-red-500' : 'border-gray-300'
+                    } bg-gray-100 cursor-not-allowed`}
                   placeholder="XXXXXXXX"
                   maxLength={9}
                   required
+                  readOnly // Esto bloquea el campo para edición
+                  title="El carnet de identidad no se puede modificar"
                 />
                 {errores.carnet && (
                   <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
@@ -679,6 +758,7 @@ export default function EventoModalEdit({ isOpen, onClose, onSuccess, reservaDat
                     {errores.carnet}
                   </p>
                 )}
+                <p className="text-xs text-gray-500 mt-1">El carnet de identidad no se puede modificar</p>
               </div>
             </div>
 
@@ -697,11 +777,10 @@ export default function EventoModalEdit({ isOpen, onClose, onSuccess, reservaDat
                     e.preventDefault();
                   }
                 }}
-                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent transition ${
-                  errores.email && touched.email
-                    ? 'border-red-500 focus:ring-red-500'
-                    : 'border-gray-300 focus:ring-cyan-500'
-                }`}
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent transition ${errores.email && touched.email
+                  ? 'border-red-500 focus:ring-red-500'
+                  : 'border-gray-300 focus:ring-cyan-500'
+                  }`}
                 placeholder="juan@email.com"
               />
               {errores.email && (
@@ -727,9 +806,8 @@ export default function EventoModalEdit({ isOpen, onClose, onSuccess, reservaDat
                 value={formData.tipoReserva}
                 onChange={handleChange}
                 onBlur={() => handleBlur('tipoReserva')}
-                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition ${
-                  errores.tipoReserva ? 'border-red-500' : 'border-gray-300'
-                }`}
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition ${errores.tipoReserva ? 'border-red-500' : 'border-gray-300'
+                  }`}
                 required
               >
                 <option value="">Seleccione un tipo de evento</option>
@@ -756,18 +834,17 @@ export default function EventoModalEdit({ isOpen, onClose, onSuccess, reservaDat
                 <button
                   type="button"
                   onClick={() => setMostrarCalendario(!mostrarCalendario)}
-                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-left flex items-center justify-between bg-white transition ${
-                    errores.fechaEvento ? 'border-red-500' : 'border-gray-300'
-                  }`}
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-left flex items-center justify-between bg-white transition ${errores.fechaEvento ? 'border-red-500' : 'border-gray-300'
+                    }`}
                 >
                   <span className={formData.fechaEvento ? 'text-gray-900' : 'text-gray-500'}>
-                    {formData.fechaEvento 
-                      ? new Date(formData.fechaEvento + 'T00:00:00').toLocaleDateString('es-ES', { 
-                          weekday: 'long', 
-                          year: 'numeric', 
-                          month: 'long', 
-                          day: 'numeric' 
-                        })
+                    {formData.fechaEvento
+                      ? new Date(formData.fechaEvento + 'T00:00:00').toLocaleDateString('es-ES', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })
                       : 'Seleccione una fecha'}
                   </span>
                   <Calendar className="w-5 h-5 text-gray-400" />
@@ -789,11 +866,11 @@ export default function EventoModalEdit({ isOpen, onClose, onSuccess, reservaDat
                       >
                         <ChevronLeft className="w-5 h-5 text-gray-600" />
                       </button>
-                      
+
                       <h3 className="text-lg font-semibold text-gray-800">
                         {mesesNombres[mesActual.getMonth()]} {mesActual.getFullYear()}
                       </h3>
-                      
+
                       <button
                         type="button"
                         onClick={() => cambiarMes(1)}
@@ -819,13 +896,12 @@ export default function EventoModalEdit({ isOpen, onClose, onSuccess, reservaDat
                               type="button"
                               onClick={() => !esFechaPasada(dia) && seleccionarFecha(dia)}
                               disabled={esFechaPasada(dia)}
-                              className={`w-full h-full rounded-lg text-sm font-medium transition-all ${
-                                esFechaPasada(dia)
-                                  ? 'text-gray-300 cursor-not-allowed'
-                                  : esFechaSeleccionada(dia)
+                              className={`w-full h-full rounded-lg text-sm font-medium transition-all ${esFechaPasada(dia)
+                                ? 'text-gray-300 cursor-not-allowed'
+                                : esFechaSeleccionada(dia)
                                   ? 'bg-teal-500 text-white shadow-lg scale-105'
                                   : 'hover:bg-teal-50 text-gray-700 hover:text-teal-600'
-                              }`}
+                                }`}
                             >
                               {dia}
                             </button>
@@ -855,19 +931,18 @@ export default function EventoModalEdit({ isOpen, onClose, onSuccess, reservaDat
                 </label>
                 <input
                   type="time"
-                  name="horaInicio"
-                  value={formData.horaInicio}
+                  name="hora_ini"
+                  value={formData.hora_ini}
                   onChange={handleChange}
-                  onBlur={() => handleBlur('horaInicio')}
-                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition ${
-                    errores.horaInicio ? 'border-red-500' : 'border-gray-300'
-                  }`}
+                  onBlur={() => handleBlur('hora_ini')}
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition ${errores.hora_ini ? 'border-red-500' : 'border-gray-300'
+                    }`}
                   required
                 />
-                {errores.horaInicio && (
+                {errores.hora_ini && (
                   <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
                     <AlertCircle className="w-3 h-3" />
-                    {errores.horaInicio}
+                    {errores.hora_ini}
                   </p>
                 )}
               </div>
@@ -878,19 +953,18 @@ export default function EventoModalEdit({ isOpen, onClose, onSuccess, reservaDat
                 </label>
                 <input
                   type="time"
-                  name="horaFin"
-                  value={formData.horaFin}
+                  name="hora_fin"
+                  value={formData.hora_fin}
                   onChange={handleChange}
-                  onBlur={() => handleBlur('horaFin')}
-                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition ${
-                    errores.horaFin ? 'border-red-500' : 'border-gray-300'
-                  }`}
+                  onBlur={() => handleBlur('hora_fin')}
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition ${errores.hora_fin ? 'border-red-500' : 'border-gray-300'
+                    }`}
                   required
                 />
-                {errores.horaFin && (
+                {errores.hora_fin && (
                   <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
                     <AlertCircle className="w-3 h-3" />
-                    {errores.horaFin}
+                    {errores.hora_fin}
                   </p>
                 )}
               </div>
@@ -923,9 +997,8 @@ export default function EventoModalEdit({ isOpen, onClose, onSuccess, reservaDat
                     e.preventDefault();
                   }
                 }}
-                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition ${
-                  errores.cantidadPersonas ? 'border-red-500' : 'border-gray-300'
-                }`}
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition ${errores.cantidadPersonas ? 'border-red-500' : 'border-gray-300'
+                  }`}
                 placeholder="Ej: 50"
                 inputMode="numeric"
                 maxLength={3}
@@ -962,9 +1035,9 @@ export default function EventoModalEdit({ isOpen, onClose, onSuccess, reservaDat
                         <span className="text-gray-700 font-medium">{servicio.nombre}</span>
                         <p className="text-xs text-gray-500">{servicio.descripcion}</p>
                         <p className="text-xs text-teal-600 font-medium">
-                          Tipo: {servicio.tipo} - 
-                          {servicio.tipo === 'A' 
-                            ? ` ${servicio.precio.toFixed(2)} Bs. por persona` 
+                          Tipo: {servicio.tipo} -
+                          {servicio.tipo === 'A'
+                            ? ` ${servicio.precio.toFixed(2)} Bs. por persona`
                             : ` ${servicio.precio.toFixed(2)} Bs. (precio fijo)`}
                         </p>
                       </div>
@@ -984,7 +1057,7 @@ export default function EventoModalEdit({ isOpen, onClose, onSuccess, reservaDat
                 Resumen de tu Reserva
               </h3>
             </div>
-            
+
             {serviciosSeleccionados.length > 0 ? (
               <div className="p-6 space-y-4">
                 <div className="space-y-3">
@@ -1012,7 +1085,7 @@ export default function EventoModalEdit({ isOpen, onClose, onSuccess, reservaDat
                     </div>
                   ))}
                 </div>
-                
+
                 <div className="space-y-3 pt-4 border-t-2 border-dashed border-gray-200">
                   <div className="flex justify-between items-center p-4 bg-teal-50 rounded-xl">
                     <span className="text-gray-700 font-semibold">Total de servicios:</span>

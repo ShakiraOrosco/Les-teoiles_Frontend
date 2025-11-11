@@ -120,15 +120,6 @@ export default function ReservasEventoTable({
                 Horario
               </TableCell>
               <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">
-                Personas
-              </TableCell>
-              <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">
-                Servicios
-              </TableCell>
-              <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">
-                Duración
-              </TableCell>
-              <TableCell isHeader className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400">
                 Estado
               </TableCell>
               <TableCell isHeader className="px-5 py-3 text-center text-theme-xs font-medium text-gray-500 dark:text-gray-400">
@@ -178,30 +169,6 @@ export default function ReservasEventoTable({
                         <span>Inicio: {formatHora(reserva.hora_ini)}</span>
                         <span>Fin: {formatHora(reserva.hora_fin)}</span>
                       </div>
-                    </TableCell>
-
-                    {/* Cantidad de Personas */}
-                    <TableCell className="px-4 py-4 sm:px-6 text-start text-gray-800 dark:text-gray-200">
-                      <div className="flex items-center gap-1">
-                        <span>{reserva.cant_personas}</span>
-                      </div>
-                    </TableCell>
-
-                    {/* Servicios Adicionales */}
-                    <TableCell className="px-4 py-4 sm:px-6 text-start text-gray-800 dark:text-gray-200">
-                      <div className="max-w-[150px] truncate" title={serviciosInfo}>
-                        {serviciosInfo}
-                      </div>
-                      {reserva.total_servicios}
-                    </TableCell>
-
-                    {/* Duración */}
-                    <TableCell className="px-4 py-4 sm:px-6 text-start text-gray-800 dark:text-gray-200">
-                      {reserva.duracion_horas ? (
-                        <span>{reserva.duracion_horas.toFixed(1)}h</span>
-                      ) : (
-                        <span className="text-gray-400">-</span>
-                      )}
                     </TableCell>
 
                     {/* Estado */}

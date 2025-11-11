@@ -33,7 +33,7 @@ import Reserva from "./pages/Reservas/Reservas";
 import ReservaHospedaje from "./pages/Reservas/Reserva_Hospedaje";
 import ReservaEventos from "./pages/Reservas/Reserva_Eventos";
 import ReservasPage from "./pages/AdReservas/Reserva_Hospedaje/Reserva_Hospedaje";
-//import ReservasEventosPage from "./pages/AdReservas/Reserva_Evento/Reserva_Evento";
+import ReservasEventosPage from "./pages/AdReservas/Reserva_Evento/Reserva_Evento";
 
 export default function App() {
   return (
@@ -89,6 +89,7 @@ export default function App() {
             <Route path="/Bienes/Servicios" element={<ServiciosAdicionalesPage />} />
             <Route path="/Bienes/Habitacion" element={<HabitacionPage />} />
             <Route path="/AdReservas/Reserva_Hospedaje" element={<ReservasPage />} />
+            <Route path="/AdReservas/Reserva_Evento" element={<ReservasEventosPage />} /> 
 
           </Route>
 
