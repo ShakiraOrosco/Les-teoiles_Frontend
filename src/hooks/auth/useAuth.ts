@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router";
 import { login, LoginCredentials } from "../../services/auth/authService";
-import { toast } from "sonner"
+import { toast } from "sonner";
+import { getUsuarioAutenticado } from "../../services/usuario/usuarioService";
 
 export const useAuth = () => {
     const navigate = useNavigate();
@@ -20,9 +21,22 @@ export const useAuth = () => {
             localStorage.setItem("access", access);
             localStorage.setItem("refresh", refresh);
 
-            // Redirigir a la página principal
-            navigate("/dashboard");
-            toast.success("Inicio de sesión realizado con correctamente.");
+            // Obtener datos del usuario autenticado
+            const usuario = await getUsuarioAutenticado();
+
+            // Verificar el rol del usuario
+            if (usuario.rol === "administrador") {
+                toast.success("Inicio de sesión realizado correctamente.");
+                setTimeout(() => navigate("/dashboard"), 100);
+            } else if (usuario.rol === "empleado") {
+                // Si el empleado intenta acceder al dashboard, mostrar error
+                toast.error("Acceso denegado", {
+                    description: "No tienes permisos para acceder al dashboard.",
+                    duration: 4000,
+                });
+                setTimeout(() => navigate("/"), 500);
+            } 
+
         } catch (error: any) {
             if (error.response?.status === 401 || error.response?.status === 400) {
                 toast.error("Credenciales inválidas, intenta de nuevo.");
@@ -30,7 +44,7 @@ export const useAuth = () => {
                 toast.error("Error inesperado, intenta de nuevo más tarde.");
             }
         }
-    }
+    };
 
-    return { loginUser };
-}
+    return { loginUser };
+};
