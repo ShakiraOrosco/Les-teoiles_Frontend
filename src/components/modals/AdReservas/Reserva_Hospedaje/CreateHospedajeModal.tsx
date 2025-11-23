@@ -58,7 +58,7 @@ export default function HospedajeModal({ isOpen, onClose, onSuccess }: Hospedaje
   const [copiado, setCopiado] = useState(false);
   const [errores, setErrores] = useState<Record<string, string | null>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
-  
+
   const [montoTotal, setMontoTotal] = useState<number>(0);
   const [precioPorPersona, setPrecioPorPersona] = useState<number | null>(null);
   const [cantidadDias, setCantidadDias] = useState<number>(0);
@@ -107,7 +107,7 @@ export default function HospedajeModal({ isOpen, onClose, onSuccess }: Hospedaje
 
   const validarCampo = (nombre: string, valor: string) => {
     let error: string | null = null;
-    
+
     switch (nombre) {
       case 'nombre':
         error = validarNombreHospedaje(valor);
@@ -138,19 +138,19 @@ export default function HospedajeModal({ isOpen, onClose, onSuccess }: Hospedaje
         error = nombre === 'fechaInicio' ? erroresFechas.inicio : erroresFechas.fin;
         break;
     }
-    
+
     return error;
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     let valorFinal = value;
-    
+
     if (name === 'nombre' || name === 'apellidoPaterno' || name === 'apellidoMaterno') {
       valorFinal = value.replace(/^\s+/, '');
       valorFinal = valorFinal.replace(/\s{2,}/g, ' ');
     }
-    
+
     if (name === 'telefono' && value.length > 8) {
       valorFinal = value.slice(0, 8);
     }
@@ -160,9 +160,9 @@ export default function HospedajeModal({ isOpen, onClose, onSuccess }: Hospedaje
     if (name === 'cantidadPersonas') {
       valorFinal = value.replace(/\D/g, '').slice(0, 1);
     }
-    
+
     setFormData(prev => ({ ...prev, [name]: valorFinal }));
-    
+
     if (touched[name]) {
       const error = validarCampo(name, valorFinal);
       setErrores(prev => ({ ...prev, [name]: error }));
@@ -171,22 +171,22 @@ export default function HospedajeModal({ isOpen, onClose, onSuccess }: Hospedaje
 
   const handleBlur = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    
+
     let valorLimpio = value;
     if (name === 'nombre' || name === 'apellidoPaterno' || name === 'apellidoMaterno') {
       valorLimpio = value.trim();
       setFormData(prev => ({ ...prev, [name]: valorLimpio }));
     }
-    
+
     setTouched(prev => ({ ...prev, [name]: true }));
     let error = validarCampo(name, valorLimpio);
-    
+
     if ((name === 'nombre' || name === 'apellidoPaterno' || name === 'apellidoMaterno') && valorLimpio && !error) {
       if (!validarEstructuraTexto(valorLimpio)) {
         error = `El ${name === 'nombre' ? 'nombre' : 'apellido'} no parece ser válido. Verifica que contenga letras reales.`;
       }
     }
-    
+
     setErrores(prev => ({ ...prev, [name]: error }));
   };
 
@@ -206,27 +206,27 @@ export default function HospedajeModal({ isOpen, onClose, onSuccess }: Hospedaje
   const handleDateSelect = (date: string, type: 'inicio' | 'fin') => {
     const nuevaFechaInicio = type === 'inicio' ? date : formData.fechaInicio;
     const nuevaFechaFin = type === 'fin' ? date : formData.fechaFin;
-    
-    setFormData(prev => ({ 
-      ...prev, 
-      [type === 'inicio' ? 'fechaInicio' : 'fechaFin']: date 
+
+    setFormData(prev => ({
+      ...prev,
+      [type === 'inicio' ? 'fechaInicio' : 'fechaFin']: date
     }));
-    
+
     if (type === 'inicio') {
       setShowCalendarInicio(false);
     } else {
       setShowCalendarFin(false);
     }
-    
+
     const erroresFechas = validarFechas(nuevaFechaInicio, nuevaFechaFin);
-    setErrores(prev => ({ 
-      ...prev, 
+    setErrores(prev => ({
+      ...prev,
       fechaInicio: erroresFechas.inicio,
       fechaFin: erroresFechas.fin
     }));
-    
-    setTouched(prev => ({ 
-      ...prev, 
+
+    setTouched(prev => ({
+      ...prev,
       fechaInicio: nuevaFechaInicio ? true : prev.fechaInicio,
       fechaFin: nuevaFechaFin ? true : prev.fechaFin
     }));
@@ -250,7 +250,7 @@ export default function HospedajeModal({ isOpen, onClose, onSuccess }: Hospedaje
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     const maxInicio = new Date(today);
     maxInicio.setFullYear(maxInicio.getFullYear() + 3);
 
@@ -295,10 +295,10 @@ export default function HospedajeModal({ isOpen, onClose, onSuccess }: Hospedaje
             const dateStr = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
             const dateObj = new Date(dateStr);
             dateObj.setHours(0, 0, 0, 0);
-            
+
             const isToday = isCurrentMonth && day === today.getDate();
             const isSelected = (type === 'inicio' && formData.fechaInicio === dateStr) || (type === 'fin' && formData.fechaFin === dateStr);
-            
+
             let isDisabled = false;
             if (type === 'inicio') {
               isDisabled = dateObj < today || dateObj > maxInicio;
@@ -308,7 +308,7 @@ export default function HospedajeModal({ isOpen, onClose, onSuccess }: Hospedaje
                 inicioDate.setHours(0, 0, 0, 0);
                 const maxFin = new Date(inicioDate);
                 maxFin.setFullYear(maxFin.getFullYear() + 3);
-                
+
                 isDisabled = dateObj <= inicioDate || dateObj > maxFin;
               } else {
                 isDisabled = dateObj <= today;
@@ -316,20 +316,19 @@ export default function HospedajeModal({ isOpen, onClose, onSuccess }: Hospedaje
             }
 
             return (
-              <button 
-                key={day} 
-                type="button" 
-                onClick={() => !isDisabled && handleDateSelect(dateStr, type)} 
-                disabled={isDisabled} 
-                className={`w-8 h-8 rounded text-sm font-medium transition ${
-                  isSelected 
-                    ? 'bg-teal-600 text-white' 
-                    : isToday 
-                      ? 'bg-teal-100 text-teal-700 border border-teal-600 dark:bg-teal-900 dark:text-teal-300' 
-                      : isDisabled 
-                        ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed' 
+              <button
+                key={day}
+                type="button"
+                onClick={() => !isDisabled && handleDateSelect(dateStr, type)}
+                disabled={isDisabled}
+                className={`w-8 h-8 rounded text-sm font-medium transition ${isSelected
+                    ? 'bg-teal-600 text-white'
+                    : isToday
+                      ? 'bg-teal-100 text-teal-700 border border-teal-600 dark:bg-teal-900 dark:text-teal-300'
+                      : isDisabled
+                        ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
                         : 'hover:bg-teal-50 dark:hover:bg-teal-900/20 text-gray-700 dark:text-gray-300'
-                }`}
+                  }`}
               >
                 {day}
               </button>
@@ -342,7 +341,7 @@ export default function HospedajeModal({ isOpen, onClose, onSuccess }: Hospedaje
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const allTouched = {
       nombre: true,
       apellidoPaterno: true,
@@ -355,13 +354,13 @@ export default function HospedajeModal({ isOpen, onClose, onSuccess }: Hospedaje
       cantidadPersonas: true,
     };
     setTouched(allTouched);
-    
+
     const erroresValidacion = validarFormularioHospedaje(formData);
     setErrores(erroresValidacion);
-    
+
     const hayErrores = Object.values(erroresValidacion).some(error => error !== null);
     if (hayErrores) return;
-    
+
     setStep('waiting');
     setWaitingTime(20);
 
@@ -382,16 +381,16 @@ export default function HospedajeModal({ isOpen, onClose, onSuccess }: Hospedaje
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    
+
     setComprobanteError(null);
-    
+
     if (!file) {
       setComprobante(null);
       return;
     }
 
     const error = validarComprobante(file);
-    
+
     if (error) {
       setComprobanteError(error);
       event.target.value = '';
@@ -413,7 +412,7 @@ export default function HospedajeModal({ isOpen, onClose, onSuccess }: Hospedaje
       const result = await subirComprobante(reservaGenId, comprobante);
       setCodigoReserva(result.reserva_gen_id?.toString() || '');
       setStep('success');
-      
+
       if (onSuccess) {
         onSuccess();
       }
@@ -510,13 +509,14 @@ export default function HospedajeModal({ isOpen, onClose, onSuccess }: Hospedaje
             <div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-400 p-4 text-left mb-6">
               <p className="text-sm text-blue-800 dark:text-blue-300">
                 <strong>Sugerencias:</strong>
-                <ul className="list-disc list-inside mt-2 space-y-1">
-                  <li>Verifica que las fechas seleccionadas estén disponibles</li>
-                  <li>Intenta con otra configuración de habitación</li>
-                  <li>Si el problema persiste, contacta con soporte</li>
-                </ul>
               </p>
+              <ul className="list-disc list-inside mt-2 space-y-1 text-blue-800 dark:text-blue-300 text-sm">
+                <li>Verifica que las fechas seleccionadas estén disponibles</li>
+                <li>Intenta con otra configuración de habitación</li>
+                <li>Si el problema persiste, contacta con soporte</li>
+              </ul>
             </div>
+
 
             <Button variant="primary" onClick={resetearFormulario} className="w-full">
               Volver a intentar
@@ -539,18 +539,18 @@ export default function HospedajeModal({ isOpen, onClose, onSuccess }: Hospedaje
               <div className="w-24 h-24 border-4 border-teal-200 dark:border-teal-800 border-t-teal-500 dark:border-t-teal-400 rounded-full animate-spin"></div>
             </div>
           </div>
-          
+
           <h3 className="text-xl font-bold text-teal-700 dark:text-teal-400 mb-3">Analizando tu Solicitud</h3>
           <p className="text-gray-600 dark:text-gray-400 mb-4">
             Por favor espera mientras verificamos los requisitos y disponibilidad de habitaciones
           </p>
-          
+
           <div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-400 p-4 text-left mb-6">
             <p className="text-sm text-blue-800 dark:text-blue-300">
               💡 Tu reserva está siendo procesada. Espera un momento por favor.
             </p>
           </div>
-          
+
           <div className="text-4xl font-bold text-teal-600 dark:text-teal-400">{waitingTime}s</div>
         </div>
       </Modal>
@@ -582,9 +582,9 @@ export default function HospedajeModal({ isOpen, onClose, onSuccess }: Hospedaje
           <div className="grid md:grid-cols-2 gap-8 items-start">
             <div className="space-y-4">
               <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-md border border-gray-200 dark:border-gray-700">
-                <img 
-                  src="../images/ReservaPagos/ResHotel1.jpg" 
-                  alt="Código QR de pago" 
+                <img
+                  src="../images/ReservaPagos/ResHotel1.jpg"
+                  alt="Código QR de pago"
                   className="w-full max-w-xs mx-auto rounded-xl"
                 />
               </div>
@@ -633,22 +633,22 @@ export default function HospedajeModal({ isOpen, onClose, onSuccess }: Hospedaje
                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
                   Comprobante de Pago *
                 </label>
-                
+
                 <div className={`
                   border-2 border-dashed rounded-xl p-6 text-center transition-all cursor-pointer
-                  ${comprobanteError 
-                    ? 'border-red-300 bg-red-50 dark:bg-red-900/20 dark:border-red-700' 
+                  ${comprobanteError
+                    ? 'border-red-300 bg-red-50 dark:bg-red-900/20 dark:border-red-700'
                     : comprobante
                       ? 'border-teal-300 bg-teal-50 dark:bg-teal-900/20 dark:border-teal-700'
                       : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 hover:border-teal-400 dark:hover:border-teal-500 hover:bg-teal-50 dark:hover:bg-teal-900/20'
                   }
                 `}>
-                  <input 
-                    type="file" 
-                    onChange={handleFileChange} 
-                    accept=".jpg,.jpeg,.png,.pdf" 
-                    className="hidden" 
-                    id="comprobante" 
+                  <input
+                    type="file"
+                    onChange={handleFileChange}
+                    accept=".jpg,.jpeg,.png,.pdf"
+                    className="hidden"
+                    id="comprobante"
                   />
                   <label htmlFor="comprobante" className="cursor-pointer block">
                     {comprobante ? (
@@ -671,7 +671,7 @@ export default function HospedajeModal({ isOpen, onClose, onSuccess }: Hospedaje
                     )}
                   </label>
                 </div>
-                
+
                 {comprobanteError && (
                   <div className="flex items-center gap-2 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 p-3 rounded-lg border border-red-200 dark:border-red-800">
                     <FaTimes className="w-5 h-5 flex-shrink-0" />
@@ -695,8 +695,8 @@ export default function HospedajeModal({ isOpen, onClose, onSuccess }: Hospedaje
                 </div>
               </div>
 
-              <Button 
-                onClick={handleUploadComprobante} 
+              <Button
+                onClick={handleUploadComprobante}
                 disabled={!comprobante || isUploadingComprobante}
                 variant="primary"
                 className="w-full py-4"
@@ -833,15 +833,15 @@ export default function HospedajeModal({ isOpen, onClose, onSuccess }: Hospedaje
                   <label className="block mb-1 text-sm font-medium text-teal-700 dark:text-teal-300">
                     Nombre *
                   </label>
-                  <input 
-                    type="text" 
-                    name="nombre" 
-                    value={formData.nombre} 
-                    onChange={handleChange} 
-                    onBlur={handleBlur} 
-                    onKeyDown={soloLetras} 
-                    className="w-full rounded-lg border border-teal-300 dark:border-teal-600 px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500" 
-                    placeholder="Ej: Juan" 
+                  <input
+                    type="text"
+                    name="nombre"
+                    value={formData.nombre}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    onKeyDown={soloLetras}
+                    className="w-full rounded-lg border border-teal-300 dark:border-teal-600 px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                    placeholder="Ej: Juan"
                   />
                   {errores.nombre && <p className="text-xs text-red-500 mt-1">{errores.nombre}</p>}
                 </div>
@@ -849,15 +849,15 @@ export default function HospedajeModal({ isOpen, onClose, onSuccess }: Hospedaje
                   <label className="block mb-1 text-sm font-medium text-teal-700 dark:text-teal-300">
                     Apellido Paterno *
                   </label>
-                  <input 
-                    type="text" 
-                    name="apellidoPaterno" 
-                    value={formData.apellidoPaterno} 
-                    onChange={handleChange} 
-                    onBlur={handleBlur} 
-                    onKeyDown={soloLetras} 
-                    className="w-full rounded-lg border border-teal-300 dark:border-teal-600 px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500" 
-                    placeholder="Ej: Pérez" 
+                  <input
+                    type="text"
+                    name="apellidoPaterno"
+                    value={formData.apellidoPaterno}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    onKeyDown={soloLetras}
+                    className="w-full rounded-lg border border-teal-300 dark:border-teal-600 px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                    placeholder="Ej: Pérez"
                   />
                   {errores.apellidoPaterno && <p className="text-xs text-red-500 mt-1">{errores.apellidoPaterno}</p>}
                 </div>
@@ -865,15 +865,15 @@ export default function HospedajeModal({ isOpen, onClose, onSuccess }: Hospedaje
                   <label className="block mb-1 text-sm font-medium text-teal-700 dark:text-teal-300">
                     Apellido Materno *
                   </label>
-                  <input 
-                    type="text" 
-                    name="apellidoMaterno" 
-                    value={formData.apellidoMaterno} 
-                    onChange={handleChange} 
-                    onBlur={handleBlur} 
-                    onKeyDown={soloLetras} 
-                    className="w-full rounded-lg border border-teal-300 dark:border-teal-600 px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500" 
-                    placeholder="Ej: García" 
+                  <input
+                    type="text"
+                    name="apellidoMaterno"
+                    value={formData.apellidoMaterno}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    onKeyDown={soloLetras}
+                    className="w-full rounded-lg border border-teal-300 dark:border-teal-600 px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                    placeholder="Ej: García"
                   />
                   {errores.apellidoMaterno && <p className="text-xs text-red-500 mt-1">{errores.apellidoMaterno}</p>}
                 </div>
@@ -884,7 +884,7 @@ export default function HospedajeModal({ isOpen, onClose, onSuccess }: Hospedaje
                   <label className="block mb-1 text-sm font-medium text-teal-700 dark:text-teal-300">
                     Teléfono *
                   </label>
-                  <input 
+                  <input
                     type="tel"
                     name="telefono"
                     value={formData.telefono}
@@ -908,7 +908,7 @@ export default function HospedajeModal({ isOpen, onClose, onSuccess }: Hospedaje
                       }
                     }}
                     maxLength={8}
-                    className="w-full rounded-lg border border-teal-300 dark:border-teal-600 px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500" 
+                    className="w-full rounded-lg border border-teal-300 dark:border-teal-600 px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                     placeholder="7XXXXXXX"
                     inputMode="numeric"
                   />
@@ -918,16 +918,16 @@ export default function HospedajeModal({ isOpen, onClose, onSuccess }: Hospedaje
                   <label className="block mb-1 text-sm font-medium text-teal-700 dark:text-teal-300">
                     Carnet de Identidad *
                   </label>
-                  <input 
-                    type="text" 
-                    name="carnet" 
-                    value={formData.carnet} 
-                    onChange={handleChange} 
-                    onBlur={handleBlur} 
-                    onKeyDown={soloNumeros} 
-                    maxLength={9} 
-                    className="w-full rounded-lg border border-teal-300 dark:border-teal-600 px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500" 
-                    placeholder="XXXXXXXXX" 
+                  <input
+                    type="text"
+                    name="carnet"
+                    value={formData.carnet}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    onKeyDown={soloNumeros}
+                    maxLength={9}
+                    className="w-full rounded-lg border border-teal-300 dark:border-teal-600 px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                    placeholder="XXXXXXXXX"
                   />
                   {errores.carnet && <p className="text-xs text-red-500 mt-1">{errores.carnet}</p>}
                 </div>
@@ -948,11 +948,10 @@ export default function HospedajeModal({ isOpen, onClose, onSuccess }: Hospedaje
                       e.preventDefault();
                     }
                   }}
-                  className={`w-full rounded-lg border px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:border-transparent transition ${
-                    errores.email && touched.email
+                  className={`w-full rounded-lg border px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:border-transparent transition ${errores.email && touched.email
                       ? 'border-red-500 focus:ring-red-500'
                       : 'border-teal-300 dark:border-teal-600 focus:ring-teal-500'
-                  }`}
+                    }`}
                   placeholder="juan@email.com"
                 />
                 {errores.email && <p className="text-xs text-red-500 mt-1">{errores.email}</p>}
@@ -971,17 +970,17 @@ export default function HospedajeModal({ isOpen, onClose, onSuccess }: Hospedaje
                     Fecha de Inicio *
                   </label>
                   <div className="relative">
-                    <input 
-                      type="text" 
-                      readOnly 
-                      value={formData.fechaInicio} 
-                      onClick={() => { 
-                        setShowCalendarInicio(!showCalendarInicio); 
-                        setShowCalendarFin(false); 
-                        setCurrentMonthInicio(new Date()); 
-                      }} 
-                      className="w-full rounded-lg border border-teal-300 dark:border-teal-600 px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500 cursor-pointer pr-10" 
-                      placeholder="Selecciona fecha" 
+                    <input
+                      type="text"
+                      readOnly
+                      value={formData.fechaInicio}
+                      onClick={() => {
+                        setShowCalendarInicio(!showCalendarInicio);
+                        setShowCalendarFin(false);
+                        setCurrentMonthInicio(new Date());
+                      }}
+                      className="w-full rounded-lg border border-teal-300 dark:border-teal-600 px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500 cursor-pointer pr-10"
+                      placeholder="Selecciona fecha"
                     />
                     <FaCalendarAlt className="absolute right-3 top-1/2 transform -translate-y-1/2 text-teal-500" />
                   </div>
@@ -994,17 +993,17 @@ export default function HospedajeModal({ isOpen, onClose, onSuccess }: Hospedaje
                     Fecha de Fin *
                   </label>
                   <div className="relative">
-                    <input 
-                      type="text" 
-                      readOnly 
-                      value={formData.fechaFin} 
-                      onClick={() => { 
-                        setShowCalendarFin(!showCalendarFin); 
-                        setShowCalendarInicio(false); 
-                        setCurrentMonthFin(new Date()); 
-                      }} 
-                      className="w-full rounded-lg border border-teal-300 dark:border-teal-600 px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500 cursor-pointer pr-10" 
-                      placeholder="Selecciona fecha" 
+                    <input
+                      type="text"
+                      readOnly
+                      value={formData.fechaFin}
+                      onClick={() => {
+                        setShowCalendarFin(!showCalendarFin);
+                        setShowCalendarInicio(false);
+                        setCurrentMonthFin(new Date());
+                      }}
+                      className="w-full rounded-lg border border-teal-300 dark:border-teal-600 px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500 cursor-pointer pr-10"
+                      placeholder="Selecciona fecha"
                     />
                     <FaCalendarAlt className="absolute right-3 top-1/2 transform -translate-y-1/2 text-teal-500" />
                   </div>
@@ -1020,24 +1019,24 @@ export default function HospedajeModal({ isOpen, onClose, onSuccess }: Hospedaje
                   </p>
                   <div className="flex space-x-4">
                     <label className="flex items-center space-x-2">
-                      <input 
-                        type="radio" 
-                        name="amoblado" 
-                        value="si" 
-                        checked={formData.amoblado === 'si'} 
-                        onChange={(e) => handleCheckboxChange('amoblado', e.target.value)} 
-                        className="w-4 h-4 text-teal-600 border-teal-300 rounded focus:ring-teal-500 dark:bg-gray-800 dark:border-teal-600" 
+                      <input
+                        type="radio"
+                        name="amoblado"
+                        value="si"
+                        checked={formData.amoblado === 'si'}
+                        onChange={(e) => handleCheckboxChange('amoblado', e.target.value)}
+                        className="w-4 h-4 text-teal-600 border-teal-300 rounded focus:ring-teal-500 dark:bg-gray-800 dark:border-teal-600"
                       />
                       <span className="text-sm text-teal-700 dark:text-teal-300">Sí</span>
                     </label>
                     <label className="flex items-center space-x-2">
-                      <input 
-                        type="radio" 
-                        name="amoblado" 
-                        value="no" 
-                        checked={formData.amoblado === 'no'} 
-                        onChange={(e) => handleCheckboxChange('amoblado', e.target.value)} 
-                        className="w-4 h-4 text-teal-600 border-teal-300 rounded focus:ring-teal-500 dark:bg-gray-800 dark:border-teal-600" 
+                      <input
+                        type="radio"
+                        name="amoblado"
+                        value="no"
+                        checked={formData.amoblado === 'no'}
+                        onChange={(e) => handleCheckboxChange('amoblado', e.target.value)}
+                        className="w-4 h-4 text-teal-600 border-teal-300 rounded focus:ring-teal-500 dark:bg-gray-800 dark:border-teal-600"
                       />
                       <span className="text-sm text-teal-700 dark:text-teal-300">No</span>
                     </label>
@@ -1050,24 +1049,24 @@ export default function HospedajeModal({ isOpen, onClose, onSuccess }: Hospedaje
                   </p>
                   <div className="flex space-x-4">
                     <label className="flex items-center space-x-2">
-                      <input 
-                        type="radio" 
-                        name="banoPrivado" 
-                        value="si" 
-                        checked={formData.banoPrivado === 'si'} 
-                        onChange={(e) => handleCheckboxChange('banoPrivado', e.target.value)} 
-                        className="w-4 h-4 text-teal-600 border-teal-300 rounded focus:ring-teal-500 dark:bg-gray-800 dark:border-teal-600" 
+                      <input
+                        type="radio"
+                        name="banoPrivado"
+                        value="si"
+                        checked={formData.banoPrivado === 'si'}
+                        onChange={(e) => handleCheckboxChange('banoPrivado', e.target.value)}
+                        className="w-4 h-4 text-teal-600 border-teal-300 rounded focus:ring-teal-500 dark:bg-gray-800 dark:border-teal-600"
                       />
                       <span className="text-sm text-teal-700 dark:text-teal-300">Sí</span>
                     </label>
                     <label className="flex items-center space-x-2">
-                      <input 
-                        type="radio" 
-                        name="banoPrivado" 
-                        value="no" 
-                        checked={formData.banoPrivado === 'no'} 
-                        onChange={(e) => handleCheckboxChange('banoPrivado', e.target.value)} 
-                        className="w-4 h-4 text-teal-600 border-teal-300 rounded focus:ring-teal-500 dark:bg-gray-800 dark:border-teal-600" 
+                      <input
+                        type="radio"
+                        name="banoPrivado"
+                        value="no"
+                        checked={formData.banoPrivado === 'no'}
+                        onChange={(e) => handleCheckboxChange('banoPrivado', e.target.value)}
+                        className="w-4 h-4 text-teal-600 border-teal-300 rounded focus:ring-teal-500 dark:bg-gray-800 dark:border-teal-600"
                       />
                       <span className="text-sm text-teal-700 dark:text-teal-300">No</span>
                     </label>
@@ -1079,16 +1078,16 @@ export default function HospedajeModal({ isOpen, onClose, onSuccess }: Hospedaje
                 <label className="block mb-1 text-sm font-medium text-teal-700 dark:text-teal-300">
                   Cantidad de Personas *
                 </label>
-                <input 
-                  type="number" 
-                  name="cantidadPersonas" 
-                  value={formData.cantidadPersonas} 
-                  onChange={handleChange} 
-                  onBlur={handleBlur} 
-                  onKeyDown={(e) => { soloNumeros(e); bloquearEscrituraDirecta(e); }} 
-                  maxLength={1} 
-                  className="w-full rounded-lg border border-teal-300 dark:border-teal-600 px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500" 
-                  placeholder="Ej: 1" 
+                <input
+                  type="number"
+                  name="cantidadPersonas"
+                  value={formData.cantidadPersonas}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  onKeyDown={(e) => { soloNumeros(e); bloquearEscrituraDirecta(e); }}
+                  maxLength={1}
+                  className="w-full rounded-lg border border-teal-300 dark:border-teal-600 px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                  placeholder="Ej: 1"
                   min={1}
                   max={9}
                 />
@@ -1123,8 +1122,8 @@ export default function HospedajeModal({ isOpen, onClose, onSuccess }: Hospedaje
                 {!precioPorPersona && formData.cantidadPersonas && (
                   <div className="mt-3 text-center">
                     <p className="text-sm text-amber-600 dark:text-amber-400">
-                      ⚠️ Configuración seleccionada: 
-                      {formData.amoblado === 'si' ? ' Amoblado' : ' Sin amoblar'} + 
+                      ⚠️ Configuración seleccionada:
+                      {formData.amoblado === 'si' ? ' Amoblado' : ' Sin amoblar'} +
                       {formData.banoPrivado === 'si' ? ' Baño privado' : ' Baño compartido'}
                     </p>
                   </div>

@@ -210,9 +210,13 @@ export default function EditHospedajeModal({ isOpen, onClose, reserva, onSave }:
   };
 
   const handleDateSelect = (date: string, type: 'inicio' | 'fin') => {
+    // Asegurarnos de que la fecha se mantenga sin ajustes de zona horaria
+    const fechaAjustada = new Date(date);
+    const fechaFormateada = fechaAjustada.toISOString().split('T')[0];
+
     setFormData(prev => ({
       ...prev,
-      [type === 'inicio' ? 'fechaInicio' : 'fechaFin']: date
+      [type === 'inicio' ? 'fechaInicio' : 'fechaFin']: fechaFormateada
     }));
 
     if (type === 'inicio') {
@@ -222,8 +226,8 @@ export default function EditHospedajeModal({ isOpen, onClose, reserva, onSave }:
     }
 
     const erroresFechas = validarFechas(
-      type === 'inicio' ? date : formData.fechaInicio,
-      type === 'fin' ? date : formData.fechaFin
+      type === 'inicio' ? fechaFormateada : formData.fechaInicio,
+      type === 'fin' ? fechaFormateada : formData.fechaFin
     );
     setErrores(prev => ({
       ...prev,
@@ -231,7 +235,6 @@ export default function EditHospedajeModal({ isOpen, onClose, reserva, onSave }:
       fechaFin: erroresFechas.fin
     }));
   };
-
   const renderCalendar = (type: 'inicio' | 'fin') => {
     const currentMonth = type === 'inicio' ? currentMonthInicio : currentMonthFin;
     const setCurrentMonth = type === 'inicio' ? setCurrentMonthInicio : setCurrentMonthFin;
@@ -678,13 +681,13 @@ export default function EditHospedajeModal({ isOpen, onClose, reserva, onSave }:
                     <input
                       type="text"
                       readOnly
-                      value={formData.fechaInicio ? new Date(formData.fechaInicio).toLocaleDateString('es-ES') : ''}
+                      value={formData.fechaInicio ? formData.fechaInicio : ''}
                       onClick={() => {
                         setShowCalendarInicio(true);
                         setShowCalendarFin(false);
                       }}
                       className="w-full rounded-lg border border-teal-300 dark:border-teal-600 px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500 cursor-pointer pr-10"
-                      placeholder="Seleccionar fecha"
+                      placeholder="YYYY-MM-DD"
                     />
                     <FaCalendarAlt className="absolute right-3 top-1/2 transform -translate-y-1/2 text-teal-500" />
                   </div>
@@ -700,13 +703,13 @@ export default function EditHospedajeModal({ isOpen, onClose, reserva, onSave }:
                     <input
                       type="text"
                       readOnly
-                      value={formData.fechaFin ? new Date(formData.fechaFin).toLocaleDateString('es-ES') : ''}
+                      value={formData.fechaFin ? formData.fechaFin : ''}
                       onClick={() => {
                         setShowCalendarFin(true);
                         setShowCalendarInicio(false);
                       }}
                       className="w-full rounded-lg border border-teal-300 dark:border-teal-600 px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500 cursor-pointer pr-10"
-                      placeholder="Seleccionar fecha"
+                      placeholder="YYYY-MM-DD"
                     />
                     <FaCalendarAlt className="absolute right-3 top-1/2 transform -translate-y-1/2 text-teal-500" />
                   </div>
