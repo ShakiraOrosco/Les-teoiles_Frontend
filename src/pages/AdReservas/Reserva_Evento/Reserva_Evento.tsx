@@ -54,11 +54,12 @@ export default function ReservasEventosPage() {
     const [reservaDelete, setReservaDelete] = useState<ReservaEvento | null>(null);
     const [selectedReserva, setSelectedReserva] = useState<ReservaEvento | null>(null);
 
-    // 📊 FILTRADO DE RESERVAS DE EVENTOS
+    // 📊 FILTRADO DE RESERVAS DE EVENTOS - CORREGIDO
     const reservasFiltradas = useMemo(() => {
         let filtered = Array.isArray(eventos) ? eventos : [];
-        const hoy = new Date();
-        hoy.setHours(0, 0, 0, 0);
+
+        console.log("Total eventos:", filtered.length);
+        console.log("Filtros aplicados:", { filtro, filtroEstado, filtroTipoEvento, filtroFecha });
 
         // Filtro por texto (código, cliente, tipo de evento)
         if (filtro) {
@@ -66,11 +67,9 @@ export default function ReservasEventosPage() {
             filtered = filtered.filter(reserva => {
                 const codigo = `EVT${reserva.id_reservas_evento}`.toLowerCase();
                 const clienteNombre = `${reserva.datos_cliente?.nombre || ''} ${reserva.datos_cliente?.app_paterno || ''}`.toLowerCase();
-                const tipoEvento = (reserva.estado || '').toLowerCase();
 
                 return codigo.includes(filtroLower) ||
-                    clienteNombre.includes(filtroLower) ||
-                    tipoEvento.includes(filtroLower);
+                    clienteNombre.includes(filtroLower)
             });
         }
 
@@ -84,32 +83,28 @@ export default function ReservasEventosPage() {
 
                 // Para los demás estados, determinar según fechas
                 const fechaEvento = reserva.fecha ? new Date(reserva.fecha) : null;
+                const hoy = new Date();
+                hoy.setHours(0, 0, 0, 0);
 
                 if (filtroEstado === "P") {
-                    // Pendiente: fecha futura
-                    return fechaEvento && fechaEvento > hoy;
+                    // Pendiente: fecha futura y no cancelado
+                    return fechaEvento && fechaEvento > hoy && reserva.estado !== "C";
                 }
 
                 if (filtroEstado === "A") {
-                    // Activa: fecha es hoy
+                    // Activa: fecha es hoy y no cancelado
                     return fechaEvento &&
-                        fechaEvento.toDateString() === hoy.toDateString();
+                        fechaEvento.toDateString() === hoy.toDateString() &&
+                        reserva.estado !== "C";
                 }
 
                 if (filtroEstado === "F") {
-                    // Finalizada: fecha anterior a hoy
-                    return fechaEvento && fechaEvento < hoy;
+                    // Finalizada: fecha anterior a hoy y no cancelado
+                    return fechaEvento && fechaEvento < hoy && reserva.estado !== "C";
                 }
 
                 return true;
             });
-        }
-
-        // Filtro por tipo de evento
-        if (filtroTipoEvento) {
-            filtered = filtered.filter(reserva =>
-                reserva.estado?.toLowerCase() === filtroTipoEvento.toLowerCase()
-            );
         }
 
         // Filtro por fecha
@@ -140,8 +135,10 @@ export default function ReservasEventosPage() {
             });
         }
 
+        console.log("Eventos después de filtrar:", filtered.length);
         return filtered;
     }, [eventos, filtro, filtroEstado, filtroTipoEvento, filtroFecha]);
+
 
     // 📄 Paginación
     const reservasArray = reservasFiltradas;
@@ -152,19 +149,6 @@ export default function ReservasEventosPage() {
 
     const onPrev = () => setPaginaActual((p) => Math.max(p - 1, 1));
     const onNext = () => setPaginaActual((p) => Math.min(p + 1, totalPaginas));
-
-    // Obtener tipos de evento únicos para el filtro
-    const tiposEventoDisponibles = useMemo(() => {
-        const tiposMap = new Map();
-
-        eventos.forEach(evento => {
-            if (evento.estado) {
-                tiposMap.set(evento.estado.toLowerCase(), evento.estado);
-            }
-        });
-
-        return Array.from(tiposMap.values());
-    }, [eventos]);
 
     // 📝 Acciones
     const handleEdit = (reserva: ReservaEvento) => {
@@ -217,8 +201,8 @@ export default function ReservasEventosPage() {
         </thead>
         <tbody>
           ${reservasParaExportar
-            .map(
-                (r) => `
+                .map(
+                    (r) => `
                 <tr>
                   <td>${r.id_reservas_evento}</td>
                   <td>EVT${r.id_reservas_evento}</td>
@@ -230,8 +214,8 @@ export default function ReservasEventosPage() {
                   <td>${r.cant_personas}</td>
                   <td>${r.estado}</td>
                 </tr>`
-            )
-            .join("")}
+                )
+                .join("")}
         </tbody>
       </table>
     `;
@@ -302,7 +286,6 @@ export default function ReservasEventosPage() {
                     setTipoEvento={setFiltroTipoEvento}
                     fechaFiltro={filtroFecha}
                     setFechaFiltro={setFiltroFecha}
-                    tiposEventoDisponibles={tiposEventoDisponibles}
                 >
                     {/* Botones de acción */}
                     <div className="flex flex-wrap gap-2">

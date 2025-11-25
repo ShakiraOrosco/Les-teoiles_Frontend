@@ -37,6 +37,8 @@ export interface ReservaHotel {
   reservas_gen: ReservasGen | number;
   datos_cliente: DatosCliente | number;
   habitacion: Habitacion | number;
+  check_in?: string;
+  check_out?: string;
 }
 
 export interface TarifaHotel {

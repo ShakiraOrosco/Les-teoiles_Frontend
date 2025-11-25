@@ -10,7 +10,6 @@ interface ReservaEventosFilterProps {
   setTipoEvento: (tipo: string) => void;
   fechaFiltro: "" | "hoy" | "semana" | "mes" | "proximas";
   setFechaFiltro: (fecha: "" | "hoy" | "semana" | "mes" | "proximas") => void;
-  tiposEventoDisponibles: string[];
   children?: React.ReactNode;
 }
 
@@ -19,25 +18,16 @@ export default function ReservaEventosFilter({
   setFiltro,
   estado,
   setEstado,
-  tipoEvento,
-  setTipoEvento,
   fechaFiltro,
   setFechaFiltro,
   children
 }: ReservaEventosFilterProps) {
-  const hayFiltrosActivos = filtro || estado || tipoEvento || fechaFiltro;
+  const hayFiltrosActivos = filtro || estado || fechaFiltro;
 
-  const limpiarFiltros = () => {
-    setFiltro("");
-    setEstado("");
-    setTipoEvento("");
-    setFechaFiltro("");
-  };
 
   const getEstadoLabel = (estado: string) => {
     switch (estado) {
       case "P": return "Pendiente";
-      case "A": return "Activo";
       case "C": return "Cancelado";
       case "F": return "Finalizado";
       default: return "Todos";
@@ -71,16 +61,6 @@ export default function ReservaEventosFilter({
             </p>
           </div>
         </div>
-
-        {hayFiltrosActivos && (
-          <button
-            onClick={limpiarFiltros}
-            className="flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-          >
-            <FiX className="w-4 h-4" />
-            Limpiar filtros
-          </button>
-        )}
       </div>
 
       {/* Filtros principales */}
@@ -94,7 +74,7 @@ export default function ReservaEventosFilter({
             type="text"
             value={filtro}
             onChange={(e) => setFiltro(e.target.value)}
-            placeholder="Código, cliente, tipo..."
+            placeholder="Código, cliente..."
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 dark:bg-gray-700 dark:text-white"
           />
         </div>
@@ -111,7 +91,6 @@ export default function ReservaEventosFilter({
           >
             <option value="">Todos los estados</option>
             <option value="P">Pendiente</option>
-            <option value="A">Activo</option>
             <option value="F">Finalizado</option>
             <option value="C">Cancelado</option>
           </select>
@@ -166,17 +145,6 @@ export default function ReservaEventosFilter({
             </span>
           )}
           
-          {tipoEvento && (
-            <span className="inline-flex items-center gap-1 px-3 py-1 bg-purple-100 text-purple-800 text-sm rounded-full dark:bg-purple-900/30 dark:text-purple-300">
-              Tipo: {tipoEvento}
-              <button
-                onClick={() => setTipoEvento("")}
-                className="hover:text-purple-600"
-              >
-                <FiX className="w-3 h-3" />
-              </button>
-            </span>
-          )}
           
           {fechaFiltro && (
             <span className="inline-flex items-center gap-1 px-3 py-1 bg-orange-100 text-orange-800 text-sm rounded-full dark:bg-orange-900/30 dark:text-orange-300">

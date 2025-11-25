@@ -34,7 +34,7 @@ export default function ReservasPage() {
 
   // NUEVOS ESTADOS PARA FILTROS
   const [filtro, setFiltro] = useState("");
-  const [filtroEstado, setFiltroEstado] = useState<"" | "P" | "C" | "A" | "F">(""); // Agregar "F"
+  const [filtroEstado, setFiltroEstado] = useState<"" | "P" | "C" | "A" | "F">(""); 
   const [filtroHabitacion, setFiltroHabitacion] = useState("");
   const [filtroFecha, setFiltroFecha] = useState<"" | "hoy" | "semana" | "mes" | "proximas">("");
 
