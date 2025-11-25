@@ -31,7 +31,7 @@ export const verificarDisponibilidad = async (
   data: VerificarDisponibilidadRequest
 ): Promise<VerificarDisponibilidadResponse> => {
   const response = await api.post<VerificarDisponibilidadResponse>(
-    "/reservaEvento/verificar-disponibilidad/", 
+    "/reservaEvento/verificar-disponibilidad/",
     data
   );
   return response.data;
@@ -44,7 +44,7 @@ export const getHorariosOcupados = async (params?: {
   fecha_fin?: string;
 }): Promise<HorariosOcupadosResponse> => {
   const response = await api.get<HorariosOcupadosResponse>(
-    "/reservaEvento/horarios-ocupados/", 
+    "/reservaEvento/horarios-ocupados/",
     { params }
   );
   return response.data;
@@ -57,7 +57,7 @@ export const createReservaEvento = async (
   reservaData: CrearReservaEventoDTO
 ): Promise<CrearReservaEventoResponse> => {
   const response = await api.post<CrearReservaEventoResponse>(
-    "/reservaEvento/registrar/", 
+    "/reservaEvento/registrar/",
     reservaData
   );
   return response.data;
@@ -77,11 +77,11 @@ export const getReservaEventoById = async (id_reserva: number): Promise<ReservaE
 
 // Actualizar una reserva existente
 export const updateReservaEvento = async (
-  id_reserva: number, 
+  id_reserva: number,
   data: ActualizarReservaEventoDTO
 ): Promise<ActualizarReservaEventoResponse> => {
   const response = await api.put<ActualizarReservaEventoResponse>(
-    `/reservaEvento/actualizar/${id_reserva}/`, 
+    `/reservaEvento/actualizar/${id_reserva}/`,
     data
   );
   return response.data;
@@ -93,6 +93,156 @@ export const deleteReservaEvento = async (id_reserva: number): Promise<{ mensaje
     `/reservaEvento/eliminar/${id_reserva}/`
   );
   return response.data;
+};
+
+// ======== CHECK-IN / CHECK-OUT EVENTOS ========
+
+// Realizar check-in de evento
+export const realizarCheckInEvento = async (reservaId: number) => {
+  try {
+    console.log(`🔄 Iniciando check-in para evento: ${reservaId}`);
+
+    const response = await fetch(
+      `https://proyecto-iii-les-toiles-de-l-eau.vercel.app/api/reservaEvento/${reservaId}/check-in/`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    console.log(`📊 Response status: ${response.status}`);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Error ${response.status}: ${errorText}`);
+    }
+
+    const data = await response.json();
+    console.log('✅ Check-in evento exitoso:', data);
+    return data;
+
+  } catch (error) {
+    console.error('❌ Error en realizarCheckInEvento:', error);
+    throw error;
+  }
+};
+
+// Realizar check-out de evento
+export const realizarCheckOutEvento = async (reservaId: number) => {
+  try {
+    console.log(`🔄 Iniciando check-out para evento: ${reservaId}`);
+
+    const response = await fetch(
+      `https://proyecto-iii-les-toiles-de-l-eau.vercel.app/api/reservaEvento/${reservaId}/check-out/`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    console.log(`📊 Response status: ${response.status}`);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Error ${response.status}: ${errorText}`);
+    }
+
+    const data = await response.json();
+    console.log('✅ Check-out evento exitoso:', data);
+    return data;
+
+  } catch (error) {
+    console.error('❌ Error en realizarCheckOutEvento:', error);
+    throw error;
+  }
+};
+
+// Cancelar check-in de evento
+export const cancelarCheckInEvento = async (reservaId: number) => {
+  try {
+    console.log(`🔄 Cancelando check-in para evento: ${reservaId}`);
+
+    const response = await fetch(
+      `https://proyecto-iii-les-toiles-de-l-eau.vercel.app/api/reservaEvento/${reservaId}/check-in/cancelar/`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    console.log(`📊 Response status: ${response.status}`);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Error ${response.status}: ${errorText}`);
+    }
+
+    const data = await response.json();
+    console.log('✅ Check-in evento cancelado:', data);
+    return data;
+
+  } catch (error) {
+    console.error('❌ Error en cancelarCheckInEvento:', error);
+    throw error;
+  }
+};
+
+// Obtener eventos pendientes de check-in
+export const getEventosPendientesCheckIn = async () => {
+  try {
+    const response = await fetch(
+      `https://proyecto-iii-les-toiles-de-l-eau.vercel.app/api/reservaEvento/pendientes-check-in/`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Error ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data;
+
+  } catch (error) {
+    console.error('❌ Error en getEventosPendientesCheckIn:', error);
+    throw error;
+  }
+};
+
+// Obtener eventos pendientes de check-out
+export const getEventosPendientesCheckOut = async () => {
+  try {
+    const response = await fetch(
+      `https://proyecto-iii-les-toiles-de-l-eau.vercel.app/api/reservaEvento/pendientes-check-out/`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Error ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data;
+
+  } catch (error) {
+    console.error('❌ Error en getEventosPendientesCheckOut:', error);
+    throw error;
+  }
 };
 
 // ======== FILTROS Y CONSULTAS ========
@@ -117,14 +267,14 @@ export const getReservasPorCliente = async (cliente_id: number): Promise<Reserva
 
 // Subir comprobante de pago
 export const subirComprobante = async (
-  id_reserva_gen: number, 
+  id_reserva_gen: number,
   archivo: File
 ): Promise<{ mensaje: string; reserva_gen_id: number }> => {
   const formData = new FormData();
   formData.append('pago', archivo);
-  
+
   const response = await api.post(
-    `/reservaEvento/comprobante/${id_reserva_gen}/`, 
+    `/reservaEvento/comprobante/${id_reserva_gen}/`,
     formData,
     {
       headers: {
@@ -165,7 +315,7 @@ export const formatReservaData = (data: CrearReservaEventoDTO): CrearReservaEven
 // Función para validar datos antes de enviar
 export const validateReservaData = (data: CrearReservaEventoDTO): string[] => {
   const errors: string[] = [];
-  
+
   if (!data.nombre) errors.push("El nombre es requerido");
   if (!data.app_paterno) errors.push("El apellido paterno es requerido");
   if (!data.telefono) errors.push("El teléfono es requerido");
@@ -175,7 +325,7 @@ export const validateReservaData = (data: CrearReservaEventoDTO): string[] => {
   if (!data.fecha) errors.push("La fecha es requerida");
   if (!data.hora_ini) errors.push("La hora de inicio es requerida");
   if (!data.hora_fin) errors.push("La hora de fin es requerida");
-  
+
   // Validar que hora_fin sea posterior a hora_ini
   if (data.hora_ini && data.hora_fin) {
     const inicio = new Date(data.hora_ini);
@@ -184,20 +334,20 @@ export const validateReservaData = (data: CrearReservaEventoDTO): string[] => {
       errors.push("La hora de fin debe ser posterior a la hora de inicio");
     }
   }
-  
+
   // Validar tipos numéricos
   if (data.telefono && isNaN(Number(data.telefono))) {
     errors.push("El teléfono debe ser un número válido");
   }
-  
+
   if (data.ci && isNaN(Number(data.ci))) {
     errors.push("El CI debe ser un número válido");
   }
-  
+
   if (data.cant_personas && isNaN(Number(data.cant_personas))) {
     errors.push("La cantidad de personas debe ser un número válido");
   }
-  
+
   return errors;
 };
 
@@ -210,14 +360,14 @@ export const procesarRespuestaReserva = (response: CrearReservaEventoResponse) =
       data: response
     };
   }
-  
+
   if (response.error) {
     return {
       success: false,
       error: response.error
     };
   }
-  
+
   return {
     success: false,
     error: 'Respuesta inesperada del servidor'
@@ -228,28 +378,35 @@ export const procesarRespuestaReserva = (response: CrearReservaEventoResponse) =
 const eventoService = {
   // Servicios adicionales
   getServiciosAdicionales,
-  
+
   // Disponibilidad
   verificarDisponibilidad,
   getHorariosOcupados,
-  
+
   // Gestión de reservas
   createReservaEvento,
   getReservasEvento,
   getReservaEventoById,
   updateReservaEvento,
   deleteReservaEvento,
-  
+
+  // Check-in/out eventos
+  realizarCheckInEvento,
+  realizarCheckOutEvento,
+  cancelarCheckInEvento,
+  getEventosPendientesCheckIn,
+  getEventosPendientesCheckOut,
+
   // Filtros
   getReservasPorEstado,
   getReservasPorCliente,
-  
+
   // Comprobantes
   subirComprobante,
-  
+
   // Sistema de cola
   getEstadisticasCola,
-  
+
   // Utilidades
   formatReservaData,
   validateReservaData,

@@ -88,7 +88,7 @@ export const realizarCheckIn = async (reservaId: number) => {
     console.log(`🔄 Iniciando check-in para reserva: ${reservaId}`);
     
     const response = await fetch(
-      `https://proyecto-iii-les-toiles-de-l-eau.vercel.app/api/reservaHotel/reservas/${reservaId}/check-in/`,
+      `https://proyecto-iii-les-toiles-de-l-eau.vercel.app/api/reservaHotel/${reservaId}/check-in/`,
       {
         method: 'POST',
         headers: {
@@ -140,7 +140,7 @@ export const realizarCheckOut = async (idReserva: number): Promise<any> => {
     console.log('🔧 Enviando check-out SIN token...');
     
     const response = await fetch(
-      `https://proyecto-iii-les-toiles-de-l-eau.vercel.app/api/reservaHotel/reservas/${idReserva}/check-out/`,
+      `https://proyecto-iii-les-toiles-de-l-eau.vercel.app/api/reservaHotel/${idReserva}/check-out/`,
       {
         method: 'POST',
         headers: {
@@ -168,7 +168,7 @@ export const cancelarCheckIn = async (idReserva: number): Promise<any> => {
     console.log('🔧 Cancelando check-in SIN token...');
     
     const response = await fetch(
-      `https://proyecto-iii-les-toiles-de-l-eau.vercel.app/api/reservaHotel/reservas/${idReserva}/check-in/cancelar/`,
+      `https://proyecto-iii-les-toiles-de-l-eau.vercel.app/api/reservaHotel/${idReserva}/check-in/cancelar/`,
       {
         method: 'DELETE',
         headers: {
