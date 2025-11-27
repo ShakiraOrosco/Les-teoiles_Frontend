@@ -8,7 +8,7 @@ import {
 } from "../../../ui/table";
 import Button from "../../../ui/button/Button";
 import Badge from "../../../ui/badge/Badge";
-import { FaSignInAlt, FaSignOutAlt, FaUndo, FaEye, FaEdit, FaTimes, FaBed, FaExclamationTriangle, FaCalendar } from 'react-icons/fa';
+import { FaSignInAlt, FaSignOutAlt, FaUndo, FaEye, FaEdit, FaTimes, FaBed, FaExclamationTriangle, FaCalendar, FaCheckCircle } from 'react-icons/fa';
 import { ReservaHotel } from "../../../../types/AdReserva/Reserva_Hospedaje/hospedaje";
 import VerClienteModal from "../../../modals/AdReservas/Reserva_Hospedaje/VerClienteModal";
 import { useCheckInOut } from '../../../../hooks/AdReservas/Reserva_Hospedaje/useCheckInOut';
@@ -29,6 +29,11 @@ export default function ReservasTable({ reservas, onEdit, onCancel, onRefresh }:
   const [modalCancelarCheckIn, setModalCancelarCheckIn] = useState<boolean>(false);
   const [reservaSeleccionada, setReservaSeleccionada] = useState<ReservaHotel | null>(null);
   const [error, setError] = useState<string | null>(null);
+  
+  // NUEVOS ESTADOS PARA MENSAJES DE CONFIRMACIÓN
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [operationType, setOperationType] = useState<'checkin' | 'checkout' | 'cancelar_checkin' | ''>('');
 
   // HOOK PARA CHECK-IN/OUT
   const { 
@@ -127,23 +132,27 @@ console.log("- Finalizadas/Canceladas/Expiradas:", finalizadasCanceladas.length)
     setReservaSeleccionada(reserva);
     setModalCheckInOut('checkin');
     setError(null);
+    clearError();
   };
 
   const handleCheckOut = (reserva: ReservaHotel) => {
     setReservaSeleccionada(reserva);
     setModalCheckInOut('checkout');
     setError(null);
+    clearError();
   };
 
   const handleCancelarCheckIn = (reserva: ReservaHotel) => {
     setReservaSeleccionada(reserva);
     setModalCancelarCheckIn(true);
     setError(null);
+    clearError();
   };
 
+  // FUNCIÓN MEJORADA PARA MANEJAR CHECK-IN/OUT
   const handleConfirmCheckInOut = async () => {
     if (!reservaSeleccionada || !modalCheckInOut || !reservaSeleccionada.id_reserva_hotel) {
-      setError("Error: No se pudo identificar la reserva seleccionada");
+      setError("No se pudo identificar la reserva seleccionada");
       return;
     }
 
@@ -151,25 +160,46 @@ console.log("- Finalizadas/Canceladas/Expiradas:", finalizadasCanceladas.length)
       let resultado;
       if (modalCheckInOut === 'checkin') {
         resultado = await realizarCheckIn(reservaSeleccionada.id_reserva_hotel);
+        if (resultado) {
+          setSuccessMessage(`Check-In realizado exitosamente para la reserva RES${reservaSeleccionada.id_reserva_hotel}`);
+          setOperationType('checkin');
+          setShowSuccessModal(true);
+          
+          // Cerrar modal y limpiar estados
+          setModalCheckInOut(null);
+          setReservaSeleccionada(null);
+          setError(null);
+        }
       } else {
         resultado = await realizarCheckOut(reservaSeleccionada.id_reserva_hotel);
-      }
-
-      if (resultado) {
-        setModalCheckInOut(null);
-        setReservaSeleccionada(null);
-        setError(null);
-        if (onRefresh) onRefresh();
+        if (resultado) {
+          setSuccessMessage(`Check-Out realizado exitosamente para la reserva RES${reservaSeleccionada.id_reserva_hotel}`);
+          setOperationType('checkout');
+          setShowSuccessModal(true);
+          
+          // Cerrar modal y limpiar estados
+          setModalCheckInOut(null);
+          setReservaSeleccionada(null);
+          setError(null);
+        }
       }
     } catch (err: any) {
       console.error('Error en operación:', err);
-      setError(err.message || "Error al procesar la operación");
+      // 🔥 MOSTRAR SOLO EL MENSAJE LIMPIO - SIN "Error 400:"
+      const rawMessage = err.message || "Error al procesar la operación";
+      const cleanMessage = rawMessage.replace(/Error \d+:\s*/i, ''); // Remover "Error 400:"
+      setError(cleanMessage);
+      
+      // Cerrar modal si hay error
+      setModalCheckInOut(null);
+      setReservaSeleccionada(null);
     }
   };
 
+  // FUNCIÓN MEJORADA PARA CANCELAR CHECK-IN
   const handleConfirmCancelarCheckIn = async () => {
     if (!reservaSeleccionada || !reservaSeleccionada.id_reserva_hotel) {
-      setError("Error: No se pudo identificar la reserva seleccionada");
+      setError("No se pudo identificar la reserva seleccionada");
       return;
     }
 
@@ -177,15 +207,40 @@ console.log("- Finalizadas/Canceladas/Expiradas:", finalizadasCanceladas.length)
       const resultado = await cancelarCheckIn(reservaSeleccionada.id_reserva_hotel);
 
       if (resultado) {
+        setSuccessMessage(`Check-In cancelado exitosamente para la reserva RES${reservaSeleccionada.id_reserva_hotel}`);
+        setOperationType('cancelar_checkin');
+        setShowSuccessModal(true);
+        
+        // Cerrar modal y limpiar estados
         setModalCancelarCheckIn(false);
         setReservaSeleccionada(null);
         setError(null);
-        if (onRefresh) onRefresh();
       }
     } catch (err: any) {
       console.error('Error al cancelar check-in:', err);
-      setError(err.message || "Error al cancelar el check-in");
+      // 🔥 MOSTRAR SOLO EL MENSAJE LIMPIO - SIN "Error 400:"
+      const rawMessage = err.message || "Error al cancelar el check-in";
+      const cleanMessage = rawMessage.replace(/Error \d+:\s*/i, ''); // Remover "Error 400:"
+      setError(cleanMessage);
+      
+      // Cerrar modal si hay error
+      setModalCancelarCheckIn(false);
+      setReservaSeleccionada(null);
     }
+  };
+
+  // FUNCIÓN PARA CERRAR MODAL DE ÉXITO - CON REFRESH AUTOMÁTICO
+  const handleCloseSuccessModal = () => {
+    setShowSuccessModal(false);
+    setSuccessMessage('');
+    setOperationType('');
+    
+    // 🔄 REFRESH COMPLETO DE LA PÁGINA después de cerrar el modal
+    if (onRefresh) {
+      onRefresh();
+    }
+    // También puedes forzar un reload completo si es necesario
+    // window.location.reload();
   };
 
   const handleCloseCheckInOutModal = () => {
@@ -489,21 +544,33 @@ console.log("- Finalizadas/Canceladas/Expiradas:", finalizadasCanceladas.length)
 
   return (
     <div className="space-y-8">
-      {/* Alertas de error */}
+      {/* 🔥 ALERTA DE ERROR MEJORADA - SOLO MENSAJE LIMPIO */}
       {(error || errorCheckInOut) && (
-        <div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4 rounded-lg shadow-md">
-          <div className="flex items-start gap-3">
-            <FaExclamationTriangle className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5" />
-            <div className="flex-1">
-              <p className="text-red-700 dark:text-red-300 font-medium">
-                {error || errorCheckInOut}
-              </p>
-              <button 
-                onClick={() => { setError(null); clearError(); }}
-                className="mt-2 text-red-600 dark:text-red-400 text-sm hover:underline font-medium"
-              >
-                Cerrar
-              </button>
+        <div className="fixed inset-0 z-50">
+          {/* FONDO BORROSO - NO SE PUEDE INTERACTUAR */}
+          <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm"></div>
+          <div className="fixed inset-0 flex items-center justify-center">
+            <div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-6 rounded-lg shadow-2xl max-w-md w-full mx-4">
+              <div className="flex items-start gap-3">
+                <FaExclamationTriangle className="w-7 h-7 text-red-600 dark:text-red-400 mt-0.5" />
+                <div className="flex-1">
+                  <h3 className="text-red-800 dark:text-red-200 font-bold text-xl mb-2">
+                    Error en la Operación
+                  </h3>
+                  <p className="text-red-700 dark:text-red-300 font-medium text-lg">
+                    {error || errorCheckInOut}
+                  </p>
+                  <p className="text-red-600 dark:text-red-400 text-sm mt-3">
+                    Por favor, verifique la información e intente nuevamente.
+                  </p>
+                  <button 
+                    onClick={() => { setError(null); clearError(); }}
+                    className="mt-4 bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-medium transition-all duration-200 w-full"
+                  >
+                    Cerrar
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -526,64 +593,131 @@ console.log("- Finalizadas/Canceladas/Expiradas:", finalizadasCanceladas.length)
         </div>
       </div>
 
-      {/* Modal del Cliente */}
-      <VerClienteModal
-        isOpen={isClienteModalOpen}
-        onClose={() => {
-          setIsClienteModalOpen(false);
-          setClienteSeleccionado(null);
-        }}
-        cliente={clienteSeleccionado}
-      />
-
-      {/* Modal de Check-In/Out */}
-      {modalCheckInOut && reservaSeleccionada && (
-        <CheckInOutModal
-          isOpen={!!modalCheckInOut}
-          onClose={handleCloseCheckInOutModal}
-          onConfirm={handleConfirmCheckInOut}
-          type={modalCheckInOut}
-          reservaInfo={{
-            id: reservaSeleccionada.id_reserva_hotel || 0,
-            cliente: getNombreCliente(reservaSeleccionada),
-            habitacion: getHabitacionInfo(reservaSeleccionada),
-            fechaInicio: reservaSeleccionada.fecha_ini || '',
-            fechaFin: reservaSeleccionada.fecha_fin || '',
-            checkIn: reservaSeleccionada.check_in || ''
-          }}
-          isLoading={isLoadingCheckInOut}
-        />
+      {/* Modal del Cliente - CON FONDO BORROSO */}
+      {isClienteModalOpen && (
+        <div className="fixed inset-0 z-50">
+          {/* FONDO BORROSO - NO SE PUEDE INTERACTUAR */}
+          <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm"></div>
+          <VerClienteModal
+            isOpen={isClienteModalOpen}
+            onClose={() => {
+              setIsClienteModalOpen(false);
+              setClienteSeleccionado(null);
+            }}
+            cliente={clienteSeleccionado}
+          />
+        </div>
       )}
 
-      {/* Modal para Cancelar Check-In */}
-      {modalCancelarCheckIn && reservaSeleccionada && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
-            <div className="flex items-center gap-3 mb-4">
-              <FaUndo className="text-orange-600 w-6 h-6" />
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Cancelar Check-In
-              </h3>
-            </div>
-            
-            <p className="text-gray-600 dark:text-gray-300 mb-4">
-              ¿Estás seguro de que deseas cancelar el check-in de la reserva <strong>RES{reservaSeleccionada.id_reserva_hotel}</strong>?
-            </p>
+      {/* Modal de Check-In/Out - CON FONDO BORROSO */}
+      {modalCheckInOut && reservaSeleccionada && (
+        <div className="fixed inset-0 z-50">
+          {/* FONDO BORROSO - NO SE PUEDE INTERACTUAR */}
+          <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm"></div>
+          <CheckInOutModal
+            isOpen={!!modalCheckInOut}
+            onClose={handleCloseCheckInOutModal}
+            onConfirm={handleConfirmCheckInOut}
+            type={modalCheckInOut}
+            reservaInfo={{
+              id: reservaSeleccionada.id_reserva_hotel || 0,
+              cliente: getNombreCliente(reservaSeleccionada),
+              habitacion: getHabitacionInfo(reservaSeleccionada),
+              fechaInicio: reservaSeleccionada.fecha_ini || '',
+              fechaFin: reservaSeleccionada.fecha_fin || '',
+              checkIn: reservaSeleccionada.check_in || ''
+            }}
+            isLoading={isLoadingCheckInOut}
+          />
+        </div>
+      )}
 
-            <div className="flex justify-end gap-3">
-              <Button
-                variant="outline"
-                onClick={handleCloseCancelarCheckInModal}
-                disabled={isLoadingCheckInOut}
-              >
-                Cancelar
-              </Button>
-              <Button
-                onClick={handleConfirmCancelarCheckIn}
-                disabled={isLoadingCheckInOut}
-              >
-                {isLoadingCheckInOut ? 'Cancelando...' : 'Sí, Cancelar Check-In'}
-              </Button>
+      {/* Modal para Cancelar Check-In - CON FONDO BORROSO */}
+      {modalCancelarCheckIn && reservaSeleccionada && (
+        <div className="fixed inset-0 z-50">
+          {/* FONDO BORROSO - NO SE PUEDE INTERACTUAR */}
+          <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm"></div>
+          <div className="fixed inset-0 flex items-center justify-center">
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-8 max-w-md w-full mx-4 shadow-2xl">
+              <div className="flex items-center gap-4 mb-6">
+                <div className="bg-orange-100 dark:bg-orange-900 p-3 rounded-full">
+                  <FaUndo className="text-orange-600 dark:text-orange-400 w-8 h-8" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+                    Cancelar Check-In
+                  </h3>
+                  <p className="text-orange-600 dark:text-orange-400 text-sm mt-1">
+                    Confirmación requerida
+                  </p>
+                </div>
+              </div>
+              
+              <p className="text-gray-700 dark:text-gray-300 mb-6 text-lg">
+                ¿Estás seguro de que deseas cancelar el check-in de la reserva <strong>RES{reservaSeleccionada.id_reserva_hotel}</strong>?
+              </p>
+
+              <div className="flex justify-end gap-4">
+                <Button
+                  variant="outline"
+                  onClick={handleCloseCancelarCheckInModal}
+                  disabled={isLoadingCheckInOut}
+                  className="px-6 py-3"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={handleConfirmCancelarCheckIn}
+                  disabled={isLoadingCheckInOut}
+                  className="bg-orange-600 hover:bg-orange-700 px-6 py-3"
+                >
+                  {isLoadingCheckInOut ? 'Cancelando...' : 'Sí, Cancelar Check-In'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 🔥 MODAL DE ÉXITO - CON FONDO BORROSO Y REFRESH AUTOMÁTICO */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 z-50">
+          {/* FONDO BORROSO - NO SE PUEDE INTERACTUAR */}
+          <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm"></div>
+          <div className="fixed inset-0 flex items-center justify-center">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl">
+              <div className="flex items-center gap-4 mb-6">
+                <div className="bg-green-100 dark:bg-green-900 p-3 rounded-full">
+                  <FaCheckCircle className="text-green-600 dark:text-green-400 w-8 h-8" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {operationType === 'checkin' && '✅ Check-In Exitoso'}
+                    {operationType === 'checkout' && '✅ Check-Out Exitoso'}
+                    {operationType === 'cancelar_checkin' && '🔄 Check-In Cancelado'}
+                  </h3>
+                  <p className="text-green-600 dark:text-green-400 text-sm mt-1">
+                    Operación completada correctamente
+                  </p>
+                </div>
+              </div>
+              
+              <p className="text-gray-700 dark:text-gray-300 mb-2 text-lg font-semibold">
+                {successMessage}
+              </p>
+
+              <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">
+                La página se actualizará automáticamente al cerrar este mensaje.
+              </p>
+
+              <div className="flex justify-end">
+                <Button
+                  onClick={handleCloseSuccessModal}
+                  className="bg-green-600 hover:bg-green-700 px-8 py-3 text-white font-semibold rounded-lg transition-all duration-200 shadow-lg text-lg"
+                >
+                  Aceptar
+                </Button>
+              </div>
             </div>
           </div>
         </div>

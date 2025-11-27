@@ -8,7 +8,7 @@ import {
 } from "../../../ui/table";
 import Button from "../../../ui/button/Button";
 import Badge from "../../../ui/badge/Badge";
-import { FaSignInAlt, FaSignOutAlt, FaUndo, FaEye, FaEdit, FaTimes, FaCalendar, FaUsers, FaClock } from 'react-icons/fa';
+import { FaSignInAlt, FaSignOutAlt, FaUndo, FaEye, FaEdit, FaTimes, FaCalendar, FaClock, FaExclamationTriangle, FaCheckCircle } from 'react-icons/fa';
 import { ReservaEvento } from "../../../../types/AdReserva/Reservas_Eventos/eventos";
 import ViewEventoModal from "../../../modals/AdReservas/Reserva_Eventos/ViewEventoModal";
 import { useCheckInOutEvento } from '../../../../hooks/AdReservas/Reserva_Eventos/useCheckInOutEvento';
@@ -26,7 +26,6 @@ export default function ReservasEventoTable({
   reservas,
   onEdit,
   onCancel,
-  onView,
   onRefresh
 }: ReservasEventoTableProps) {
   // ESTADOS
@@ -35,6 +34,12 @@ export default function ReservasEventoTable({
   const [modalCheckInOut, setModalCheckInOut] = useState<'checkin' | 'checkout' | null>(null);
   const [modalCancelarCheckIn, setModalCancelarCheckIn] = useState<boolean>(false);
   const [reservaSeleccionada, setReservaSeleccionada] = useState<ReservaEvento | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  // NUEVOS ESTADOS PARA MENSAJES DE CONFIRMACIÓN
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [operationType, setOperationType] = useState<'checkin' | 'checkout' | 'cancelar_checkin' | ''>('');
 
   // HOOK PARA CHECK-IN/OUT
   const {
@@ -64,18 +69,18 @@ export default function ReservasEventoTable({
   const futuras = reservas.filter((r) => {
     // Eventos activos sin check-in
     const fechaEventoStr = r.fecha.split('T')[0];
-    
+
     // Si es una fecha futura, incluir
     if (fechaEventoStr > hoyBolivia && r.estado === "A" && !r.check_in) {
       return true;
     }
-    
+
     // Si es hoy, verificar que la hora de fin no haya pasado
     if (fechaEventoStr === hoyBolivia && r.estado === "A" && !r.check_in) {
       const horaFin = new Date(r.hora_fin);
       return horaFin > ahoraBolivia; // Solo si la hora de fin es futura
     }
-    
+
     return false;
   });
 
@@ -90,12 +95,12 @@ export default function ReservasEventoTable({
     // O eventos de hoy cuya hora de fin ya pasó sin check-in
     const fechaEventoStr = r.fecha.split('T')[0];
     const esPasado = fechaEventoStr < hoyBolivia;
-    
+
     // Si es de hoy, verificar si la hora ya pasó
-    const esHoyHoraPasada = fechaEventoStr === hoyBolivia && 
-                            r.hora_fin && 
-                            new Date(r.hora_fin) <= ahoraBolivia &&
-                            !r.check_in; // Solo si no hizo check-in
+    const esHoyHoraPasada = fechaEventoStr === hoyBolivia &&
+      r.hora_fin &&
+      new Date(r.hora_fin) <= ahoraBolivia &&
+      !r.check_in; // Solo si no hizo check-in
 
     return (
       r.estado === "C" || // Cancelados
@@ -110,52 +115,186 @@ export default function ReservasEventoTable({
   const handleCheckIn = (reserva: ReservaEvento) => {
     setReservaSeleccionada(reserva);
     setModalCheckInOut('checkin');
+    setError(null);
+    clearError();
   };
 
   const handleCheckOut = (reserva: ReservaEvento) => {
     setReservaSeleccionada(reserva);
     setModalCheckInOut('checkout');
+    setError(null);
+    clearError();
   };
 
   const handleCancelarCheckIn = (reserva: ReservaEvento) => {
     setReservaSeleccionada(reserva);
     setModalCancelarCheckIn(true);
+    setError(null);
+    clearError();
   };
 
   const handleConfirmCheckInOut = async () => {
-    if (!reservaSeleccionada || !modalCheckInOut) return;
+    if (!reservaSeleccionada || !modalCheckInOut) {
+      setError("No se pudo identificar el evento seleccionado");
+      return;
+    }
 
     try {
       let resultado;
       if (modalCheckInOut === 'checkin') {
         resultado = await realizarCheckIn(reservaSeleccionada.id_reservas_evento);
+        if (resultado) {
+          setSuccessMessage(`Check-In realizado exitosamente para el evento EVT${reservaSeleccionada.id_reservas_evento}`);
+          setOperationType('checkin');
+          setShowSuccessModal(true);
+
+          // Cerrar modal y limpiar estados
+          setModalCheckInOut(null);
+          setReservaSeleccionada(null);
+          setError(null);
+        }
       } else {
         resultado = await realizarCheckOut(reservaSeleccionada.id_reservas_evento);
+        if (resultado) {
+          setSuccessMessage(`Check-Out realizado exitosamente para el evento EVT${reservaSeleccionada.id_reservas_evento}`);
+          setOperationType('checkout');
+          setShowSuccessModal(true);
+
+          // Cerrar modal y limpiar estados
+          setModalCheckInOut(null);
+          setReservaSeleccionada(null);
+          setError(null);
+        }
+      }
+    } catch (err: any) {
+      console.error('Error en operación:', err);
+
+      // 🔥 CORRECCIÓN COMPLETA: Extraer el mensaje del error de diferentes formatos
+      let errorMessage = "Error al procesar la operación";
+
+      try {
+        // Caso 1: El error ya es un string con el mensaje
+        if (typeof err === 'string') {
+          errorMessage = err;
+        }
+        // Caso 2: El error tiene una propiedad 'message' que es string
+        else if (err.message && typeof err.message === 'string') {
+          // Intentar parsear si es JSON string
+          try {
+            const parsedError = JSON.parse(err.message);
+            errorMessage = parsedError.error || parsedError.message || err.message;
+          } catch {
+            // Si no es JSON, usar el mensaje directamente
+            errorMessage = err.message;
+          }
+        }
+        // Caso 3: El error tiene una propiedad 'error' (respuesta directa del servidor)
+        else if (err.error && typeof err.error === 'string') {
+          errorMessage = err.error;
+        }
+        // Caso 4: El error es un objeto con propiedades
+        else if (typeof err === 'object') {
+          // Buscar cualquier propiedad que pueda contener el mensaje
+          errorMessage = err.error || err.message || err.detail || err.err || "Error al procesar la operación";
+        }
+      } catch (parseError) {
+        console.error('Error al parsear mensaje de error:', parseError);
+        errorMessage = "Error al procesar la operación";
       }
 
-      if (resultado) {
-        setModalCheckInOut(null);
-        setReservaSeleccionada(null);
-        if (onRefresh) onRefresh();
-      }
-    } catch (err) {
-      console.error('Error en operación:', err);
+      // Limpiar el mensaje de "Error" y códigos
+      const cleanMessage = errorMessage
+        .replace(/^Error\s*\d*\s*:\s*/i, '')
+        .replace(/^{.*"error":"(.*?)".*}$/, '$1') // Extraer solo el texto del error del JSON
+        .trim();
+
+      setError(cleanMessage);
+
+      // Cerrar modal si hay error
+      setModalCheckInOut(null);
+      setReservaSeleccionada(null);
     }
   };
 
+  // FUNCIÓN MEJORADA PARA CANCELAR CHECK-IN
   const handleConfirmCancelarCheckIn = async () => {
-    if (!reservaSeleccionada) return;
+    if (!reservaSeleccionada) {
+      setError("No se pudo identificar el evento seleccionado");
+      return;
+    }
 
     try {
       const resultado = await cancelarCheckIn(reservaSeleccionada.id_reservas_evento);
 
       if (resultado) {
+        setSuccessMessage(`Check-In cancelado exitosamente para el evento EVT${reservaSeleccionada.id_reservas_evento}`);
+        setOperationType('cancelar_checkin');
+        setShowSuccessModal(true);
+
+        // Cerrar modal y limpiar estados
         setModalCancelarCheckIn(false);
         setReservaSeleccionada(null);
-        if (onRefresh) onRefresh();
+        setError(null);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error al cancelar check-in:', err);
+
+      // 🔥 CORRECCIÓN COMPLETA: Extraer el mensaje del error de diferentes formatos
+      let errorMessage = "Error al cancelar el check-in";
+
+      try {
+        // Caso 1: El error ya es un string con el mensaje
+        if (typeof err === 'string') {
+          errorMessage = err;
+        }
+        // Caso 2: El error tiene una propiedad 'message' que es string
+        else if (err.message && typeof err.message === 'string') {
+          // Intentar parsear si es JSON string
+          try {
+            const parsedError = JSON.parse(err.message);
+            errorMessage = parsedError.error || parsedError.message || err.message;
+          } catch {
+            // Si no es JSON, usar el mensaje directamente
+            errorMessage = err.message;
+          }
+        }
+        // Caso 3: El error tiene una propiedad 'error' (respuesta directa del servidor)
+        else if (err.error && typeof err.error === 'string') {
+          errorMessage = err.error;
+        }
+        // Caso 4: El error es un objeto con propiedades
+        else if (typeof err === 'object') {
+          // Buscar cualquier propiedad que pueda contener el mensaje
+          errorMessage = err.error || err.message || err.detail || err.err || "Error al cancelar el check-in";
+        }
+      } catch (parseError) {
+        console.error('Error al parsear mensaje de error:', parseError);
+        errorMessage = "Error al cancelar el check-in";
+      }
+
+      // Limpiar el mensaje de "Error" y códigos
+      const cleanMessage = errorMessage
+        .replace(/^Error\s*\d*\s*:\s*/i, '')
+        .replace(/^{.*"error":"(.*?)".*}$/, '$1') // Extraer solo el texto del error del JSON
+        .trim();
+
+      setError(cleanMessage);
+
+      // Cerrar modal si hay error
+      setModalCancelarCheckIn(false);
+      setReservaSeleccionada(null);
+    }
+  };
+
+  // FUNCIÓN PARA CERRAR MODAL DE ÉXITO - CON REFRESH AUTOMÁTICO
+  const handleCloseSuccessModal = () => {
+    setShowSuccessModal(false);
+    setSuccessMessage('');
+    setOperationType('');
+
+    // 🔄 REFRESH COMPLETO DE LA PÁGINA después de cerrar el modal
+    if (onRefresh) {
+      onRefresh();
     }
   };
 
@@ -163,12 +302,14 @@ export default function ReservasEventoTable({
     setModalCheckInOut(null);
     setReservaSeleccionada(null);
     clearError();
+    setError(null);
   };
 
   const handleCloseCancelarCheckInModal = () => {
     setModalCancelarCheckIn(false);
     setReservaSeleccionada(null);
     clearError();
+    setError(null);
   };
 
   // FUNCIONES PARA VER EVENTO
@@ -306,13 +447,7 @@ export default function ReservasEventoTable({
                 Horario
               </TableCell>
               <TableCell isHeader className="px-6 py-4 text-start text-theme-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                Personas
-              </TableCell>
-              <TableCell isHeader className="px-6 py-4 text-start text-theme-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                 Estado
-              </TableCell>
-              <TableCell isHeader className="px-6 py-4 text-center text-theme-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                Detalles
               </TableCell>
               {withActions && (
                 <TableCell isHeader className="px-6 py-4 text-center text-theme-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
@@ -353,9 +488,6 @@ export default function ReservasEventoTable({
                       <div className="flex flex-col">
                         <span className="font-bold text-gray-900 dark:text-white text-base">
                           {codigoReserva}
-                        </span>
-                        <span className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                          ID: {reserva.id_reservas_evento}
                         </span>
                       </div>
                     </TableCell>
@@ -409,16 +541,6 @@ export default function ReservasEventoTable({
                       </div>
                     </TableCell>
 
-                    {/* Cantidad de Personas */}
-                    <TableCell className="px-6 py-5 text-start">
-                      <div className="flex items-center gap-2">
-                        <FaUsers className="w-4 h-4 text-[#2A9D8F]" />
-                        <span className="font-semibold text-gray-900 dark:text-white">
-                          {reserva.cant_personas}
-                        </span>
-                      </div>
-                    </TableCell>
-
                     {/* Estado */}
                     <TableCell className="px-6 py-5 text-start">
                       <Badge
@@ -427,17 +549,6 @@ export default function ReservasEventoTable({
                       >
                         {estado.label}
                       </Badge>
-                    </TableCell>
-
-                    {/* 👁️ Ver Detalles */}
-                    <TableCell className="px-6 py-5 text-center">
-                      <button
-                        onClick={() => onView?.(reserva)}
-                        className="p-3 bg-[#2A9D8F] text-white hover:bg-[#23857a] rounded-xl transition-all duration-200 shadow-md hover:shadow-lg group-hover:scale-105"
-                        title="Ver detalles completos del evento"
-                      >
-                        <FaEye className="w-4 h-4" />
-                      </button>
                     </TableCell>
 
                     {/* Acciones */}
@@ -518,111 +629,193 @@ export default function ReservasEventoTable({
 
   return (
     <div className="space-y-8">
+      {/* 🔥 ALERTA DE ERROR MEJORADA - SOLO MENSAJE LIMPIO */}
+      {(error || errorCheckInOut) && (
+        <div className="fixed inset-0 z-50">
+          {/* FONDO SEMITRANSPARENTE ELEGANTE */}
+          <div className="fixed inset-0 bg-gradient-to-br from-blue-50/80 to-cyan-50/80 backdrop-blur-sm"></div>
+          <div className="fixed inset-0 flex items-center justify-center">
+            <div className="bg-white dark:bg-gray-800 border-2 border-red-200 dark:border-red-800 rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl">
+              <div className="flex items-center gap-4 mb-6">
+                <div className="bg-red-100 dark:bg-red-900/20 p-3 rounded-full">
+                  <FaExclamationTriangle className="text-red-600 dark:text-red-400 w-8 h-8" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+                    Ocurrió un problema
+                  </h3>
+                  <p className="text-red-600 dark:text-red-400 text-sm mt-1">
+                    No se pudo completar la operación
+                  </p>
+                </div>
+              </div>
+
+              <p className="text-gray-700 dark:text-gray-300 mb-2 text-lg font-semibold">
+                {error || errorCheckInOut}
+              </p>
+
+              <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">
+                Por favor, verifique la información e intente nuevamente.
+              </p>
+
+              <div className="flex justify-end">
+                <Button
+                  onClick={() => { setError(null); clearError(); }}
+                  className="bg-red-600 hover:bg-red-700 px-8 py-3 text-white font-semibold rounded-lg transition-all duration-200 shadow-lg text-lg"
+                >
+                  Cerrar
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Información del sistema */}
-      <div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 p-4 rounded-lg">
-        <div className="flex items-center gap-3">
-          <div className="bg-blue-100 dark:bg-blue-800 p-2 rounded-full">
-            <FaCalendar className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+      <div className="bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 border-l-4 border-blue-500 p-6 rounded-2xl shadow-lg">
+        <div className="flex items-center gap-4">
+          <div className="bg-white dark:bg-blue-800 p-3 rounded-2xl shadow-md">
+            <FaCalendar className="w-8 h-8 text-blue-600 dark:text-blue-400" />
           </div>
           <div>
-            <p className="text-blue-800 dark:text-blue-300 font-medium">
-              Sistema de Gestión de Reservas
+            <p className="text-blue-800 dark:text-blue-300 font-bold text-lg">
+              Sistema de Gestión de Eventos
             </p>
             <p className="text-blue-600 dark:text-blue-400 text-sm">
-              Total de reservas: {reservas.length} | Hoy: {hoyBolivia}
+              Total de eventos: {reservas.length} | Hoy: {hoyBolivia}
             </p>
           </div>
         </div>
       </div>
 
-      {/* Modal del Evento */}
-      {eventoSeleccionado && (
-        <ViewEventoModal
-          isOpen={isEventoModalOpen}
-          onClose={() => {
-            setIsEventoModalOpen(false);
-            setEventoSeleccionado(null);
-          }}
-          reserva={eventoSeleccionado}
-        />
+      {/* Modal del Evento - CON FONDO SEMITRANSPARENTE ELEGANTE */}
+      {isEventoModalOpen && eventoSeleccionado && (
+        <div className="fixed inset-0 z-50">
+          {/* FONDO SEMITRANSPARENTE ELEGANTE */}
+          <div className="fixed inset-0 bg-gradient-to-br from-blue-50/80 to-cyan-50/80 backdrop-blur-sm"></div>
+          <ViewEventoModal
+            isOpen={isEventoModalOpen}
+            onClose={() => {
+              setIsEventoModalOpen(false);
+              setEventoSeleccionado(null);
+            }}
+            reserva={eventoSeleccionado}
+          />
+        </div>
       )}
 
-      {/* Modal de Check-In/Out */}
+      {/* Modal de Check-In/Out - CON FONDO SEMITRANSPARENTE ELEGANTE */}
       {modalCheckInOut && reservaSeleccionada && (
-        <CheckInOutEventoModal
-          isOpen={!!modalCheckInOut}
-          onClose={handleCloseCheckInOutModal}
-          onConfirm={handleConfirmCheckInOut}
-          type={modalCheckInOut}
-          reservaInfo={{
-            id: reservaSeleccionada.id_reservas_evento,
-            cliente: getNombreCliente(reservaSeleccionada),
-            fecha: formatFecha(reservaSeleccionada.fecha),
-            horaInicio: formatHora(reservaSeleccionada.hora_ini),
-            horaFin: formatHora(reservaSeleccionada.hora_fin),
-            cantPersonas: reservaSeleccionada.cant_personas,
-            servicios: reservaSeleccionada.servicios_adicionales?.map(s => s.nombre),
-            checkIn: reservaSeleccionada.check_in || ''
-          }}
-          isLoading={isLoadingCheckInOut}
-        />
+        <div className="fixed inset-0 z-50">
+          {/* FONDO SEMITRANSPARENTE ELEGANTE */}
+          <div className="fixed inset-0 bg-gradient-to-br from-blue-50/80 to-cyan-50/80 backdrop-blur-sm"></div>
+          <CheckInOutEventoModal
+            isOpen={!!modalCheckInOut}
+            onClose={handleCloseCheckInOutModal}
+            onConfirm={handleConfirmCheckInOut}
+            type={modalCheckInOut}
+            reservaInfo={{
+              id: reservaSeleccionada.id_reservas_evento,
+              cliente: getNombreCliente(reservaSeleccionada),
+              fecha: formatFecha(reservaSeleccionada.fecha),
+              horaInicio: formatHora(reservaSeleccionada.hora_ini),
+              horaFin: formatHora(reservaSeleccionada.hora_fin),
+              cantPersonas: reservaSeleccionada.cant_personas,
+              servicios: reservaSeleccionada.servicios_adicionales?.map(s => s.nombre),
+              checkIn: reservaSeleccionada.check_in || ''
+            }}
+            isLoading={isLoadingCheckInOut}
+          />
+        </div>
       )}
 
-      {/* Modal para Cancelar Check-In */}
+      {/* Modal para Cancelar Check-In - CON FONDO SEMITRANSPARENTE ELEGANTE */}
       {modalCancelarCheckIn && reservaSeleccionada && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-orange-100 dark:bg-orange-900/20 rounded-lg">
-                <FaUndo className="text-orange-600 w-6 h-6" />
+        <div className="fixed inset-0 z-50">
+          {/* FONDO SEMITRANSPARENTE ELEGANTE */}
+          <div className="fixed inset-0 bg-gradient-to-br from-blue-50/80 to-cyan-50/80 backdrop-blur-sm"></div>
+          <div className="fixed inset-0 flex items-center justify-center">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl border-2 border-orange-200 dark:border-orange-800">
+              <div className="flex items-center gap-4 mb-6">
+                <div className="bg-orange-100 dark:bg-orange-900/20 p-3 rounded-full">
+                  <FaUndo className="text-orange-600 dark:text-orange-400 w-8 h-8" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+                    Cancelar Check-In
+                  </h3>
+                  <p className="text-orange-600 dark:text-orange-400 text-sm mt-1">
+                    Confirmación requerida
+                  </p>
+                </div>
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Cancelar Check-In
-              </h3>
-            </div>
 
-            <p className="text-gray-600 dark:text-gray-300 mb-6">
-              ¿Estás seguro de que deseas cancelar el check-in del evento <strong>EVT{reservaSeleccionada.id_reservas_evento}</strong>?
-            </p>
+              <p className="text-gray-700 dark:text-gray-300 mb-6 text-lg">
+                ¿Estás seguro de que deseas cancelar el check-in del evento <strong>EVT{reservaSeleccionada.id_reservas_evento}</strong>?
+              </p>
 
-            <div className="flex justify-end gap-3">
-              <Button
-                variant="outline"
-                onClick={handleCloseCancelarCheckInModal}
-                disabled={isLoadingCheckInOut}
-              >
-                Cancelar
-              </Button>
-              <Button
-                onClick={handleConfirmCancelarCheckIn}
-                disabled={isLoadingCheckInOut}
-                className="bg-orange-600 hover:bg-orange-700"
-              >
-                {isLoadingCheckInOut ? 'Cancelando...' : 'Sí, Cancelar Check-In'}
-              </Button>
+              <div className="flex justify-end gap-4">
+                <Button
+                  variant="outline"
+                  onClick={handleCloseCancelarCheckInModal}
+                  disabled={isLoadingCheckInOut}
+                  className="px-6 py-3 border-2"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={handleConfirmCancelarCheckIn}
+                  disabled={isLoadingCheckInOut}
+                  className="bg-orange-600 hover:bg-orange-700 px-6 py-3 text-white font-semibold rounded-lg transition-all duration-200 shadow-lg"
+                >
+                  {isLoadingCheckInOut ? 'Cancelando...' : 'Sí, Cancelar Check-In'}
+                </Button>
+              </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Mostrar errores de check-in/out */}
-      {errorCheckInOut && (
-        <div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4 rounded-lg">
-          <div className="flex items-center gap-3">
-            <div className="flex-shrink-0">
-              <FaTimes className="w-5 h-5 text-red-600 dark:text-red-400" />
-            </div>
-            <div className="flex-1">
-              <p className="text-red-700 dark:text-red-300 font-medium">
-                {errorCheckInOut}
+      {/* 🔥 MODAL DE ÉXITO - CON FONDO SEMITRANSPARENTE ELEGANTE Y REFRESH AUTOMÁTICO */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 z-50">
+          {/* FONDO SEMITRANSPARENTE ELEGANTE */}
+          <div className="fixed inset-0 bg-gradient-to-br from-blue-50/80 to-cyan-50/80 backdrop-blur-sm"></div>
+          <div className="fixed inset-0 flex items-center justify-center">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl border-2 border-green-200 dark:border-green-800">
+              <div className="flex items-center gap-4 mb-6">
+                <div className="bg-green-100 dark:bg-green-900/20 p-3 rounded-full">
+                  <FaCheckCircle className="text-green-600 dark:text-green-400 w-8 h-8" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {operationType === 'checkin' && '✅ Check-In Exitoso'}
+                    {operationType === 'checkout' && '✅ Check-Out Exitoso'}
+                    {operationType === 'cancelar_checkin' && '🔄 Check-In Cancelado'}
+                  </h3>
+                  <p className="text-green-600 dark:text-green-400 text-sm mt-1">
+                    Operación completada correctamente
+                  </p>
+                </div>
+              </div>
+
+              <p className="text-gray-700 dark:text-gray-300 mb-2 text-lg font-semibold">
+                {successMessage}
               </p>
+
+              <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">
+                La página se actualizará automáticamente al cerrar este mensaje.
+              </p>
+
+              <div className="flex justify-end">
+                <Button
+                  onClick={handleCloseSuccessModal}
+                  className="bg-green-600 hover:bg-green-700 px-8 py-3 text-white font-semibold rounded-lg transition-all duration-200 shadow-lg text-lg"
+                >
+                  Aceptar
+                </Button>
+              </div>
             </div>
-            <button
-              onClick={clearError}
-              className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-200"
-            >
-              <FaTimes className="w-4 h-4" />
-            </button>
           </div>
         </div>
       )}
