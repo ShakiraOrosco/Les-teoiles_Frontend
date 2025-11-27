@@ -787,14 +787,14 @@ export default function HospedajeModal({ isOpen, onClose, onSuccess }: Hospedaje
   // STEP: FORM (formulario principal)
   return (
     <Modal isOpen={isOpen} onClose={onClose} className="max-w-4xl">
-      <div className="relative w-full p-6 bg-white rounded-2xl dark:bg-gray-900 max-h-[90vh] overflow-y-auto">
+      <div className="relative w-full p-6 bg-white rounded-2xl dark:bg-gray-900 max-h-[90vh] overflow-y-auto" id= "reserva-hospedaje-modal">
         {/* Header */}
         <div className="flex items-center justify-between border-b px-4 py-3 rounded-t-2xl bg-teal-500 dark:bg-teal-600 mb-6">
           <h2 className="text-xl font-bold text-white">Reserva de Hospedaje</h2>
           <button
             onClick={onClose}
             className="p-2 text-white hover:bg-teal-600 dark:hover:bg-teal-700 rounded-lg transition-colors"
-          >
+          hidden>
             <FaTimes className="w-5 h-5" />
           </button>
         </div>

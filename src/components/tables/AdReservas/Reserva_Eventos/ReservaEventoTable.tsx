@@ -46,36 +46,65 @@ export default function ReservasEventoTable({
     clearError
   } = useCheckInOutEvento();
 
-  // 🔹 Fecha actual
-  const hoy = new Date();
+  // 🔹 Obtener fecha y hora actual en Bolivia
+  const getHoyBolivia = () => {
+    const ahora = new Date();
+    return ahora.toLocaleDateString('en-CA', { timeZone: 'America/La_Paz' });
+  };
 
-  // 🔹 TRES CATEGORÍAS DE EVENTOS - CORREGIDO
+  const getAhoraBolivia = () => {
+    // Obtener fecha y hora actual en Bolivia
+    return new Date().toLocaleString('en-US', { timeZone: 'America/La_Paz' });
+  };
+
+  const hoyBolivia = getHoyBolivia();
+  const ahoraBolivia = new Date(getAhoraBolivia());
+
+  // 🔹 TRES CATEGORÍAS DE EVENTOS - CORREGIDO con comparación de strings y horas
   const futuras = reservas.filter((r) => {
-    // Eventos activos con fecha futura y sin check-in
-    return r.estado === "A" && new Date(r.fecha) > hoy && !r.check_in;
+    // Eventos activos sin check-in
+    const fechaEventoStr = r.fecha.split('T')[0];
+    
+    // Si es una fecha futura, incluir
+    if (fechaEventoStr > hoyBolivia && r.estado === "A" && !r.check_in) {
+      return true;
+    }
+    
+    // Si es hoy, verificar que la hora de fin no haya pasado
+    if (fechaEventoStr === hoyBolivia && r.estado === "A" && !r.check_in) {
+      const horaFin = new Date(r.hora_fin);
+      return horaFin > ahoraBolivia; // Solo si la hora de fin es futura
+    }
+    
+    return false;
   });
 
   const enCurso = reservas.filter((r) => {
-    // Eventos activos que son hoy o pasados, con check-in pero sin check-out
-    const fechaEvento = new Date(r.fecha);
-    const esHoyOPasado = fechaEvento <= hoy;
-    return r.estado === "A" && esHoyOPasado && r.check_in && !r.check_out;
+    // Eventos activos con check-in pero sin check-out
+    return r.estado === "A" && r.check_in && !r.check_out;
   });
 
   const finalizadasCanceladas = reservas.filter((r) => {
     // Eventos cancelados, finalizados O con check-out realizado
     // O eventos pasados sin check-in (que nunca se realizaron)
-    const fechaEvento = new Date(r.fecha);
-    const esPasado = fechaEvento < hoy;
+    // O eventos de hoy cuya hora de fin ya pasó sin check-in
+    const fechaEventoStr = r.fecha.split('T')[0];
+    const esPasado = fechaEventoStr < hoyBolivia;
+    
+    // Si es de hoy, verificar si la hora ya pasó
+    const esHoyHoraPasada = fechaEventoStr === hoyBolivia && 
+                            r.hora_fin && 
+                            new Date(r.hora_fin) <= ahoraBolivia &&
+                            !r.check_in; // Solo si no hizo check-in
 
     return (
       r.estado === "C" || // Cancelados
       r.estado === "F" || // Finalizados
       r.check_out !== null || // Con check-out
-      (r.estado === "A" && esPasado && !r.check_in) // Eventos pasados que nunca tuvieron check-in
+      (r.estado === "A" && esPasado && !r.check_in) || // Eventos pasados sin check-in
+      (r.estado === "A" && esHoyHoraPasada) // Eventos de hoy con hora pasada sin check-in
     );
   });
-
 
   // FUNCIONES PARA CHECK-IN/OUT
   const handleCheckIn = (reserva: ReservaEvento) => {
@@ -164,12 +193,9 @@ export default function ReservasEventoTable({
   // ✅ Función para formatear fecha
   const formatFecha = (fechaStr: string) => {
     try {
-      const fecha = new Date(fechaStr);
-      return fecha.toLocaleDateString('es-ES', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-      });
+      // Parseamos la fecha localmente sin conversión UTC
+      const [year, month, day] = fechaStr.split('T')[0].split('-');
+      return `${day}/${month}/${year}`;
     } catch {
       return '-';
     }
@@ -184,7 +210,6 @@ export default function ReservasEventoTable({
 
   // ✅ Etiquetas visuales de estado - CORREGIDO
   const getEstadoLabel = (reserva: ReservaEvento) => {
-    const fechaEvento = new Date(reserva.fecha);
     const estado = reserva.estado;
 
     // Si está cancelado o finalizado, mostrar eso primero
@@ -194,19 +219,22 @@ export default function ReservasEventoTable({
     // Si tiene check-out, está finalizado
     if (reserva.check_out) return { label: "Finalizado", color: "info" as const };
 
+    // Extraer fecha del evento en formato YYYY-MM-DD
+    const fechaEventoStr = reserva.fecha.split('T')[0];
+
     // Eventos activos
     if (estado === 'A') {
       if (reserva.check_in && !reserva.check_out) {
         return { label: "En Curso", color: "success" as const };
       }
-      if (fechaEvento > hoy) {
+      if (fechaEventoStr > hoyBolivia) {
         return { label: "Confirmado", color: "success" as const };
       }
-      if (fechaEvento.toDateString() === hoy.toDateString()) {
+      if (fechaEventoStr === hoyBolivia) {
         return { label: "Hoy", color: "primary" as const };
       }
       // Evento pasado sin check-in (no realizado)
-      if (fechaEvento < hoy && !reserva.check_in) {
+      if (fechaEventoStr < hoyBolivia && !reserva.check_in) {
         return { label: "No Realizado", color: "warning" as const };
       }
     }
@@ -490,6 +518,23 @@ export default function ReservasEventoTable({
 
   return (
     <div className="space-y-8">
+      {/* Información del sistema */}
+      <div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 p-4 rounded-lg">
+        <div className="flex items-center gap-3">
+          <div className="bg-blue-100 dark:bg-blue-800 p-2 rounded-full">
+            <FaCalendar className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+          </div>
+          <div>
+            <p className="text-blue-800 dark:text-blue-300 font-medium">
+              Sistema de Gestión de Reservas
+            </p>
+            <p className="text-blue-600 dark:text-blue-400 text-sm">
+              Total de reservas: {reservas.length} | Hoy: {hoyBolivia}
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Modal del Evento */}
       {eventoSeleccionado && (
         <ViewEventoModal
@@ -582,8 +627,8 @@ export default function ReservasEventoTable({
         </div>
       )}
 
-      {/* 🟡 TABLA 1: Eventos Futuros (CHECK-IN + EDITAR + CANCELAR) */}
-      {renderTable(futuras, "Eventos Futuros - Pendientes de Check-In", true, true, true, false, true)}
+      {/* 🟡 TABLA 1: Eventos Futuros y de Hoy (CHECK-IN + EDITAR + CANCELAR) */}
+      {renderTable(futuras, "Eventos de Hoy y Futuros - Pendientes de Check-In", true, true, true, false, true)}
 
       {/* 🟢 TABLA 2: Eventos en Curso (SOLO CHECK-OUT) */}
       {renderTable(enCurso, "Eventos en Curso - Pendientes de Check-Out", true, true, false, true, false)}

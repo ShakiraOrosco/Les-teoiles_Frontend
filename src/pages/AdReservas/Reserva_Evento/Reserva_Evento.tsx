@@ -54,11 +54,19 @@ export default function ReservasEventosPage() {
     const [reservaDelete, setReservaDelete] = useState<ReservaEvento | null>(null);
     const [selectedReserva, setSelectedReserva] = useState<ReservaEvento | null>(null);
 
-    // 📊 FILTRADO DE RESERVAS DE EVENTOS - CORREGIDO
+    // 🔹 Función para obtener fecha actual en Bolivia
+    const getHoyBolivia = () => {
+        const ahora = new Date();
+        return ahora.toLocaleDateString('en-CA', { timeZone: 'America/La_Paz' });
+    };
+
+    // 📊 FILTRADO DE RESERVAS DE EVENTOS - CORREGIDO CON ZONA HORARIA BOLIVIA
     const reservasFiltradas = useMemo(() => {
         let filtered = Array.isArray(eventos) ? eventos : [];
+        const hoyBolivia = getHoyBolivia(); // Formato YYYY-MM-DD
 
         console.log("Total eventos:", filtered.length);
+        console.log("Hoy en Bolivia:", hoyBolivia);
         console.log("Filtros aplicados:", { filtro, filtroEstado, filtroTipoEvento, filtroFecha });
 
         // Filtro por texto (código, cliente, tipo de evento)
@@ -81,54 +89,62 @@ export default function ReservasEventosPage() {
                     return reserva.estado === "C";
                 }
 
-                // Para los demás estados, determinar según fechas
-                const fechaEvento = reserva.fecha ? new Date(reserva.fecha) : null;
-                const hoy = new Date();
-                hoy.setHours(0, 0, 0, 0);
+                // Para los demás estados, determinar según fechas usando strings
+                const fechaEventoStr = reserva.fecha ? reserva.fecha.split('T')[0] : null;
 
                 if (filtroEstado === "P") {
                     // Pendiente: fecha futura y no cancelado
-                    return fechaEvento && fechaEvento > hoy && reserva.estado !== "C";
+                    return fechaEventoStr && fechaEventoStr > hoyBolivia && reserva.estado !== "C";
                 }
 
                 if (filtroEstado === "A") {
                     // Activa: fecha es hoy y no cancelado
-                    return fechaEvento &&
-                        fechaEvento.toDateString() === hoy.toDateString() &&
-                        reserva.estado !== "C";
+                    return fechaEventoStr && fechaEventoStr === hoyBolivia && reserva.estado !== "C";
                 }
 
                 if (filtroEstado === "F") {
                     // Finalizada: fecha anterior a hoy y no cancelado
-                    return fechaEvento && fechaEvento < hoy && reserva.estado !== "C";
+                    return fechaEventoStr && fechaEventoStr < hoyBolivia && reserva.estado !== "C";
                 }
 
                 return true;
             });
         }
 
-        // Filtro por fecha
+        // Filtro por fecha - CORREGIDO
         if (filtroFecha) {
             filtered = filtered.filter(reserva => {
                 if (!reserva.fecha) return false;
 
-                const fechaEvento = new Date(reserva.fecha);
-                const hoy = new Date();
-                hoy.setHours(0, 0, 0, 0);
+                const fechaEventoStr = reserva.fecha.split('T')[0]; // YYYY-MM-DD
 
                 switch (filtroFecha) {
                     case "hoy":
-                        return fechaEvento.toDateString() === hoy.toDateString();
-                    case "semana":
-                        const semanaSiguiente = new Date(hoy);
-                        semanaSiguiente.setDate(hoy.getDate() + 7);
-                        return fechaEvento >= hoy && fechaEvento <= semanaSiguiente;
-                    case "mes":
-                        const mesSiguiente = new Date(hoy);
-                        mesSiguiente.setMonth(hoy.getMonth() + 1);
-                        return fechaEvento >= hoy && fechaEvento <= mesSiguiente;
+                        return fechaEventoStr === hoyBolivia;
+                    
+                    case "semana": {
+                        // Calcular fecha de una semana después
+                        const hoyDate = new Date(hoyBolivia + 'T00:00:00');
+                        const semanaSiguiente = new Date(hoyDate);
+                        semanaSiguiente.setDate(hoyDate.getDate() + 7);
+                        const semanaSiguienteStr = semanaSiguiente.toLocaleDateString('en-CA', { timeZone: 'America/La_Paz' });
+                        
+                        return fechaEventoStr >= hoyBolivia && fechaEventoStr <= semanaSiguienteStr;
+                    }
+                    
+                    case "mes": {
+                        // Calcular fecha de un mes después
+                        const hoyDate = new Date(hoyBolivia + 'T00:00:00');
+                        const mesSiguiente = new Date(hoyDate);
+                        mesSiguiente.setMonth(hoyDate.getMonth() + 1);
+                        const mesSiguienteStr = mesSiguiente.toLocaleDateString('en-CA', { timeZone: 'America/La_Paz' });
+                        
+                        return fechaEventoStr >= hoyBolivia && fechaEventoStr <= mesSiguienteStr;
+                    }
+                    
                     case "proximas":
-                        return fechaEvento > hoy;
+                        return fechaEventoStr > hoyBolivia;
+                    
                     default:
                         return true;
                 }
@@ -426,6 +442,7 @@ export default function ReservasEventosPage() {
                                 onEdit={handleEdit}
                                 onCancel={handleDelete}
                                 onView={handleView}
+                                onRefresh={refetch}
                             />
 
                             {reservasArray.length > 0 && (
