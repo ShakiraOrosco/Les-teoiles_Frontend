@@ -40,62 +40,87 @@ export default function ReservasTable({ reservas, onEdit, onCancel, onRefresh }:
     clearError 
   } = useCheckInOut();
 
-  // 🔹 SOLUCIÓN SIMPLE: Usar solo strings YYYY-MM-DD para comparar
-  const getHoyBolivia = () => {
+  // 🔹 REEMPLAZA la función getHoyBolivia y el filtrado de pendientes con esto:
+
+const getHoyBolivia = () => {
   const ahora = new Date();
   // Obtener la fecha en formato YYYY-MM-DD para Bolivia
   return ahora.toLocaleDateString('en-CA', { timeZone: 'America/La_Paz' });
 };
 
-  const hoyBolivia = getHoyBolivia();
+const hoyBolivia = getHoyBolivia();
+const fechaHoy = new Date(hoyBolivia);
 
-  console.log("🎯 FECHA DE COMPARACIÓN (Bolivia):", hoyBolivia);
-  console.log("📦 Total reservas recibidas:", reservas.length);
+console.log("🎯 FECHA DE COMPARACIÓN (Bolivia):", hoyBolivia);
+console.log("📦 Total reservas recibidas:", reservas.length);
 
-  // 🔹 CATEGORÍAS SIMPLIFICADAS - SOLO COMPARACIÓN DE STRINGS
-  const pendientes = reservas.filter((r) => {
-    console.log(`🔍 Reserva ${r.id_reserva_hotel}:`, {
-      estado: r.estado,
-      fecha_ini: r.fecha_ini,
-      check_in: r.check_in,
-      check_out: r.check_out
-    });
+// 🔹 CATEGORÍAS CORREGIDAS - ORDEN IMPORTANTE: EVALUAR FINALIZADAS PRIMERO
+// 1️⃣ PRIMERO: Finalizadas/Canceladas (tienen prioridad sobre cualquier otra categoría)
+const finalizadasCanceladas = reservas.filter((r) => {
+  const fechaInicio = r.fecha_ini ? new Date(r.fecha_ini) : null;
+  const fechaFin = r.fecha_fin ? new Date(r.fecha_fin) : null;
+  
+  // Reservas que ya pasaron su período válido (fecha_fin < hoy)
+  const yaExpiro = fechaFin ? fechaFin < fechaHoy : false;
+  
+  return (
+    r.check_out !== null || // ✅ Con check-out (PRIORIDAD MÁXIMA)
+    r.estado === "C" || // Canceladas
+    r.estado === "F" || // Finalizadas (por estado)
+    (r.estado === "A" && yaExpiro && !r.check_in) // Expiradas sin check-in
+  );
+});
 
-    // Reservas activas sin check-in y con fecha futura
-    const fechaInicio = r.fecha_ini ? new Date(r.fecha_ini) : null;
-    const esFutura = fechaInicio ? fechaInicio > new Date(hoyBolivia) : true;
-    const esPendiente = r.estado === "A" && !r.check_in && esFutura;
-    
-    if (esPendiente) {
-      console.log(`✅ Reserva ${r.id_reserva_hotel} -> PENDIENTE`);
-    } else {
-      console.log(`❌ Reserva ${r.id_reserva_hotel} -> NO PENDIENTE (estado: ${r.estado}, check_in: ${r.check_in}, esFutura: ${esFutura})`);
-    }
-    
-    return esPendiente;
+// 2️⃣ SEGUNDO: En Curso (excluir las ya finalizadas)
+const enCurso = reservas.filter((r) => {
+  // No debe estar en finalizadas
+  const estaFinalizada = finalizadasCanceladas.some(f => f.id_reserva_hotel === r.id_reserva_hotel);
+  
+  // Reservas activas con check-in pero sin check-out
+  return !estaFinalizada && r.estado === "A" && r.check_in && !r.check_out;
+});
+
+// 3️⃣ TERCERO: Pendientes (excluir finalizadas y en curso)
+const pendientes = reservas.filter((r) => {
+  console.log(`🔍 Reserva ${r.id_reserva_hotel}:`, {
+    estado: r.estado,
+    fecha_ini: r.fecha_ini,
+    fecha_fin: r.fecha_fin,
+    check_in: r.check_in,
+    check_out: r.check_out
   });
 
-  const enCurso = reservas.filter((r) => {
-    // Reservas activas con check-in pero sin check-out
-    return r.estado === "A" && r.check_in && !r.check_out;
-  });
+  // No debe estar en finalizadas ni en curso
+  const estaFinalizada = finalizadasCanceladas.some(f => f.id_reserva_hotel === r.id_reserva_hotel);
+  const estaEnCurso = enCurso.some(c => c.id_reserva_hotel === r.id_reserva_hotel);
 
-  const finalizadasCanceladas = reservas.filter((r) => {
-    const fechaInicio = r.fecha_ini ? new Date(r.fecha_ini) : null;
-    const esPasada = fechaInicio ? fechaInicio < new Date(hoyBolivia) : false;
-    
-    return (
-      r.estado === "C" || // Canceladas
-      r.estado === "F" || // Finalizadas
-      r.check_out !== null || // Con check-out
-      (r.estado === "A" && esPasada && !r.check_in) // Reservas pasadas sin check-in (No realizadas)
-    );
-  });
+  // ✅ CORREGIDO: Reservas activas sin check-in Y dentro del período válido
+  const fechaInicio = r.fecha_ini ? new Date(r.fecha_ini) : null;
+  const fechaFin = r.fecha_fin ? new Date(r.fecha_fin) : null;
+  
+  // Verificar si está dentro del período: fecha_ini <= hoy <= fecha_fin
+  const dentroDelPeriodo = fechaInicio && fechaFin 
+    ? (fechaInicio <= fechaHoy && fechaFin >= fechaHoy)
+    : false;
+  
+  // O si la fecha de inicio es futura
+  const esFutura = fechaInicio ? fechaInicio > fechaHoy : false;
+  
+  const esPendiente = !estaFinalizada && !estaEnCurso && r.estado === "A" && !r.check_in && (dentroDelPeriodo || esFutura);
+  
+  if (esPendiente) {
+    console.log(`✅ Reserva ${r.id_reserva_hotel} -> PENDIENTE`);
+  } else {
+    console.log(`❌ Reserva ${r.id_reserva_hotel} -> NO PENDIENTE`);
+  }
+  
+  return esPendiente;
+});
 
-  console.log("📊 RESUMEN FINAL:");
-  console.log("- Pendientes (activas sin check-in, fecha futura):", pendientes.length);
-  console.log("- En curso (activas con check-in):", enCurso.length);
-  console.log("- Finalizadas/Canceladas/No realizadas:", finalizadasCanceladas.length);
+console.log("📊 RESUMEN FINAL:");
+console.log("- Pendientes (activas sin check-in, dentro del período o futuras):", pendientes.length);
+console.log("- En curso (activas con check-in):", enCurso.length);
+console.log("- Finalizadas/Canceladas/Expiradas:", finalizadasCanceladas.length);
 
   // FUNCIONES PARA CHECK-IN/OUT
   const handleCheckIn = (reserva: ReservaHotel) => {
