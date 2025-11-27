@@ -42,9 +42,10 @@ export default function ReservasTable({ reservas, onEdit, onCancel, onRefresh }:
 
   // 🔹 SOLUCIÓN SIMPLE: Usar solo strings YYYY-MM-DD para comparar
   const getHoyBolivia = () => {
-    // Forzar la fecha de Bolivia (24 de noviembre de 2025)
-    return '2025-11-24';
-  };
+  const ahora = new Date();
+  // Obtener la fecha en formato YYYY-MM-DD para Bolivia
+  return ahora.toLocaleDateString('en-CA', { timeZone: 'America/La_Paz' });
+};
 
   const hoyBolivia = getHoyBolivia();
 
