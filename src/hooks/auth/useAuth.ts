@@ -3,6 +3,7 @@ import { login, LoginCredentials } from "../../services/auth/authService";
 import { toast } from "sonner";
 import { getUsuarioAutenticado } from "../../services/usuario/usuarioService";
 
+// useAuth.ts
 export const useAuth = () => {
     const navigate = useNavigate();
 
@@ -24,18 +25,20 @@ export const useAuth = () => {
             // Obtener datos del usuario autenticado
             const usuario = await getUsuarioAutenticado();
 
-            // Verificar el rol del usuario
-            if (usuario.rol === "administrador") {
+            // Guardar información del usuario en localStorage
+            localStorage.setItem("user", JSON.stringify(usuario));
+
+            // Permitir acceso al dashboard tanto a administradores como empleados
+            if (usuario.rol === "administrador" || usuario.rol === "empleado") {
                 toast.success("Inicio de sesión realizado correctamente.");
                 setTimeout(() => navigate("/dashboard"), 100);
-            } else if (usuario.rol === "empleado") {
-                // Si el empleado intenta acceder al dashboard, mostrar error
+            } else {
                 toast.error("Acceso denegado", {
-                    description: "No tienes permisos para acceder al dashboard.",
+                    description: "No tienes permisos para acceder al sistema.",
                     duration: 4000,
                 });
                 setTimeout(() => navigate("/"), 500);
-            } 
+            }
 
         } catch (error: any) {
             if (error.response?.status === 401 || error.response?.status === 400) {

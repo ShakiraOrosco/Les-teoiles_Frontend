@@ -43,7 +43,7 @@ export default function App() {
         <ScrollToTop />
         <Routes>
           {/* Páginas Informativas (SIN Layout del Dashboard) */}
-          <Route index path="/" element={<Homes />} />  {/* PÁGINA PRINCIPAL */}
+          <Route index path="/" element={<Homes />} />
           <Route path="/home" element={<Homes />} />
           <Route path="/contactanos" element={<Contactanos />} />
           <Route path="/sobre-nosotros" element={<SobreNosotros />} />
@@ -51,46 +51,39 @@ export default function App() {
           <Route path="/reservas/hospedaje" element={<ReservaHospedaje />} />
           <Route path="/reservas/eventos" element={<ReservaEventos />} />
 
-          {/* Dashboard Layout - Solo Administradores */}
+          {/* Dashboard Layout - Para Administradores y Empleados */}
           <Route element={
             <ProtectedRoute>
-              <RoleProtectedRoute allowedRoles={["administrador"]}>
-                <AppLayout />
-              </RoleProtectedRoute>
-            </ProtectedRoute>}>
-            <Route path="/dashboard" element={<Home />} />  {/* Dashboard ahora en /dashboard */}
+              <AppLayout />
+            </ProtectedRoute>
+          }>
+            {/* Dashboard - Accesible para ambos roles */}
+            <Route path="/dashboard" element={<Home />} />
 
-            {/* Others Page */}
-             {/*Crud de Usuarios */}
-            <Route path="/profile" element={<Usuarios/>} />
-            
-            <Route path="/calendar" element={<Calendar />} />
-            <Route path="/blank" element={<Blank />} />
+            {/* RUTAS SOLO PARA EMPLEADOS (Reservas) */}
+            <Route element={<RoleProtectedRoute allowedRoles={["empleado", "administrador"]} />}>
+              <Route path="/AdReservas/Reserva_Hospedaje" element={<ReservasPage />} />
+              <Route path="/AdReservas/Reserva_Evento" element={<ReservasEventosPage />} />
+            </Route>
 
-            {/* Forms */}
-            <Route path="/form-elements" element={<FormElements />} />
-
-            {/* Tables */}
-            <Route path="/basic-tables" element={<BasicTables />} />
-
-            {/* Ui Elements */}
-            <Route path="/alerts" element={<Alerts />} />
-            <Route path="/avatars" element={<Avatars />} />
-            <Route path="/badge" element={<Badges />} />
-            <Route path="/buttons" element={<Buttons />} />
-            <Route path="/images" element={<Images />} />
-            <Route path="/videos" element={<Videos />} />            
-
-            {/* Charts */}
-            <Route path="/line-chart" element={<LineChart />} />
-            <Route path="/bar-chart" element={<BarChart />} />
-
-            {/*Crud Bienes */}
-            <Route path="/Bienes/Servicios" element={<ServiciosAdicionalesPage />} />
-            <Route path="/Bienes/Habitacion" element={<HabitacionPage />} />
-            <Route path="/AdReservas/Reserva_Hospedaje" element={<ReservasPage />} />
-            <Route path="/AdReservas/Reserva_Evento" element={<ReservasEventosPage />} /> 
-
+            {/* RUTAS SOLO PARA ADMINISTRADORES */}
+            <Route element={<RoleProtectedRoute allowedRoles={["administrador"]} />}>
+              <Route path="/profile" element={<Usuarios/>} />
+              <Route path="/calendar" element={<Calendar />} />
+              <Route path="/blank" element={<Blank />} />
+              <Route path="/form-elements" element={<FormElements />} />
+              <Route path="/basic-tables" element={<BasicTables />} />
+              <Route path="/alerts" element={<Alerts />} />
+              <Route path="/avatars" element={<Avatars />} />
+              <Route path="/badge" element={<Badges />} />
+              <Route path="/buttons" element={<Buttons />} />
+              <Route path="/images" element={<Images />} />
+              <Route path="/videos" element={<Videos />} />
+              <Route path="/line-chart" element={<LineChart />} />
+              <Route path="/bar-chart" element={<BarChart />} />
+              <Route path="/Bienes/Servicios" element={<ServiciosAdicionalesPage />} />
+              <Route path="/Bienes/Habitacion" element={<HabitacionPage />} />
+            </Route>
           </Route>
 
           {/* Auth Pages */}

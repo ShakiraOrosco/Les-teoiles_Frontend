@@ -1,25 +1,27 @@
-import { Navigate } from "react-router";
-import { useUsuario } from "../../hooks/Usuario/useUsuario";
-import { JSX } from "react/jsx-runtime";
+import { Navigate, Outlet } from "react-router";
 
-type RoleProtectedRouteProps = {
-    allowedRoles: string[];
-    children: JSX.Element;
-};
+interface RoleProtectedRouteProps {
+  allowedRoles: string[];
+}
 
-const RoleProtectedRoute = ({ allowedRoles, children }: RoleProtectedRouteProps) => {
-  const { usuario, loading } = useUsuario();
+const RoleProtectedRoute = ({ allowedRoles }: RoleProtectedRouteProps) => {
+  const getUser = () => {
+    try {
+      const user = localStorage.getItem("user");
+      return user ? JSON.parse(user) : null;
+    } catch {
+      return null;
+    }
+  };
 
-  if (loading) return null; // o un spinner
+  const user = getUser();
+  const userRole = user?.rol;
 
-  const rolUsuario = usuario?.rol;
-  console.log("Rol del usuario autenticado:", rolUsuario);
-
-  if (!rolUsuario || !allowedRoles.includes(rolUsuario)) {
-    return <Navigate to="/" replace />;
+  if (!userRole || !allowedRoles.includes(userRole)) {
+    return <Navigate to="/dashboard" replace />;
   }
 
-  return children;
+  return <Outlet />;
 };
 
 export default RoleProtectedRoute;
