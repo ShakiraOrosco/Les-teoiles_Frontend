@@ -19,7 +19,7 @@ export const useCheckInOutEvento = () => {
       const resultado = await realizarCheckInEvento(reservaId);
       return resultado;
     } catch (err: any) {
-      const errorMessage = err.message || 'No se pudo realizar el check-in. El backend necesita configuración CORS.';
+      const errorMessage = err.message || 'No se pudo realizar el ingreso. El backend necesita configuración CORS.';
       setError(errorMessage);
       throw err;
     } finally {
@@ -34,7 +34,7 @@ export const useCheckInOutEvento = () => {
       const resultado = await realizarCheckOutEvento(reservaId);
       return resultado;
     } catch (err: any) {
-      const errorMessage = err.message || 'No se pudo realizar el check-out. El backend necesita configuración CORS.';
+      const errorMessage = err.message || 'No se pudo realizar la salida. El backend necesita configuración CORS.';
       setError(errorMessage);
       throw err;
     } finally {
@@ -49,7 +49,7 @@ export const useCheckInOutEvento = () => {
       const resultado = await cancelarCheckInEvento(reservaId);
       return resultado;
     } catch (err: any) {
-      const errorMessage = err.message || 'No se pudo cancelar el check-in. El backend necesita configuración CORS.';
+      const errorMessage = err.message || 'No se pudo cancelar el ingreso. El backend necesita configuración CORS.';
       setError(errorMessage);
       throw err;
     } finally {

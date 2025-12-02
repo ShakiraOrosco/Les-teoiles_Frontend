@@ -28,7 +28,7 @@ export default function CheckInOutModal({
   isLoading = false 
 }: CheckInOutModalProps) {
   const getTitle = () => {
-    return type === 'checkin' ? 'Confirmar Check-In' : 'Confirmar Check-Out';
+    return type === 'checkin' ? 'Confirmar ingreso' : 'Confirmar salida';
   };
 
   const getIcon = () => {
@@ -37,9 +37,9 @@ export default function CheckInOutModal({
 
   const getButtonText = () => {
     if (isLoading) {
-      return type === 'checkin' ? 'Realizando Check-In...' : 'Realizando Check-Out...';
+      return type === 'checkin' ? 'Realizando ingreso...' : 'Realizando salida...';
     }
-    return type === 'checkin' ? 'Confirmar Check-In' : 'Confirmar Check-Out';
+    return type === 'checkin' ? 'Confirmar ingreso' : 'Confirmar salida';
   };
 
   const IconComponent = getIcon();
@@ -140,7 +140,7 @@ export default function CheckInOutModal({
               <div className="flex items-center gap-3">
                 <FaCalendarAlt className="text-teal-600 dark:text-teal-400 flex-shrink-0" />
                 <div>
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">Check-In Realizado</p>
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">Registro de ingreso Realizado</p>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
                     {formatFechaHora(reservaInfo.checkIn)}
                   </p>
@@ -158,7 +158,7 @@ export default function CheckInOutModal({
                   Confirmar llegada del huésped
                 </p>
                 <p className="text-sm text-blue-700 dark:text-blue-400">
-                  Al realizar el check-in, se registrará la hora actual como hora de entrada.
+                  Al realizar el ingreso, se registrará la hora actual como hora de entrada.
                 </p>
               </div>
             </div>
@@ -172,7 +172,7 @@ export default function CheckInOutModal({
                   Acción irreversible
                 </p>
                 <p className="text-sm text-yellow-700 dark:text-yellow-400">
-                  Al realizar el check-out, la reserva se marcará como <strong>Finalizada</strong> y no podrá ser modificada.
+                  Al realizar la salida, la reserva se marcará como <strong>Finalizada</strong> y no podrá ser modificada.
                 </p>
               </div>
             </div>

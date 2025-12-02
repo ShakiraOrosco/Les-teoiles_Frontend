@@ -70,22 +70,22 @@ export const uploadComprobante = async (idReservaGen: number, archivo: File): Pr
 };
 
 // ==============================================
-// 🔹 CHECK-IN / CHECK-OUT SERVICES
+// 🔹 ingreso /SALIDA SERVICES
 // ==============================================
 
 // ==============================================
-// 🔹 CHECK-IN / CHECK-OUT SERVICES - SOLUCIÓN DIRECTA
+// 🔹 ingreso / SALIDA SERVICES - SOLUCIÓN DIRECTA
 // ==============================================
 
-// Realizar check-in - SOLUCIÓN DIRECTA
+// Realizar ingreso - SOLUCIÓN DIRECTA
 // ==============================================
-// 🔹 CHECK-IN / CHECK-OUT SERVICES - SIN TOKEN
+// 🔹 ingreso / SALIDA SERVICES - SIN TOKEN
 // ==============================================
 
 // Reserva_Hospedaje_Services.ts - VERSIÓN MEJORADA
 export const realizarCheckIn = async (reservaId: number) => {
   try {
-    console.log(`🔄 Iniciando check-in para reserva: ${reservaId}`);
+    console.log(`🔄 Iniciando ingreso para reserva: ${reservaId}`);
     
     const response = await fetch(
       `https://proyecto-iii-les-toiles-de-l-eau.vercel.app/api/reservaHotel/${reservaId}/check-in/`,
@@ -125,19 +125,19 @@ export const realizarCheckIn = async (reservaId: number) => {
 
     // Parsear la respuesta exitosa
     const data = JSON.parse(responseText);
-    console.log('✅ Check-in exitoso:', data);
+    console.log('✅ ingreso exitoso:', data);
     return data;
     
   } catch (error) {
-    console.error('❌ Error en realizarCheckIn:', error);
+    console.error('❌ Error en realizarIngreso:', error);
     throw error;
   }
 };
 
-// Realizar check-out - SIN TOKEN
+// Realizar salida - SIN TOKEN
 export const realizarCheckOut = async (idReserva: number): Promise<any> => {
   try {
-    console.log('🔧 Enviando check-out SIN token...');
+    console.log('🔧 Enviando salida SIN token...');
     
     const response = await fetch(
       `https://proyecto-iii-les-toiles-de-l-eau.vercel.app/api/reservaHotel/${idReserva}/check-out/`,
@@ -157,15 +157,15 @@ export const realizarCheckOut = async (idReserva: number): Promise<any> => {
     return data;
     
   } catch (error: any) {
-    console.error('❌ Error en realizarCheckOut:', error);
-    throw new Error('No se pudo realizar el check-out. El backend necesita configuración CORS.');
+    console.error('❌ Error en realizarSalida:', error);
+    throw new Error('No se pudo realizar la salida. El backend necesita configuración CORS.');
   }
 };
 
-// Cancelar check-in - SIN TOKEN
+// Cancelar ingreso - SIN TOKEN
 export const cancelarCheckIn = async (idReserva: number): Promise<any> => {
   try {
-    console.log('🔧 Cancelando check-in SIN token...');
+    console.log('🔧 Cancelando ingreso SIN token...');
     
     const response = await fetch(
       `https://proyecto-iii-les-toiles-de-l-eau.vercel.app/api/reservaHotel/${idReserva}/check-in/cancelar/`,
@@ -185,18 +185,18 @@ export const cancelarCheckIn = async (idReserva: number): Promise<any> => {
     return data;
     
   } catch (error: any) {
-    console.error('❌ Error en cancelarCheckIn:', error);
-    throw new Error('No se pudo cancelar el check-in. El backend necesita configuración CORS.');
+    console.error('❌ Error en cancelarIngreso:', error);
+    throw new Error('No se pudo cancelar el ingreso. El backend necesita configuración CORS.');
   }
 };
 
-// Obtener reservas pendientes de check-in
+// Obtener reservas pendientes de ingreso
 export const getReservasPendientesCheckIn = async (): Promise<any[]> => {
   const response = await api.get('/reservaHotel/reservas/pendientes-check-in/');
   return response.data.reservas || [];
 };
 
-// Obtener reservas pendientes de check-out
+// Obtener reservas pendientes de salida
 export const getReservasPendientesCheckOut = async (): Promise<any[]> => {
   const response = await api.get('/reservaHotel/reservas/pendientes-check-out/');
   return response.data.reservas || [];

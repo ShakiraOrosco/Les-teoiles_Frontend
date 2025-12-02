@@ -35,7 +35,7 @@ export default function ReservasTable({ reservas, onEdit, onCancel, onRefresh }:
   const [successMessage, setSuccessMessage] = useState('');
   const [operationType, setOperationType] = useState<'checkin' | 'checkout' | 'cancelar_checkin' | ''>('');
 
-  // HOOK PARA CHECK-IN/OUT
+  // HOOK PARA INGRESO/SALIDA
   const { 
     realizarCheckIn, 
     realizarCheckOut, 
@@ -69,10 +69,10 @@ const finalizadasCanceladas = reservas.filter((r) => {
   const yaExpiro = fechaFin ? fechaFin < fechaHoy : false;
   
   return (
-    r.check_out !== null || // ✅ Con check-out (PRIORIDAD MÁXIMA)
+    r.check_out !== null || // ✅ Con salida (PRIORIDAD MÁXIMA)
     r.estado === "C" || // Canceladas
     r.estado === "F" || // Finalizadas (por estado)
-    (r.estado === "A" && yaExpiro && !r.check_in) // Expiradas sin check-in
+    (r.estado === "A" && yaExpiro && !r.check_in) // Expiradas sin ingreso
   );
 });
 
@@ -81,7 +81,7 @@ const enCurso = reservas.filter((r) => {
   // No debe estar en finalizadas
   const estaFinalizada = finalizadasCanceladas.some(f => f.id_reserva_hotel === r.id_reserva_hotel);
   
-  // Reservas activas con check-in pero sin check-out
+  // Reservas activas con ingreso pero sin salida
   return !estaFinalizada && r.estado === "A" && r.check_in && !r.check_out;
 });
 
@@ -99,7 +99,7 @@ const pendientes = reservas.filter((r) => {
   const estaFinalizada = finalizadasCanceladas.some(f => f.id_reserva_hotel === r.id_reserva_hotel);
   const estaEnCurso = enCurso.some(c => c.id_reserva_hotel === r.id_reserva_hotel);
 
-  // ✅ CORREGIDO: Reservas activas sin check-in Y dentro del período válido
+  // ✅ CORREGIDO: Reservas activas sin ingreso Y dentro del período válido
   const fechaInicio = r.fecha_ini ? new Date(r.fecha_ini) : null;
   const fechaFin = r.fecha_fin ? new Date(r.fecha_fin) : null;
   
@@ -123,11 +123,11 @@ const pendientes = reservas.filter((r) => {
 });
 
 console.log("📊 RESUMEN FINAL:");
-console.log("- Pendientes (activas sin check-in, dentro del período o futuras):", pendientes.length);
-console.log("- En curso (activas con check-in):", enCurso.length);
+console.log("- Pendientes (activas sin ingreso, dentro del período o futuras):", pendientes.length);
+console.log("- En curso (activas con ingreso):", enCurso.length);
 console.log("- Finalizadas/Canceladas/Expiradas:", finalizadasCanceladas.length);
 
-  // FUNCIONES PARA CHECK-IN/OUT
+  // FUNCIONES PARA INGRESO/SALIDA
   const handleCheckIn = (reserva: ReservaHotel) => {
     setReservaSeleccionada(reserva);
     setModalCheckInOut('checkin');
@@ -149,7 +149,7 @@ console.log("- Finalizadas/Canceladas/Expiradas:", finalizadasCanceladas.length)
     clearError();
   };
 
-  // FUNCIÓN MEJORADA PARA MANEJAR CHECK-IN/OUT
+  // FUNCIÓN MEJORADA PARA MANEJAR INGRESO/SALIDA
   const handleConfirmCheckInOut = async () => {
     if (!reservaSeleccionada || !modalCheckInOut || !reservaSeleccionada.id_reserva_hotel) {
       setError("No se pudo identificar la reserva seleccionada");
@@ -161,7 +161,7 @@ console.log("- Finalizadas/Canceladas/Expiradas:", finalizadasCanceladas.length)
       if (modalCheckInOut === 'checkin') {
         resultado = await realizarCheckIn(reservaSeleccionada.id_reserva_hotel);
         if (resultado) {
-          setSuccessMessage(`Check-In realizado exitosamente para la reserva RES${reservaSeleccionada.id_reserva_hotel}`);
+          setSuccessMessage(`Ingreso realizado exitosamente para la reserva RES${reservaSeleccionada.id_reserva_hotel}`);
           setOperationType('checkin');
           setShowSuccessModal(true);
           
@@ -196,7 +196,7 @@ console.log("- Finalizadas/Canceladas/Expiradas:", finalizadasCanceladas.length)
     }
   };
 
-  // FUNCIÓN MEJORADA PARA CANCELAR CHECK-IN
+  // FUNCIÓN MEJORADA PARA CANCELAR INGRESO
   const handleConfirmCancelarCheckIn = async () => {
     if (!reservaSeleccionada || !reservaSeleccionada.id_reserva_hotel) {
       setError("No se pudo identificar la reserva seleccionada");
@@ -207,7 +207,7 @@ console.log("- Finalizadas/Canceladas/Expiradas:", finalizadasCanceladas.length)
       const resultado = await cancelarCheckIn(reservaSeleccionada.id_reserva_hotel);
 
       if (resultado) {
-        setSuccessMessage(`Check-In cancelado exitosamente para la reserva RES${reservaSeleccionada.id_reserva_hotel}`);
+        setSuccessMessage(`Ingreso cancelado exitosamente para la reserva RES${reservaSeleccionada.id_reserva_hotel}`);
         setOperationType('cancelar_checkin');
         setShowSuccessModal(true);
         
@@ -217,9 +217,9 @@ console.log("- Finalizadas/Canceladas/Expiradas:", finalizadasCanceladas.length)
         setError(null);
       }
     } catch (err: any) {
-      console.error('Error al cancelar check-in:', err);
+      console.error('Error al cancelar ingreso:', err);
       // 🔥 MOSTRAR SOLO EL MENSAJE LIMPIO - SIN "Error 400:"
-      const rawMessage = err.message || "Error al cancelar el check-in";
+      const rawMessage = err.message || "Error al cancelar el ingreso";
       const cleanMessage = rawMessage.replace(/Error \d+:\s*/i, ''); // Remover "Error 400:"
       setError(cleanMessage);
       
@@ -290,7 +290,7 @@ console.log("- Finalizadas/Canceladas/Expiradas:", finalizadasCanceladas.length)
     if (reserva.check_out) return { label: "Finalizado", color: "info" };
     if (reserva.check_in) return { label: "En Curso", color: "success" };
     
-    // Reservas activas sin check-in
+    // Reservas activas sin ingreso
     if (reserva.estado === "A") {
       if (fechaInicio && fechaInicio < hoy) {
         return { label: "No Realizado", color: "warning" };
@@ -469,36 +469,36 @@ console.log("- Finalizadas/Canceladas/Expiradas:", finalizadasCanceladas.length)
                       {withActions && (
                         <TableCell className="px-5 py-4 text-center">
                           <div className="flex items-center justify-center gap-2">
-                            {/* BOTÓN CHECK-IN */}
+                            {/* BOTÓN INGRESO */}
                             {puedeHacerCheckIn(reserva) && (
                               <button
                                 onClick={() => handleCheckIn(reserva)}
                                 disabled={isLoadingCheckInOut}
-                                title="Realizar Check-In"
+                                title="Realizar Ingreso"
                                 className="p-3 bg-green-600 text-white hover:bg-green-700 disabled:bg-green-400 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg"
                               >
                                 <FaSignInAlt className="w-4 h-4" />
                               </button>
                             )}
 
-                            {/* BOTÓN CHECK-OUT */}
+                            {/* BOTÓN SALIDA */}
                             {puedeHacerCheckOut(reserva) && (
                               <button
                                 onClick={() => handleCheckOut(reserva)}
                                 disabled={isLoadingCheckInOut}
-                                title="Realizar Check-Out"
+                                title="Realizar Salida"
                                 className="p-3 bg-blue-600 text-white hover:bg-blue-700 disabled:bg-blue-400 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg"
                               >
                                 <FaSignOutAlt className="w-4 h-4" />
                               </button>
                             )}
 
-                            {/* BOTÓN CANCELAR CHECK-IN */}
+                            {/* BOTÓN CANCELAR INGRESO */}
                             {puedeCancelarCheckIn(reserva) && (
                               <button
                                 onClick={() => handleCancelarCheckIn(reserva)}
                                 disabled={isLoadingCheckInOut}
-                                title="Cancelar Check-In"
+                                title="Cancelar Ingreso"
                                 className="p-3 bg-orange-600 text-white hover:bg-orange-700 disabled:bg-orange-400 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg"
                               >
                                 <FaUndo className="w-4 h-4" />
@@ -609,7 +609,7 @@ console.log("- Finalizadas/Canceladas/Expiradas:", finalizadasCanceladas.length)
         </div>
       )}
 
-      {/* Modal de Check-In/Out - CON FONDO BORROSO */}
+      {/* Modal de Ingreso/Salida - CON FONDO BORROSO */}
       {modalCheckInOut && reservaSeleccionada && (
         <div className="fixed inset-0 z-50">
           {/* FONDO BORROSO - NO SE PUEDE INTERACTUAR */}
@@ -632,7 +632,7 @@ console.log("- Finalizadas/Canceladas/Expiradas:", finalizadasCanceladas.length)
         </div>
       )}
 
-      {/* Modal para Cancelar Check-In - CON FONDO BORROSO */}
+      {/* Modal para Cancelar Ingreso - CON FONDO BORROSO */}
       {modalCancelarCheckIn && reservaSeleccionada && (
         <div className="fixed inset-0 z-50">
           {/* FONDO BORROSO - NO SE PUEDE INTERACTUAR */}
@@ -645,7 +645,7 @@ console.log("- Finalizadas/Canceladas/Expiradas:", finalizadasCanceladas.length)
                 </div>
                 <div>
                   <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
-                    Cancelar Check-In
+                    Cancelar Ingreso
                   </h3>
                   <p className="text-orange-600 dark:text-orange-400 text-sm mt-1">
                     Confirmación requerida
@@ -654,7 +654,7 @@ console.log("- Finalizadas/Canceladas/Expiradas:", finalizadasCanceladas.length)
               </div>
               
               <p className="text-gray-700 dark:text-gray-300 mb-6 text-lg">
-                ¿Estás seguro de que deseas cancelar el check-in de la reserva <strong>RES{reservaSeleccionada.id_reserva_hotel}</strong>?
+                ¿Estás seguro de que deseas cancelar el ingreso de la reserva <strong>RES{reservaSeleccionada.id_reserva_hotel}</strong>?
               </p>
 
               <div className="flex justify-end gap-4">
@@ -671,7 +671,7 @@ console.log("- Finalizadas/Canceladas/Expiradas:", finalizadasCanceladas.length)
                   disabled={isLoadingCheckInOut}
                   className="bg-orange-600 hover:bg-orange-700 px-6 py-3"
                 >
-                  {isLoadingCheckInOut ? 'Cancelando...' : 'Sí, Cancelar Check-In'}
+                  {isLoadingCheckInOut ? 'Cancelando...' : 'Sí, Cancelar ingreso'}
                 </Button>
               </div>
             </div>
@@ -692,9 +692,9 @@ console.log("- Finalizadas/Canceladas/Expiradas:", finalizadasCanceladas.length)
                 </div>
                 <div>
                   <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {operationType === 'checkin' && '✅ Check-In Exitoso'}
-                    {operationType === 'checkout' && '✅ Check-Out Exitoso'}
-                    {operationType === 'cancelar_checkin' && '🔄 Check-In Cancelado'}
+                    {operationType === 'checkin' && '✅ Ingreso Exitoso'}
+                    {operationType === 'checkout' && '✅ Salida Exitosa'}
+                    {operationType === 'cancelar_checkin' && '🔄 Ingreso Cancelado'}
                   </h3>
                   <p className="text-green-600 dark:text-green-400 text-sm mt-1">
                     Operación completada correctamente
@@ -723,11 +723,11 @@ console.log("- Finalizadas/Canceladas/Expiradas:", finalizadasCanceladas.length)
         </div>
       )}
 
-      {/* 🟡 TABLA 1: Reservas Pendientes (CHECK-IN + EDITAR + CANCELAR) */}
-      {renderTable(pendientes, "Reservas Pendientes - Listas para Check-In", true, true, true)}
+      {/* 🟡 TABLA 1: Reservas Pendientes (Ingreso + EDITAR + CANCELAR) */}
+      {renderTable(pendientes, "Reservas Pendientes - Listas para Ingreso", true, true, true)}
       
-      {/* 🟢 TABLA 2: Reservas en Curso (SOLO CHECK-OUT) */}
-      {renderTable(enCurso, "Reservas en Curso - Pendientes de Check-Out", true, true, false)}
+      {/* 🟢 TABLA 2: Reservas en Curso (SOLO Salida) */}
+      {renderTable(enCurso, "Reservas en Curso - Pendientes de Salida", true, true, false)}
       
       {/* 🔴 TABLA 3: Finalizadas y Canceladas (SIN ACCIONES) */}
       {renderTable(finalizadasCanceladas, "Reservas Finalizadas y Canceladas", false, true, false)}

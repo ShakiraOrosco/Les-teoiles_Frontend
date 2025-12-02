@@ -95,12 +95,12 @@ export const deleteReservaEvento = async (id_reserva: number): Promise<{ mensaje
   return response.data;
 };
 
-// ======== CHECK-IN / CHECK-OUT EVENTOS ========
+// ======== INGRESO / SALIDA EVENTOS ========
 
-// Realizar check-in de evento
+// Realizar ingreso de evento
 export const realizarCheckInEvento = async (reservaId: number) => {
   try {
-    console.log(`🔄 Iniciando check-in para evento: ${reservaId}`);
+    console.log(`🔄 Iniciando ingreso para evento: ${reservaId}`);
 
     const response = await fetch(
       `https://proyecto-iii-les-toiles-de-l-eau.vercel.app/api/reservaEvento/${reservaId}/check-in/`,
@@ -120,19 +120,19 @@ export const realizarCheckInEvento = async (reservaId: number) => {
     }
 
     const data = await response.json();
-    console.log('✅ Check-in evento exitoso:', data);
+    console.log('✅ ingreso evento exitoso:', data);
     return data;
 
   } catch (error) {
-    console.error('❌ Error en realizarCheckInEvento:', error);
+    console.error('❌ Error en realizarIngresoEvento:', error);
     throw error;
   }
 };
 
-// Realizar check-out de evento
+// Realizar salida de evento
 export const realizarCheckOutEvento = async (reservaId: number) => {
   try {
-    console.log(`🔄 Iniciando check-out para evento: ${reservaId}`);
+    console.log(`🔄 Iniciando salida para evento: ${reservaId}`);
 
     const response = await fetch(
       `https://proyecto-iii-les-toiles-de-l-eau.vercel.app/api/reservaEvento/${reservaId}/check-out/`,
@@ -152,19 +152,19 @@ export const realizarCheckOutEvento = async (reservaId: number) => {
     }
 
     const data = await response.json();
-    console.log('✅ Check-out evento exitoso:', data);
+    console.log('✅ Salida evento exitosa:', data);
     return data;
 
   } catch (error) {
-    console.error('❌ Error en realizarCheckOutEvento:', error);
+    console.error('❌ Error en realizarSalidaEvento:', error);
     throw error;
   }
 };
 
-// Cancelar check-in de evento
+// Cancelar ingreso de evento
 export const cancelarCheckInEvento = async (reservaId: number) => {
   try {
-    console.log(`🔄 Cancelando check-in para evento: ${reservaId}`);
+    console.log(`🔄 Cancelando ingreso para evento: ${reservaId}`);
 
     const response = await fetch(
       `https://proyecto-iii-les-toiles-de-l-eau.vercel.app/api/reservaEvento/${reservaId}/check-in/cancelar/`,
@@ -184,16 +184,16 @@ export const cancelarCheckInEvento = async (reservaId: number) => {
     }
 
     const data = await response.json();
-    console.log('✅ Check-in evento cancelado:', data);
+    console.log('✅ Ingreso evento cancelado:', data);
     return data;
 
   } catch (error) {
-    console.error('❌ Error en cancelarCheckInEvento:', error);
+    console.error('❌ Error en cancelarIngresoEvento:', error);
     throw error;
   }
 };
 
-// Obtener eventos pendientes de check-in
+// Obtener eventos pendientes de ingreso
 export const getEventosPendientesCheckIn = async () => {
   try {
     const response = await fetch(
@@ -219,7 +219,7 @@ export const getEventosPendientesCheckIn = async () => {
   }
 };
 
-// Obtener eventos pendientes de check-out
+// Obtener eventos pendientes de salida
 export const getEventosPendientesCheckOut = async () => {
   try {
     const response = await fetch(
@@ -390,7 +390,7 @@ const eventoService = {
   updateReservaEvento,
   deleteReservaEvento,
 
-  // Check-in/out eventos
+  // Ingreso/out eventos
   realizarCheckInEvento,
   realizarCheckOutEvento,
   cancelarCheckInEvento,
