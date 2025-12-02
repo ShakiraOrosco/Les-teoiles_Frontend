@@ -41,7 +41,7 @@ export default function ReservasEventoTable({
   const [successMessage, setSuccessMessage] = useState('');
   const [operationType, setOperationType] = useState<'checkin' | 'checkout' | 'cancelar_checkin' | ''>('');
 
-  // HOOK PARA CHECK-IN/OUT
+  // HOOK PARA INGRESO/SALIDA
   const {
     realizarCheckIn,
     realizarCheckOut,
@@ -67,7 +67,7 @@ export default function ReservasEventoTable({
 
   // 🔹 TRES CATEGORÍAS DE EVENTOS - CORREGIDO con comparación de strings y horas
   const futuras = reservas.filter((r) => {
-    // Eventos activos sin check-in
+    // Eventos activos sin ingreso
     const fechaEventoStr = r.fecha.split('T')[0];
 
     // Si es una fecha futura, incluir
@@ -85,14 +85,14 @@ export default function ReservasEventoTable({
   });
 
   const enCurso = reservas.filter((r) => {
-    // Eventos activos con check-in pero sin check-out
+    // Eventos activos con ingreso pero sin salida
     return r.estado === "A" && r.check_in && !r.check_out;
   });
 
   const finalizadasCanceladas = reservas.filter((r) => {
-    // Eventos cancelados, finalizados O con check-out realizado
-    // O eventos pasados sin check-in (que nunca se realizaron)
-    // O eventos de hoy cuya hora de fin ya pasó sin check-in
+    // Eventos cancelados, finalizados O con salida realizada
+    // O eventos pasados sin ingreso (que nunca se realizaron)
+    // O eventos de hoy cuya hora de fin ya pasó sin ingreso
     const fechaEventoStr = r.fecha.split('T')[0];
     const esPasado = fechaEventoStr < hoyBolivia;
 
@@ -100,18 +100,18 @@ export default function ReservasEventoTable({
     const esHoyHoraPasada = fechaEventoStr === hoyBolivia &&
       r.hora_fin &&
       new Date(r.hora_fin) <= ahoraBolivia &&
-      !r.check_in; // Solo si no hizo check-in
+      !r.check_in; // Solo si no hizo ingreso
 
     return (
       r.estado === "C" || // Cancelados
       r.estado === "F" || // Finalizados
-      r.check_out !== null || // Con check-out
-      (r.estado === "A" && esPasado && !r.check_in) || // Eventos pasados sin check-in
-      (r.estado === "A" && esHoyHoraPasada) // Eventos de hoy con hora pasada sin check-in
+      r.check_out !== null || // Con salida realizada
+      (r.estado === "A" && esPasado && !r.check_in) || // Eventos pasados sin ingreso
+      (r.estado === "A" && esHoyHoraPasada) // Eventos de hoy con hora pasada sin ingreso 
     );
   });
 
-  // FUNCIONES PARA CHECK-IN/OUT
+  // FUNCIONES PARA INGRESO/SALIDA
   const handleCheckIn = (reserva: ReservaEvento) => {
     setReservaSeleccionada(reserva);
     setModalCheckInOut('checkin');
@@ -144,7 +144,7 @@ export default function ReservasEventoTable({
       if (modalCheckInOut === 'checkin') {
         resultado = await realizarCheckIn(reservaSeleccionada.id_reservas_evento);
         if (resultado) {
-          setSuccessMessage(`Check-In realizado exitosamente para el evento EVT${reservaSeleccionada.id_reservas_evento}`);
+          setSuccessMessage(`Ingreso realizado exitosamente para el evento EVT${reservaSeleccionada.id_reservas_evento}`);
           setOperationType('checkin');
           setShowSuccessModal(true);
 
@@ -216,7 +216,7 @@ export default function ReservasEventoTable({
     }
   };
 
-  // FUNCIÓN MEJORADA PARA CANCELAR CHECK-IN
+  // FUNCIÓN MEJORADA PARA CANCELAR INGRESO
   const handleConfirmCancelarCheckIn = async () => {
     if (!reservaSeleccionada) {
       setError("No se pudo identificar el evento seleccionado");
@@ -227,7 +227,7 @@ export default function ReservasEventoTable({
       const resultado = await cancelarCheckIn(reservaSeleccionada.id_reservas_evento);
 
       if (resultado) {
-        setSuccessMessage(`Check-In cancelado exitosamente para el evento EVT${reservaSeleccionada.id_reservas_evento}`);
+        setSuccessMessage(`Ingreso cancelado exitosamente para el evento EVT${reservaSeleccionada.id_reservas_evento}`);
         setOperationType('cancelar_checkin');
         setShowSuccessModal(true);
 
@@ -237,10 +237,10 @@ export default function ReservasEventoTable({
         setError(null);
       }
     } catch (err: any) {
-      console.error('Error al cancelar check-in:', err);
+      console.error('Error al cancelar ingreso:', err);
 
       // 🔥 CORRECCIÓN COMPLETA: Extraer el mensaje del error de diferentes formatos
-      let errorMessage = "Error al cancelar el check-in";
+      let errorMessage = "Error al cancelar el ingreso";
 
       try {
         // Caso 1: El error ya es un string con el mensaje
@@ -265,11 +265,11 @@ export default function ReservasEventoTable({
         // Caso 4: El error es un objeto con propiedades
         else if (typeof err === 'object') {
           // Buscar cualquier propiedad que pueda contener el mensaje
-          errorMessage = err.error || err.message || err.detail || err.err || "Error al cancelar el check-in";
+          errorMessage = err.error || err.message || err.detail || err.err || "Error al cancelar el ingreso";
         }
       } catch (parseError) {
         console.error('Error al parsear mensaje de error:', parseError);
-        errorMessage = "Error al cancelar el check-in";
+        errorMessage = "Error al cancelar el ingreso";
       }
 
       // Limpiar el mensaje de "Error" y códigos
@@ -357,7 +357,7 @@ export default function ReservasEventoTable({
     if (estado === 'C') return { label: "Cancelado", color: "error" as const };
     if (estado === 'F') return { label: "Finalizado", color: "info" as const };
 
-    // Si tiene check-out, está finalizado
+    // Si tiene salida, está finalizado
     if (reserva.check_out) return { label: "Finalizado", color: "info" as const };
 
     // Extraer fecha del evento en formato YYYY-MM-DD
@@ -374,7 +374,7 @@ export default function ReservasEventoTable({
       if (fechaEventoStr === hoyBolivia) {
         return { label: "Hoy", color: "primary" as const };
       }
-      // Evento pasado sin check-in (no realizado)
+      // Evento pasado sin ingreso (no realizado)
       if (fechaEventoStr < hoyBolivia && !reserva.check_in) {
         return { label: "No Realizado", color: "warning" as const };
       }
@@ -555,36 +555,36 @@ export default function ReservasEventoTable({
                     {withActions && (
                       <TableCell className="px-6 py-5 text-center">
                         <div className="flex items-center justify-center gap-2">
-                          {/* BOTÓN CHECK-IN */}
+                          {/* BOTÓN Ingreso */}
                           {showCheckIn && puedeHacerCheckIn(reserva) && (
                             <button
                               onClick={() => handleCheckIn(reserva)}
                               disabled={isLoadingCheckInOut}
-                              title="Realizar Check-In"
+                              title="Realizar Ingreso"
                               className="p-3 bg-green-600 text-white hover:bg-green-700 disabled:bg-green-400 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg group-hover:scale-105"
                             >
                               <FaSignInAlt className="w-4 h-4" />
                             </button>
                           )}
 
-                          {/* BOTÓN CHECK-OUT */}
+                          {/* BOTÓN SALIDA */}
                           {showCheckOut && puedeHacerCheckOut(reserva) && (
                             <button
                               onClick={() => handleCheckOut(reserva)}
                               disabled={isLoadingCheckInOut}
-                              title="Realizar Check-Out"
+                              title="Realizar Salida"
                               className="p-3 bg-blue-600 text-white hover:bg-blue-700 disabled:bg-blue-400 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg group-hover:scale-105"
                             >
                               <FaSignOutAlt className="w-4 h-4" />
                             </button>
                           )}
 
-                          {/* BOTÓN CANCELAR CHECK-IN */}
+                          {/* BOTÓN CANCELAR INGRESO */}
                           {(showCheckIn || showCheckOut) && puedeCancelarCheckIn(reserva) && (
                             <button
                               onClick={() => handleCancelarCheckIn(reserva)}
                               disabled={isLoadingCheckInOut}
-                              title="Cancelar Check-In"
+                              title="Cancelar Ingreso"
                               className="p-3 bg-orange-600 text-white hover:bg-orange-700 disabled:bg-orange-400 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg group-hover:scale-105"
                             >
                               <FaUndo className="w-4 h-4" />
@@ -704,7 +704,7 @@ export default function ReservasEventoTable({
         </div>
       )}
 
-      {/* Modal de Check-In/Out - CON FONDO SEMITRANSPARENTE ELEGANTE */}
+      {/* Modal de ingreso/Salida - CON FONDO SEMITRANSPARENTE ELEGANTE */}
       {modalCheckInOut && reservaSeleccionada && (
         <div className="fixed inset-0 z-50">
           {/* FONDO SEMITRANSPARENTE ELEGANTE */}
@@ -729,7 +729,7 @@ export default function ReservasEventoTable({
         </div>
       )}
 
-      {/* Modal para Cancelar Check-In - CON FONDO SEMITRANSPARENTE ELEGANTE */}
+      {/* Modal para Cancelar Ingreso - CON FONDO SEMITRANSPARENTE ELEGANTE */}
       {modalCancelarCheckIn && reservaSeleccionada && (
         <div className="fixed inset-0 z-50">
           {/* FONDO SEMITRANSPARENTE ELEGANTE */}
@@ -742,7 +742,7 @@ export default function ReservasEventoTable({
                 </div>
                 <div>
                   <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
-                    Cancelar Check-In
+                    Cancelar Ingreso
                   </h3>
                   <p className="text-orange-600 dark:text-orange-400 text-sm mt-1">
                     Confirmación requerida
@@ -751,7 +751,7 @@ export default function ReservasEventoTable({
               </div>
 
               <p className="text-gray-700 dark:text-gray-300 mb-6 text-lg">
-                ¿Estás seguro de que deseas cancelar el check-in del evento <strong>EVT{reservaSeleccionada.id_reservas_evento}</strong>?
+                ¿Estás seguro de que deseas cancelar el ingreso del evento <strong>EVT{reservaSeleccionada.id_reservas_evento}</strong>?
               </p>
 
               <div className="flex justify-end gap-4">
@@ -768,7 +768,7 @@ export default function ReservasEventoTable({
                   disabled={isLoadingCheckInOut}
                   className="bg-orange-600 hover:bg-orange-700 px-6 py-3 text-white font-semibold rounded-lg transition-all duration-200 shadow-lg"
                 >
-                  {isLoadingCheckInOut ? 'Cancelando...' : 'Sí, Cancelar Check-In'}
+                  {isLoadingCheckInOut ? 'Cancelando...' : 'Sí, Cancelar Ingreso'}
                 </Button>
               </div>
             </div>
@@ -789,9 +789,9 @@ export default function ReservasEventoTable({
                 </div>
                 <div>
                   <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {operationType === 'checkin' && '✅ Check-In Exitoso'}
-                    {operationType === 'checkout' && '✅ Check-Out Exitoso'}
-                    {operationType === 'cancelar_checkin' && '🔄 Check-In Cancelado'}
+                    {operationType === 'checkin' && '✅ Ingreso Exitoso'}
+                    {operationType === 'checkout' && '✅ Salida Exitosa'}
+                    {operationType === 'cancelar_checkin' && '🔄 Ingreso Cancelado'}
                   </h3>
                   <p className="text-green-600 dark:text-green-400 text-sm mt-1">
                     Operación completada correctamente
@@ -820,12 +820,11 @@ export default function ReservasEventoTable({
         </div>
       )}
 
-      {/* 🟡 TABLA 1: Eventos Futuros y de Hoy (CHECK-IN + EDITAR + CANCELAR) */}
-      {renderTable(futuras, "Eventos de Hoy y Futuros - Pendientes de Check-In", true, true, true, false, true)}
+      {/* 🟡 TABLA 1: Eventos Futuros y de Hoy (INGRESO + EDITAR + CANCELAR) */}
+      {renderTable(futuras, "Eventos de Hoy y Futuros - Pendientes de Ingreso", true, true, true, false, true)}
 
-      {/* 🟢 TABLA 2: Eventos en Curso (SOLO CHECK-OUT) */}
-      {renderTable(enCurso, "Eventos en Curso - Pendientes de Check-Out", true, true, false, true, false)}
-
+      {/* 🟢 TABLA 2: Eventos en Curso (SOLO SALIDA) */}
+      {renderTable(enCurso, "Eventos en Curso - Pendientes de Salida", true, true, false, true, false)}
       {/* 🔴 TABLA 3: Eventos Finalizados y Canceladas (SIN ACCIONES) */}
       {renderTable(finalizadasCanceladas, "Eventos Finalizados y Cancelados", false, true, false, false, false)}
     </div>

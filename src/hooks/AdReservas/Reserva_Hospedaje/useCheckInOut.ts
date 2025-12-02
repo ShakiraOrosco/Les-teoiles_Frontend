@@ -17,13 +17,13 @@ export const useCheckInOut = () => {
         setError(null);
 
         try {
-            console.log('🔄 Iniciando check-in para reserva:', idReserva);
+            console.log('🔄 Iniciando ingreso para reserva:', idReserva);
             const response = await realizarCheckIn(idReserva);
-            console.log('✅ Check-in exitoso:', response);
+            console.log('✅ Ingreso exitoso:', response);
             return response;
         } catch (err: any) {
             console.error('❌ Error en realizarCheckInAction:', err);
-            const errorMessage = err.message || 'Error al realizar check-in';
+            const errorMessage = err.message || 'Error al realizar ingreso';
             setError(errorMessage);
             throw err; // Re-lanzar el error para que el componente lo maneje
         } finally {
@@ -36,13 +36,13 @@ export const useCheckInOut = () => {
         setError(null);
 
         try {
-            console.log('🔄 Iniciando check-out para reserva:', idReserva);
+            console.log('🔄 Iniciando salida para reserva:', idReserva);
             const response = await realizarCheckOut(idReserva);
-            console.log('✅ Check-out exitoso:', response);
+            console.log('✅ Salida exitosa:', response);
             return response;
         } catch (err: any) {
             console.error('❌ Error en realizarCheckOutAction:', err);
-            const errorMessage = err.message || 'Error al realizar check-out';
+            const errorMessage = err.message || 'Error al realizar salida';
             setError(errorMessage);
             throw err;
         } finally {
@@ -55,13 +55,13 @@ export const useCheckInOut = () => {
         setError(null);
 
         try {
-            console.log('🔄 Cancelando check-in para reserva:', idReserva);
+            console.log('🔄 Cancelando ingreso para reserva:', idReserva);
             const response = await cancelarCheckIn(idReserva);
-            console.log('✅ Check-in cancelado:', response);
+            console.log('✅ Ingreso cancelado:', response);
             return response;
         } catch (err: any) {
             console.error('❌ Error en cancelarCheckInAction:', err);
-            const errorMessage = err.message || 'Error al cancelar check-in';
+            const errorMessage = err.message || 'Error al cancelar ingreso';
             setError(errorMessage);
             throw err;
         } finally {
@@ -77,7 +77,7 @@ export const useCheckInOut = () => {
             const reservas = await getReservasPendientesCheckIn();
             return reservas;
         } catch (err: any) {
-            const errorMessage = err.response?.data?.error || 'Error al obtener reservas pendientes de check-in';
+            const errorMessage = err.response?.data?.error || 'Error al obtener reservas pendientes de ingreso';
             setError(errorMessage);
             return [];
         } finally {
@@ -93,7 +93,7 @@ export const useCheckInOut = () => {
             const reservas = await getReservasPendientesCheckOut();
             return reservas;
         } catch (err: any) {
-            const errorMessage = err.response?.data?.error || 'Error al obtener reservas pendientes de check-out';
+            const errorMessage = err.response?.data?.error || 'Error al obtener reservas pendientes de salida';
             setError(errorMessage);
             return [];
         } finally {

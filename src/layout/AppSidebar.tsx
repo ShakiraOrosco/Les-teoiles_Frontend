@@ -293,7 +293,7 @@ const AppSidebar: React.FC = () => {
     return (
       <div className="mt-auto p-4 border-t border-gray-200 dark:border-gray-700">
         <div className="text-xs text-gray-500 dark:text-gray-400">
-          Rol: <span className="font-medium capitalize">{userRole || "No asignado"}</span>
+          <span className="font-bold capitalize" >{userRole || "No asignado"}</span>
         </div>
       </div>
     );
@@ -319,7 +319,7 @@ const AppSidebar: React.FC = () => {
           !isExpanded && !isHovered ? "lg:justify-center" : "justify-start"
         }`}
       >
-        <Link to="/">
+        <Link to="/dashboard" className="flex items-center gap-2">
           {isExpanded || isHovered || isMobileOpen ? (
             <>
               <img
@@ -339,7 +339,7 @@ const AppSidebar: React.FC = () => {
             </>
           ) : (
             <img
-              src="/images/logo/logo-icon.svg"
+              src="/images/Informativa/LogoPlayaAzul.png"
               alt="Logo"
               width={32}
               height={32}
@@ -366,22 +366,7 @@ const AppSidebar: React.FC = () => {
               </h2>
               {renderMenuItems(navItems, "main")}
             </div>
-            <div className="">
-              <h2
-                className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${
-                  !isExpanded && !isHovered
-                    ? "lg:justify-center"
-                    : "justify-start"
-                }`}
-              >
-                {isExpanded || isHovered || isMobileOpen ? (
-                  "Others"
-                ) : (
-                  <HorizontaLDots />
-                )}
-              </h2>
-              {renderMenuItems(othersItems, "others")}
-            </div>
+            
           </div>
         </nav>
         {/*isExpanded || isHovered || isMobileOpen ? <SidebarWidget /> : null*/}

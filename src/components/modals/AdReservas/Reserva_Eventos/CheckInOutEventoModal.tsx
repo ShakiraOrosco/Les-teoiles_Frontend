@@ -32,9 +32,9 @@ const CheckInOutEventoModal: React.FC<CheckInOutEventoModalProps> = ({
   if (!isOpen) return null;
 
   const isCheckIn = type === 'checkin';
-  const title = isCheckIn ? 'Confirmar Check-In Evento' : 'Confirmar Check-Out Evento';
+  const title = isCheckIn ? 'Confirmar Ingreso Evento' : 'Confirmar Salida Evento';
   const icon = isCheckIn ? FaSignInAlt : FaSignOutAlt;
-  const buttonText = isCheckIn ? 'Confirmar Check-In' : 'Confirmar Check-Out';
+  const buttonText = isCheckIn ? 'Confirmar Ingreso' : 'Confirmar Salida';
   const IconComponent = icon;
 
   return (
@@ -104,10 +104,10 @@ const CheckInOutEventoModal: React.FC<CheckInOutEventoModalProps> = ({
               </div>
             )}
 
-            {/* Check-in anterior (para check-out) */}
+            {/* Ingreso anterior (para salida) */}
             {!isCheckIn && reservaInfo.checkIn && (
               <div className="pt-2 border-t border-gray-200 dark:border-gray-600">
-                <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Check-in:</span>
+                <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Ingreso:</span>
                 <span className="text-sm text-gray-600 dark:text-gray-300 ml-2">
                   {new Date(reservaInfo.checkIn).toLocaleString()}
                 </span>
@@ -118,8 +118,8 @@ const CheckInOutEventoModal: React.FC<CheckInOutEventoModalProps> = ({
           {/* Mensaje de confirmación */}
           <p className="text-gray-600 dark:text-gray-300 text-sm">
             {isCheckIn 
-              ? '¿Estás seguro de que deseas registrar el check-in para este evento?'
-              : '¿Estás seguro de que deseas registrar el check-out y finalizar el evento?'
+              ? '¿Estás seguro de que deseas registrar el ingreso para este evento?'
+              : '¿Estás seguro de que deseas registrar la salida y finalizar el evento?'
             }
           </p>
         </div>
