@@ -13,9 +13,10 @@ import { useSidebar } from "../context/SidebarContext";
 
 type NavItem = {
   name: string;
+  id?: string;
   icon: React.ReactNode;
   path?: string;
-  subItems?: { name: string; path: string; pro?: boolean; new?: boolean }[];
+  subItems?: { name: string; id?: string; path: string; pro?: boolean; new?: boolean }[];
   roles?: string[]; // Roles que pueden ver este item
 };
 
@@ -69,17 +70,19 @@ const AppSidebar: React.FC = () => {
     {
       icon: <UserCircleIcon />,
       name: "Usuarios",
+      id: "nav-usuarios",
       path: "/profile",
       roles: ["administrador"]
     },
     // Reservas - Para empleados y administradores
     {
       name: "Reservas",
+      id: "nav-reservas",
       icon: <ListIcon />,
       roles: ["empleado", "administrador"],
       subItems: [
-        { name: "Reserva Hospedaje", path: "/AdReservas/Reserva_Hospedaje" },
-        { name: "Reservas Evento", path: "/AdReservas/Reserva_Evento" },
+        { name: "Reserva Hospedaje", id: "nav-reserva-hospedaje", path: "/AdReservas/Reserva_Hospedaje" },
+        { name: "Reservas Evento", id: "nav-reserva-evento", path: "/AdReservas/Reserva_Evento" },
       ]
     },
     // Bienes - Solo para administradores
@@ -165,7 +168,7 @@ const AppSidebar: React.FC = () => {
     return (
       <ul className="flex flex-col gap-4">
         {filteredItems.map((nav, index) => (
-          <li key={nav.name}>
+          <li id='nav' key={nav.name}>
             {nav.subItems ? (
               <button
                 onClick={() => handleSubmenuToggle(index, menuType)}
@@ -205,6 +208,7 @@ const AppSidebar: React.FC = () => {
             ) : (
               nav.path && (
                 <Link
+                  id={nav.id}
                   to={nav.path}
                   className={`menu-item group ${
                     isActive(nav.path) ? "menu-item-active" : "menu-item-inactive"
@@ -242,6 +246,7 @@ const AppSidebar: React.FC = () => {
                   {nav.subItems.map((subItem) => (
                     <li key={subItem.name}>
                       <Link
+                        id={subItem.id}
                         to={subItem.path}
                         className={`menu-dropdown-item ${
                           isActive(subItem.path)

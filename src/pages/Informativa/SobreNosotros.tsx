@@ -99,9 +99,9 @@ export default function SobreNosotros() {
 
       {/* Hero Section */}
       <section className="bg-gradient-to-r from-teal-600 to-cyan-500 py-16 text-white">
-        <div className="max-w-7xl mx-auto px-4 text-center">
-          <h2 className="text-4xl md:text-5xl font-bold mb-4">Nuestra Historia</h2>
-          <p className="text-xl text-cyan-100">Más de 25 años creando momentos inolvidables</p>
+        <div className="max-w-7xl mx-auto px-4 text-center" id="Banner-Sobre-Nosotros">
+          <h2 className="text-4xl md:text-5xl font-bold mb-4" id="Titulo-Nuestra-Historia">Nuestra Historia</h2>
+          <p className="text-xl text-cyan-100" id="Descripcion-Nuestra-Historia">Más de 25 años creando momentos inolvidables</p>
         </div>
       </section>
 

@@ -288,16 +288,17 @@ export default function ReservasPage() {
           <div className="flex flex-wrap gap-2">
             <Button
               size="md"
+              id="btn-nueva-reserva"
               variant="primary"
               onClick={() => setIsModalOpen(true)}
             >
-              <FaPlus className="mr-2" /> Nueva Reserva
+              <FaPlus className="mr-2" />Nueva Reserva
             </Button>
 
-            <Button size="md" onClick={handleExportExcel} disabled={loading}>
+            <Button size="md" id="btn-exportar-excel" onClick={handleExportExcel} disabled={loading}>
               📊 Excel
             </Button>
-            <Button size="md" onClick={handleExportPDF} disabled={loading}>
+            <Button size="md" id="btn-exportar-pdf" onClick={handleExportPDF} disabled={loading}>
               📄 PDF
             </Button>
           </div>

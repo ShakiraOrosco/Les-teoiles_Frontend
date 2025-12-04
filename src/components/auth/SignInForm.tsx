@@ -3,6 +3,7 @@ import { EyeCloseIcon, EyeIcon } from "../../icons";
 import { useAuth } from "../../hooks/auth/useAuth";
 import Button from "../ui/button/Button";
 import { Waves } from "lucide-react";
+
 import { 
   validateUsuario, 
   validatePassword, 
@@ -106,12 +107,12 @@ export default function PoolLoginPage() {
   return (
     <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-2xl backdrop-blur-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
       {/* Header con icono */}
-      <div className="text-center pt-8 pb-6 px-8">
+      <div className="text-center pt-8 pb-6 px-8" id="Seccion-Iniciar-Sesion">
         <div className="w-16 h-16 bg-gradient-to-br from-cyan-500 to-teal-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
           <Waves className="w-8 h-8 text-white" />
         </div>
-        <h3 className="text-2xl font-bold text-teal-800 dark:text-cyan-400 mb-2">Iniciar Sesión</h3>
-        <p className="text-sm text-gray-600 dark:text-gray-400">Accede a tu cuenta del sistema de reservas</p>
+        <h3 className="text-2xl font-bold text-teal-800 dark:text-cyan-400 mb-2" id="Titulo-Iniciar-Sesion">Iniciar Sesión</h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400" id="Descripcion-Iniciar-Sesion">Accede a tu cuenta del sistema de reservas</p>
       </div>
 
       {/* Formulario */}
@@ -119,14 +120,15 @@ export default function PoolLoginPage() {
         {/* Error general */}
         {generalError && (
           <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-            <p className="text-sm text-red-600 dark:text-red-400 text-center">{generalError}</p>
+            <p className="text-sm text-red-600 dark:text-red-400 text-center" id="Error-General">{generalError}</p>
           </div>
         )}
 
         {/* Usuario */}
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Usuario</label>
+        <div id="Contenedor-Usuario">
+          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2" id="Etiqueta-Usuario">Usuario</label>
           <input
+            id="input-usuario"
             type="text"
             value={loginForm.usuario}
             onChange={handleUsuarioChange}
@@ -139,15 +141,16 @@ export default function PoolLoginPage() {
             placeholder="Tu usuario"
           />
           {errors.usuario && touched.usuario && (
-            <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.usuario}</p>
+            <p className="mt-1 text-sm text-red-600 dark:text-red-400" id="Error-Usuario">{errors.usuario}</p>
           )}
         </div>
 
         {/* Contraseña */}
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Contraseña</label>
-          <div className="relative">
+        <div id="Contenedor-Contraseña">
+          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2" id="Etiqueta-Contraseña">Contraseña</label>
+          <div className="relative" id="Seccion-Contraseña">
             <input
+              id="input-password"
               type={showPassword ? "text" : "password"}
               value={loginForm.password}
               onChange={handlePasswordChange}
@@ -169,13 +172,15 @@ export default function PoolLoginPage() {
             </button>
           </div>
           {errors.password && touched.password && (
-            <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.password}</p>
+            <p className="mt-1 text-sm text-red-600 dark:text-red-400" id="Error-Contraseña">{errors.password}</p>
           )}
         </div>
 
         {/* Botón Ingresar */}
         <Button
           type="submit"
+          id="Boton-Ingresar"
+          name="Boton-Ingresar"
           className="w-full bg-gradient-to-r from-cyan-500 to-teal-600 hover:from-cyan-600 hover:to-teal-700 text-white px-6 py-3 rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-[1.02]"
         >
           Ingresar

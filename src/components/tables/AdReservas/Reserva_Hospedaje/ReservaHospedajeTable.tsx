@@ -374,7 +374,7 @@ console.log("- Finalizadas/Canceladas/Expiradas:", finalizadasCanceladas.length)
                       <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
                         <FaBed className="w-8 h-8 text-gray-400" />
                       </div>
-                      <p className="text-lg font-medium mb-2">No hay reservas en esta categoría</p>
+                      <p className="text-lg font-medium mb-2" id="no-reservas-message">No hay reservas en esta categoría</p>
                       <p className="text-sm text-gray-400">Las reservas aparecerán aquí según su estado</p>
                     </div>
                   </TableCell>
@@ -392,8 +392,8 @@ console.log("- Finalizadas/Canceladas/Expiradas:", finalizadasCanceladas.length)
                       className="transition-all duration-200 hover:bg-gradient-to-r hover:from-blue-50 hover:to-cyan-50 dark:hover:from-gray-800 dark:hover:to-gray-700 border-l-4 border-l-transparent hover:border-l-[#2A9D8F]"
                     >
                       {/* Código de Reserva */}
-                      <TableCell className="px-5 py-4 text-start">
-                        <div className="font-bold text-gray-900 dark:text-white text-lg">
+                      <TableCell className="px-5 py-4 text-start" >
+                        <div className="font-bold text-gray-900 dark:text-white text-lg" id="codigo-reserva">
                           {codigoReserva}
                         </div>
                         <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
@@ -404,12 +404,12 @@ console.log("- Finalizadas/Canceladas/Expiradas:", finalizadasCanceladas.length)
                       {/* Cliente */}
                       {showCliente && (
                         <TableCell className="px-5 py-4 text-start">
-                          <div className="flex items-center gap-3">
-                            <div className="flex-1">
+                          <div className="flex items-center gap-3" id="cliente-info">
+                            <div className="flex-1" id="cliente-nombre">
                               <div className="font-semibold text-gray-900 dark:text-white">
                                 {nombreCliente}
                               </div>
-                              <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                              <div className="text-sm text-gray-500 dark:text-gray-400 mt-1" id="cliente-personas">
                                 {reserva.cant_personas} persona{reserva.cant_personas !== 1 ? 's' : ''}
                               </div>
                             </div>
@@ -426,15 +426,15 @@ console.log("- Finalizadas/Canceladas/Expiradas:", finalizadasCanceladas.length)
 
                       {/* Habitación */}
                       <TableCell className="px-5 py-4 text-start">
-                        <div className="font-semibold text-gray-900 dark:text-white">
+                        <div className="font-semibold text-gray-900 dark:text-white" id="habitacion-info">
                           {habitacionInfo}
                         </div>
                       </TableCell>
 
                       {/* Fechas */}
                       <TableCell className="px-5 py-4 text-start">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
+                        <div className="space-y-1" id="fechas-info">
+                          <div className="flex items-center gap-2" id="fecha-inicio">
                             <FaCalendar className="w-3 h-3 text-[#2A9D8F]" />
                             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Inicio:</span>
                             <span className="text-sm text-gray-900 dark:text-white font-semibold">
@@ -443,9 +443,9 @@ console.log("- Finalizadas/Canceladas/Expiradas:", finalizadasCanceladas.length)
                               )}
                             </span>
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2" id="fecha-fin">
                             <FaCalendar className="w-3 h-3 text-[#0E7C7B]" />
-                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Fin:</span>
+                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300" id="fecha-fin-label">Fin:</span>
                             <span className="text-sm text-gray-900 dark:text-white font-semibold">
                               {reserva.fecha_fin || (
                                 <span className="italic text-gray-400">-</span>

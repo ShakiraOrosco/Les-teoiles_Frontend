@@ -40,6 +40,7 @@ export default function Header({ currentPage = '' }: HeaderProps) {
           <nav className="hidden md:flex space-x-8 items-center">
             <a
               href="/home"
+              id="home-nav"
               className={`transition ${
                 isCurrentPage('home') ? 'text-teal-700 font-semibold' : 'text-gray-600 hover:text-teal-700'
               }`}
@@ -48,6 +49,7 @@ export default function Header({ currentPage = '' }: HeaderProps) {
             </a>
             <a
               href="/sobre-nosotros"
+              id="sobre-nosotros-nav"
               className={`transition ${
                 isCurrentPage('sobre-nosotros') ? 'text-teal-700 font-semibold' : 'text-gray-600 hover:text-teal-700'
               }`}
@@ -56,6 +58,7 @@ export default function Header({ currentPage = '' }: HeaderProps) {
             </a>
             <a
               href="/reservas"
+              id="reservas-nav"
               className={`transition ${
                 isCurrentPage('reservas') ? 'text-teal-700 font-semibold' : 'text-gray-600 hover:text-teal-700'
               }`}
@@ -64,6 +67,7 @@ export default function Header({ currentPage = '' }: HeaderProps) {
             </a>
             <a
               href="/contactanos"
+              id="contactanos-nav"
               className={`transition ${
                 isCurrentPage('contactanos') ? 'text-teal-700 font-semibold' : 'text-gray-600 hover:text-teal-700'
               }`}
@@ -71,6 +75,7 @@ export default function Header({ currentPage = '' }: HeaderProps) {
               Contáctanos
             </a>
             <button
+              id="iniciar-sesion-btn"
               onClick={() => navigate('/signin')}
               className="bg-gradient-to-r from-cyan-500 to-teal-600 text-white px-6 py-2 rounded-lg hover:shadow-lg transition font-semibold"
             >

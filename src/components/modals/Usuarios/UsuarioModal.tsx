@@ -388,6 +388,7 @@ export default function UsuarioModal({ isOpen, onClose, onSubmit }: UsuarioModal
             </Button>
             <button 
               type="submit" 
+              id="btn-guardar-usuario"
               disabled={isPending} 
               className="px-4 py-2 rounded-lg bg-[#26a5b9] text-white hover:bg-[#26a5b9]/90 disabled:opacity-50 transition-colors"
             >

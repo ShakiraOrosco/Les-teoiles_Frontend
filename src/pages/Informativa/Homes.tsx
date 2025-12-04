@@ -88,8 +88,8 @@ export default function Home() {
       <section className="max-w-7xl mx-auto px-4 py-16">
         <div className="grid md:grid-cols-2 gap-12 items-center">
           <div>
-            <h3 className="text-3xl font-bold text-teal-800 mb-4">Descubre Playa Azul</h3>
-            <p className="text-gray-600 mb-4 leading-relaxed">
+            <h3 className="text-3xl font-bold text-teal-800 mb-4" id="Informacion-Piscina">Descubre Playa Azul</h3>
+            <p className="text-gray-600 mb-4 leading-relaxed" id="Descripcion-Piscina">
               Trabajando a tu lado desde 2013, Playa Azul es fundado por Edgar Martin Orosco Linares con el intento de unir a familias, amigos y parejas. Tras años trabajando por encontrar la formula de como unir no solo a su familia, si no a toda la comunidad.
             </p>
             <p className="text-gray-600 mb-6 leading-relaxed">
