@@ -843,7 +843,7 @@ export default function HospedajeModal({ isOpen, onClose, onSuccess }: Hospedaje
                     className="w-full rounded-lg border border-teal-300 dark:border-teal-600 px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                     placeholder="Ej: Juan"
                   />
-                  {errores.nombre && <p className="text-xs text-red-500 mt-1">{errores.nombre}</p>}
+                  {errores.nombre && <p className="text-xs text-red-500 mt-1" id="error-nombre">{errores.nombre}</p>}
                 </div>
                 <div>
                   <label className="block mb-1 text-sm font-medium text-teal-700 dark:text-teal-300">
@@ -859,7 +859,7 @@ export default function HospedajeModal({ isOpen, onClose, onSuccess }: Hospedaje
                     className="w-full rounded-lg border border-teal-300 dark:border-teal-600 px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                     placeholder="Ej: Pérez"
                   />
-                  {errores.apellidoPaterno && <p className="text-xs text-red-500 mt-1">{errores.apellidoPaterno}</p>}
+                  {errores.apellidoPaterno && <p className="text-xs text-red-500 mt-1" id="error-apellidoPaterno">{errores.apellidoPaterno}</p>}
                 </div>
                 <div>
                   <label className="block mb-1 text-sm font-medium text-teal-700 dark:text-teal-300">
@@ -875,7 +875,7 @@ export default function HospedajeModal({ isOpen, onClose, onSuccess }: Hospedaje
                     className="w-full rounded-lg border border-teal-300 dark:border-teal-600 px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                     placeholder="Ej: García"
                   />
-                  {errores.apellidoMaterno && <p className="text-xs text-red-500 mt-1">{errores.apellidoMaterno}</p>}
+                  {errores.apellidoMaterno && <p className="text-xs text-red-500 mt-1" id="error-apellidoMaterno">{errores.apellidoMaterno}</p>}
                 </div>
               </div>
 
@@ -912,7 +912,7 @@ export default function HospedajeModal({ isOpen, onClose, onSuccess }: Hospedaje
                     placeholder="7XXXXXXX"
                     inputMode="numeric"
                   />
-                  {errores.telefono && <p className="text-xs text-red-500 mt-1">{errores.telefono}</p>}
+                  {errores.telefono && <p className="text-xs text-red-500 mt-1" id="error-telefono">{errores.telefono}</p>}
                 </div>
                 <div>
                   <label className="block mb-1 text-sm font-medium text-teal-700 dark:text-teal-300">
@@ -929,7 +929,7 @@ export default function HospedajeModal({ isOpen, onClose, onSuccess }: Hospedaje
                     className="w-full rounded-lg border border-teal-300 dark:border-teal-600 px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                     placeholder="XXXXXXXXX"
                   />
-                  {errores.carnet && <p className="text-xs text-red-500 mt-1">{errores.carnet}</p>}
+                  {errores.carnet && <p className="text-xs text-red-500 mt-1" id="error-carnet">{errores.carnet}</p>}
                 </div>
               </div>
 
@@ -954,7 +954,7 @@ export default function HospedajeModal({ isOpen, onClose, onSuccess }: Hospedaje
                     }`}
                   placeholder="juan@email.com"
                 />
-                {errores.email && <p className="text-xs text-red-500 mt-1">{errores.email}</p>}
+                {errores.email && <p className="text-xs text-red-500 mt-1" id="error-email">{errores.email}</p>}
               </div>
             </div>
 
@@ -965,13 +965,14 @@ export default function HospedajeModal({ isOpen, onClose, onSuccess }: Hospedaje
               </h3>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="calendar-container relative">
-                  <label className="block mb-1 text-sm font-medium text-teal-700 dark:text-teal-300">
+                <div className="calendar-container relative" id="fecha-inicio-container">
+                  <label className="block mb-1 text-sm font-medium text-teal-700 dark:text-teal-300" id="fecha-inicio-label">
                     Fecha de Inicio *
                   </label>
-                  <div className="relative">
+                  <div className="relative" id="fecha-inicio-input">
                     <input
                       type="text"
+                      id="fecha-inicio-input"
                       readOnly
                       value={formData.fechaInicio}
                       onClick={() => {
@@ -982,19 +983,20 @@ export default function HospedajeModal({ isOpen, onClose, onSuccess }: Hospedaje
                       className="w-full rounded-lg border border-teal-300 dark:border-teal-600 px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500 cursor-pointer pr-10"
                       placeholder="Selecciona fecha"
                     />
-                    <FaCalendarAlt className="absolute right-3 top-1/2 transform -translate-y-1/2 text-teal-500" />
+                    <FaCalendarAlt id="icono-fecha-inicio" className="absolute right-3 top-1/2 transform -translate-y-1/2 text-teal-500" />
                   </div>
-                  {errores.fechaInicio && <p className="text-xs text-red-500 mt-1">{errores.fechaInicio}</p>}
+                  {errores.fechaInicio && <p className="text-xs text-red-500 mt-1" id="error-fechaInicio">{errores.fechaInicio}</p>}
                   {showCalendarInicio && renderCalendar('inicio')}
                 </div>
 
-                <div className="calendar-container relative">
-                  <label className="block mb-1 text-sm font-medium text-teal-700 dark:text-teal-300">
+                <div className="calendar-container relative" id="fecha-fin-container">
+                  <label className="block mb-1 text-sm font-medium text-teal-700 dark:text-teal-300" id="fecha-fin-label">
                     Fecha de Fin *
                   </label>
-                  <div className="relative">
+                  <div className="relative" id="fecha-fin-input">
                     <input
                       type="text"
+                      id="fecha-fin-input"
                       readOnly
                       value={formData.fechaFin}
                       onClick={() => {
@@ -1007,7 +1009,7 @@ export default function HospedajeModal({ isOpen, onClose, onSuccess }: Hospedaje
                     />
                     <FaCalendarAlt className="absolute right-3 top-1/2 transform -translate-y-1/2 text-teal-500" />
                   </div>
-                  {errores.fechaFin && <p className="text-xs text-red-500 mt-1">{errores.fechaFin}</p>}
+                  {errores.fechaFin && <p className="text-xs text-red-500 mt-1" id="error-fechaFin">{errores.fechaFin}</p>}
                   {showCalendarFin && renderCalendar('fin')}
                 </div>
               </div>
@@ -1091,13 +1093,13 @@ export default function HospedajeModal({ isOpen, onClose, onSuccess }: Hospedaje
                   min={1}
                   max={9}
                 />
-                {errores.cantidadPersonas && <p className="text-xs text-red-500 mt-1">{errores.cantidadPersonas}</p>}
+                {errores.cantidadPersonas && <p className="text-xs text-red-500 mt-1" id="error-cantidadPersonas">{errores.cantidadPersonas}</p>}
               </div>
 
               <div className="mt-6 bg-teal-50 dark:bg-teal-900/20 rounded-xl p-6 border-2 border-teal-200 dark:border-teal-700">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-teal-700 dark:text-teal-300 mb-1">Monto Total a Pagar</p>
+                    <p className="text-sm text-teal-700 dark:text-teal-300 mb-1" id="monto-total">Monto Total a Pagar</p>
                     {precioPorPersona && formData.cantidadPersonas && cantidadDias > 0 && (
                       <p className="text-xs text-teal-600 dark:text-teal-400">
                         {precioPorPersona.toFixed(2)} Bs. × {formData.cantidadPersonas} persona(s) × {cantidadDias} día(s)
@@ -1106,13 +1108,13 @@ export default function HospedajeModal({ isOpen, onClose, onSuccess }: Hospedaje
                   </div>
                   <div className="text-right">
                     <div className="flex items-baseline gap-2">
-                      <span className="text-3xl font-bold text-teal-700 dark:text-teal-300">
+                      <span className="text-3xl font-bold text-teal-700 dark:text-teal-300" id="monto-valor">
                         {montoTotal.toFixed(2)}
                       </span>
-                      <span className="text-lg font-semibold text-teal-600 dark:text-teal-400">Bs.</span>
+                      <span className="text-lg font-semibold text-teal-600 dark:text-teal-400" id="moneda">Bs.</span>
                     </div>
                     {montoTotal > 0 && (
-                      <p className="text-xs text-teal-600 dark:text-teal-400 mt-1">
+                      <p className="text-xs text-teal-600 dark:text-teal-400 mt-1" id="adelanto-50">
                         Adelanto (50%): {(montoTotal * 0.5).toFixed(2)} Bs.
                       </p>
                     )}
@@ -1157,6 +1159,7 @@ export default function HospedajeModal({ isOpen, onClose, onSuccess }: Hospedaje
               <Button variant="outline" onClick={onClose}>Cancelar</Button>
               <Button
                 variant="primary"
+                id="submit-reserva-hospedaje"
                 type="submit"
                 disabled={isLoading || montoTotal === 0}
               >

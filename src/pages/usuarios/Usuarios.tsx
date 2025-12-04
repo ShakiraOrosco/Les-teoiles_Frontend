@@ -230,13 +230,13 @@ export default function Usuarios() {
                     rol={rol}
                     setRol={setRol}
                 >
-                    <div className="flex flex-wrap gap-2">
-                        <Button size="md" variant="primary" onClick={openModal}>
-                            <FaPlus className="size-3 mr-2" />
+                    <div className="flex flex-wrap gap-2" id="Contenedor-Botones-Usuarios">
+                        <Button size="md" variant="primary" onClick={openModal} id="btn-nuevo-usuario" name="btn-nuevo-usuario">
+                            <FaPlus className="size-3 mr-2" id="icon-nuevo-usuario" />
                             Nuevo Usuario
                         </Button>
-                        <Button size="md" onClick={handleExportExcel}>📊 Excel</Button>
-                        <Button size="md" onClick={handleExportPDF}>📄 PDF</Button>
+                        <Button id="btn-exportar-excel" size="md" onClick={handleExportExcel}>📊 Excel</Button>
+                        <Button id="btn-exportar-pdf" size="md" onClick={handleExportPDF}>📄 PDF</Button>
                     </div>
                 </UsuariosFilter>
 

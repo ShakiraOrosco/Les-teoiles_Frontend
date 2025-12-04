@@ -30,6 +30,7 @@ export default function ReservaHospedajeFilter({
                     <FaSearch className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
                     <input
                         type="text"
+                        id="input-busqueda-reserva-hospedaje"
                         placeholder="Buscar por código, cliente o habitación..."
                         value={filtro}
                         onChange={(e) => setFiltro(e.target.value)}
@@ -42,13 +43,14 @@ export default function ReservaHospedajeFilter({
                     <FaUser className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
                     <select
                         value={estado}
+                        id="select-estado-reserva-hospedaje"
                         onChange={(e) => setEstado(e.target.value as "" | "P" | "C" | "A" | "F")} // Agregar "F"
                         className="w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-10 pr-4 text-sm text-gray-700 transition-all duration-200 focus:border-[#26a5b9] focus:outline-none focus:ring-2 focus:ring-[#26a5b9]/20 dark:border-gray-700 dark:bg-gray-800/50 dark:text-gray-300 dark:focus:border-[#26a5b9]"
                     >
-                        <option value="">Todos los estados</option>
-                        <option value="P">Pendientes</option>
-                        <option value="C">Canceladas</option>
-                        <option value="F">Finalizadas</option> {/* NUEVA OPCIÓN */}
+                        <option id="option-todos-estados" value="">Todos los estados</option>
+                        <option id="option-pendientes" value="P">Pendientes</option>
+                        <option id="option-canceladas" value="C">Canceladas</option>
+                        <option id="option-finalizadas" value="F">Finalizadas</option> {/* NUEVA OPCIÓN */}
                     </select>
                 </div>
             </div>

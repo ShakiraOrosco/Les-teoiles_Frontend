@@ -91,9 +91,10 @@ export default function AuthLayout({
       </div>
 
       {/* Link volver en la esquina inferior izquierda */}
-      <div className="absolute bottom-6 left-6 z-50">
+      <div className="absolute bottom-6 left-6 z-50" id="Volver-Inicio-Contenedor">
         <Link 
           to="/" 
+          id="Volver-Inicio"
           className="inline-flex items-center gap-2 text-sm text-cyan-600 dark:text-cyan-400 hover:text-cyan-700 dark:hover:text-cyan-300 font-medium hover:underline transition-colors"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

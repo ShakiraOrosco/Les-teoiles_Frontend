@@ -753,7 +753,7 @@ export default function Hospedaje() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Nombre *</label>
                   <input type="text" name="nombre" value={formData.nombre} onChange={handleChange} onBlur={handleBlur} onKeyDown={soloLetras} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent" placeholder="Ej: Juan" />
-                  {errores.nombre && <p className="text-xs text-red-600 mt-1">{errores.nombre}</p>}
+                  {errores.nombre && <p className="text-xs text-red-600 mt-1" id="error-nombre">{errores.nombre}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Apellido Paterno</label>

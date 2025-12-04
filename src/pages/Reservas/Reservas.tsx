@@ -26,9 +26,9 @@ export default function Reservas() {
 
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-cyan-600 to-teal-700 text-white py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">Sistema de Reservas</h1>
-          <p className="text-xl md:text-2xl text-cyan-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center" id="Banner-Reservas">
+          <h1 className="text-4xl md:text-5xl font-bold mb-4" id="Titulo-Reservas">Sistema de Reservas</h1>
+          <p className="text-xl md:text-2xl text-cyan-100" id="Descripcion-Reservas">
             Reserva tu espacio de forma rápida y sencilla
           </p>
         </div>

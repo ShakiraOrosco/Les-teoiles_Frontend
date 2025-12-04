@@ -38,6 +38,7 @@ export default function UsuariosFilter({
                     <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 size-4" />
                     <input
                         type="text"
+                        id="input-busqueda-usuarios"
                         placeholder="Buscar por nombre, CI, teléfono o correo..."
                         value={filtro}
                         onChange={(e) => setFiltro(e.target.value)}

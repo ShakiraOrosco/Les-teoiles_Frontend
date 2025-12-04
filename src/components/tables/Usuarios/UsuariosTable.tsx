@@ -43,8 +43,8 @@ export default function UsuariosTable({ usuarios, onEdit, onToggleEstado }: Usua
   };
 
   return (
-    <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
-      <div className="max-w-full overflow-x-auto">
+    <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]" id="contenedor-tabla-usuarios">
+      <div className="max-w-full overflow-x-auto" id="scroll-tabla-usuarios">
         <Table>
           <TableHeader className="border-b border-gray-100 dark:border-white/[0.05] bg-[#e2e8f6] dark:bg-[#458890]">
             <TableRow>
@@ -69,17 +69,19 @@ export default function UsuariosTable({ usuarios, onEdit, onToggleEstado }: Usua
                   className={`transition-colors duration-150 hover:bg-[#dbeafe]/30 dark:hover:bg-white/[0.05] ${!isActivo ? "opacity-60" : ""}`}
                 >
                   <TableCell className="px-5 py-4 sm:px-6 text-start">
-                    <span className="block font-medium text-gray-800 text-theme-sm dark:text-white/90">
+                    <span className="block font-medium text-gray-800 text-theme-sm dark:text-white/90" id={`id-usuario-${usuario.id_usuario}`}>
                       #{usuario.id_usuario}
                     </span>
                   </TableCell>
 
                   <TableCell className="px-5 py-4 sm:px-6 text-start font-semibold text-gray-900 dark:text-white">
-                    {usuario.nombre} {usuario.app_paterno} {usuario.app_materno}
+                    <span id={`nombre-usuario-${usuario.id_usuario}`}>
+                      {usuario.nombre} {usuario.app_paterno} {usuario.app_materno}
+                    </span>
                   </TableCell>
 
                   <TableCell className="px-5 py-4 sm:px-6 text-start">
-                    <span className="font-medium text-gray-700 dark:text-gray-300">
+                    <span className="font-medium text-gray-700 dark:text-gray-300" id={`ci-usuario-${usuario.id_usuario}`}>
                       {usuario.ci}
                     </span>
                   </TableCell>
@@ -88,13 +90,14 @@ export default function UsuariosTable({ usuarios, onEdit, onToggleEstado }: Usua
                     <div
                       className="max-w-xs truncate text-gray-600 dark:text-gray-400"
                       title={usuario.email}
+                      id={`email-usuario-${usuario.id_usuario}`}
                     >
                       {usuario.email}
                     </div>
                   </TableCell>
 
                   <TableCell className="px-5 py-4 sm:px-6 text-start">
-                    <span className="text-gray-600 dark:text-gray-400">
+                    <span className="text-gray-600 dark:text-gray-400" id={`telefono-usuario-${usuario.id_usuario}`}>
                       {usuario.telefono || (
                         <span className="text-gray-400 dark:text-gray-500 italic">-</span>
                       )}
@@ -102,9 +105,11 @@ export default function UsuariosTable({ usuarios, onEdit, onToggleEstado }: Usua
                   </TableCell>
 
                   <TableCell className="px-5 py-4 sm:px-6 text-start">
-                    <Badge size="sm" color={getRolColor(usuario.rol)}>
-                      {getRolLabel(usuario.rol)}
-                    </Badge>
+                    <div id={`rol-usuario-${usuario.id_usuario}`}>
+                      <Badge size="sm" color={getRolColor(usuario.rol)}>
+                        {getRolLabel(usuario.rol)}
+                      </Badge>
+                    </div>
                   </TableCell>
 
                   <TableCell className="px-5 py-4 sm:px-6 text-start">
@@ -112,19 +117,21 @@ export default function UsuariosTable({ usuarios, onEdit, onToggleEstado }: Usua
                       className={`font-semibold ${
                         isActivo ? "text-green-600" : "text-red-600"
                       }`}
+                      id={`estado-usuario-${usuario.id_usuario}`}
                     >
                       {isActivo ? "Activo" : "Inactivo"}
                     </span>
                   </TableCell>
 
                   <TableCell className="px-5 py-4 sm:px-6 text-start">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2" id={`acciones-usuario-${usuario.id_usuario}`}>
                       {isActivo && (
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => onEdit(usuario)}
                           className="text-[#3b82f6]"
+                          id={`btn-editar-usuario-${usuario.id_usuario}`}
                         >
                           Editar
                         </Button>
@@ -134,6 +141,7 @@ export default function UsuariosTable({ usuarios, onEdit, onToggleEstado }: Usua
                         size="sm"
                         onClick={() => onToggleEstado(usuario)}
                         className={isActivo ? "text-red-600" : "text-green-600"}
+                        id={`btn-toggle-usuario-${usuario.id_usuario}`}
                       >
                         {isActivo ? "Desactivar" : "Activar"}
                       </Button>

@@ -806,7 +806,7 @@ export default function EditHospedajeModal({ isOpen, onClose, reserva, onSave }:
               <div className="bg-teal-50 dark:bg-teal-900/20 rounded-xl p-4 border border-teal-200 dark:border-teal-700">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-teal-700 dark:text-teal-300 mb-1">Monto Total a Pagar</p>
+                    <p className="text-sm text-teal-700 dark:text-teal-300 mb-1" id="monto-total">Monto Total a Pagar</p>
                     {formData.cantidadPersonas && cantidadDias > 0 && (
                       <p className="text-xs text-teal-600 dark:text-teal-400">
                         {precioPorPersona.toFixed(2)} Bs. × {formData.cantidadPersonas} persona(s) × {cantidadDias} día(s)
@@ -815,10 +815,10 @@ export default function EditHospedajeModal({ isOpen, onClose, reserva, onSave }:
                   </div>
                   <div className="text-right">
                     <div className="flex items-baseline gap-2">
-                      <span className="text-2xl font-bold text-teal-700 dark:text-teal-300">
+                      <span className="text-2xl font-bold text-teal-700 dark:text-teal-300" id="monto-valor">
                         {montoTotal.toFixed(2)}
                       </span>
-                      <span className="text-lg font-semibold text-teal-600 dark:text-teal-400">Bs.</span>
+                      <span className="text-lg font-semibold text-teal-600 dark:text-teal-400" id="moneda">Bs.</span>
                     </div>
                   </div>
                 </div>

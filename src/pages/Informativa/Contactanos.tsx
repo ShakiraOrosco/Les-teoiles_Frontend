@@ -182,9 +182,9 @@ export default function Contactanos() {
       
       {/* Hero Section */}
       <section className="bg-gradient-to-r from-teal-600 to-cyan-500 py-16 text-white">
-        <div className="max-w-7xl mx-auto px-4 text-center">
-          <h2 className="text-4xl md:text-5xl font-bold mb-4">Contáctanos</h2>
-          <p className="text-xl text-cyan-100">Estamos aquí para ayudarte. ¡Escríbenos!</p>
+        <div className="max-w-7xl mx-auto px-4 text-center" id="Banner-Contactanos">
+          <h2 className="text-4xl md:text-5xl font-bold mb-4" id="Titulo-Contactanos">Contáctanos</h2>
+          <p className="text-xl text-cyan-100" id="Descripcion-Contactanos">Estamos aquí para ayudarte. ¡Escríbenos!</p>
         </div>
       </section>
 

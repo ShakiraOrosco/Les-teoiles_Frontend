@@ -795,7 +795,7 @@ export default function EventoModal({ isOpen, onClose, onSuccess }: EventoModalP
                   required
                 />
                 {errores.nombre && (
-                  <p className="text-red-500 text-xs mt-1">{errores.nombre}</p>
+                  <p className="text-red-500 text-xs mt-1" id="error-nombre">{errores.nombre}</p>
                 )}
               </div>
 

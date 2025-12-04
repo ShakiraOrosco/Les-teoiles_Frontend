@@ -317,6 +317,7 @@ if (materno) errores.app_materno = materno;
             </Button>
             <button 
               type="submit" 
+              id="btn-actualizar-usuario"
               disabled={isPending} 
               className="px-4 py-2 rounded-lg bg-[#3b82f6] text-white hover:bg-[#3b82f6]/90 disabled:opacity-50 transition-colors"
             >
