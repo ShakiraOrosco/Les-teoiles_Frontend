@@ -11,6 +11,7 @@ type BadgeColor =
 
 interface BadgeProps {
   variant?: BadgeVariant; // Light or solid variant
+  id?: string; // Optional id for the badge
   size?: BadgeSize; // Badge size
   color?: BadgeColor; // Badge color
   startIcon?: React.ReactNode; // Icon at the start
@@ -20,6 +21,7 @@ interface BadgeProps {
 
 const Badge: React.FC<BadgeProps> = ({
   variant = "light",
+  id,
   color = "primary",
   size = "md",
   startIcon,

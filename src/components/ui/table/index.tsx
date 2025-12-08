@@ -27,6 +27,7 @@ interface TableRowProps {
 // Props for TableCell
 interface TableCellProps {
   children: ReactNode; // Cell content
+  id?: string; // Optional id for the cell
   isHeader?: boolean; // If true, renders as <th>, otherwise <td>
   className?: string; // Optional className for styling
 }
@@ -54,6 +55,7 @@ const TableRow: React.FC<TableRowProps> = ({ children, className }) => {
 // TableCell Component
 const TableCell: React.FC<TableCellProps> = ({
   children,
+  id,
   isHeader = false,
   className,
 }) => {

@@ -456,13 +456,15 @@ console.log("- Finalizadas/Canceladas/Expiradas:", finalizadasCanceladas.length)
                       </TableCell>
 
                       {/* Estado */}
-                      <TableCell className="px-5 py-4 text-start">
-                        <Badge 
-                          size="md" 
-                          color={estado.color as any}
-                        >
-                          {estado.label}
-                        </Badge>
+                      <TableCell className="px-5 py-4 text-start"> 
+                        <div id={`estado-reserva-${reserva.id_reserva_hotel}`}>
+                          <Badge 
+                            size="md" 
+                            color={estado.color as any}
+                          >
+                            <span id={`estado-badge-${reserva.id_reserva_hotel}`}>{estado.label}</span>
+                          </Badge>
+                        </div>
                       </TableCell>
 
                       {/* Acciones */}
