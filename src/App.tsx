@@ -34,6 +34,7 @@ import ReservaHospedaje from "./pages/Reservas/Reserva_Hospedaje";
 import ReservaEventos from "./pages/Reservas/Reserva_Eventos";
 import ReservasPage from "./pages/AdReservas/Reserva_Hospedaje/Reserva_Hospedaje";
 import ReservasEventosPage from "./pages/AdReservas/Reserva_Evento/Reserva_Evento";
+import HomeEmpleados from "./pages/Dashboard/HomeEmpleados";
 
 export default function App() {
   return (
@@ -57,8 +58,10 @@ export default function App() {
               <AppLayout />
             </ProtectedRoute>
           }>
-            {/* Dashboard - Accesible para ambos roles */}
-            <Route path="/dashboard" element={<Home />} />
+            <Route element={<RoleProtectedRoute allowedRoles={["empleado"]} />}>
+              {/* Dashboard - Accesible para ambos roles */}
+              <Route path="/dashboard/emp" element={<HomeEmpleados />} />
+            </Route>
 
             {/* RUTAS SOLO PARA EMPLEADOS (Reservas) */}
             <Route element={<RoleProtectedRoute allowedRoles={["empleado", "administrador"]} />}>
@@ -68,6 +71,8 @@ export default function App() {
 
             {/* RUTAS SOLO PARA ADMINISTRADORES */}
             <Route element={<RoleProtectedRoute allowedRoles={["administrador"]} />}>
+              {/* Dashboard - Accesible para ambos roles */}
+              <Route path="/dashboard" element={<Home />} />
               <Route path="/profile" element={<Usuarios/>} />
               <Route path="/calendar" element={<Calendar />} />
               <Route path="/blank" element={<Blank />} />

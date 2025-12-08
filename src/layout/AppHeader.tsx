@@ -189,7 +189,7 @@ const AppHeader: React.FC = () => {
               <span className="text-m font-medium text-gray-700 dark:text-gray-300">
                 {userName}
               </span>
-              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-m font-medium ${getRoleBadgeColor(userRole)}`}>
+              <span id="etiqueta_rol" className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-m font-medium ${getRoleBadgeColor(userRole)}`}>
                 {userRole ? userRole.charAt(0).toUpperCase() + userRole.slice(1) : "Sin rol"}
               </span>
             </div>

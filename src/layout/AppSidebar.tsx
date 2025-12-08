@@ -10,6 +10,7 @@ import {
   UserCircleIcon,
 } from "../icons";
 import { useSidebar } from "../context/SidebarContext";
+import { ClipboardListIcon } from "lucide-react";
 
 type NavItem = {
   name: string;
@@ -67,6 +68,14 @@ const AppSidebar: React.FC = () => {
   // Items de navegación con control de roles
   const navItems: NavItem[] = [
     // Usuarios - Solo para administradores
+    {
+      icon: <ClipboardListIcon />,
+      name: "Auditorías",
+      id: "nav-auditorias",
+      path: "/dashboard",
+      roles: ["administrador"]
+    },
+
     {
       icon: <UserCircleIcon />,
       name: "Usuarios",

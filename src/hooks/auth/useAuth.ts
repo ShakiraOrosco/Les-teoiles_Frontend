@@ -29,10 +29,15 @@ export const useAuth = () => {
             localStorage.setItem("user", JSON.stringify(usuario));
 
             // Permitir acceso al dashboard tanto a administradores como empleados
-            if (usuario.rol === "administrador" || usuario.rol === "empleado") {
+            if (usuario.rol === "administrador") {
                 toast.success("Inicio de sesión realizado correctamente.");
                 setTimeout(() => navigate("/dashboard"), 100);
-            } else {
+            }
+            else if (usuario.rol === "empleado") {
+                toast.success("Inicio de sesión realizado correctamente.");
+                setTimeout(() => navigate("/dashboard/emp"), 100);
+            }
+             else {
                 toast.error("Acceso denegado", {
                     description: "No tienes permisos para acceder al sistema.",
                     duration: 4000,
