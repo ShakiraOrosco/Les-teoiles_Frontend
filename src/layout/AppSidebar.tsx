@@ -333,7 +333,11 @@ const AppSidebar: React.FC = () => {
           !isExpanded && !isHovered ? "lg:justify-center" : "justify-start"
         }`}
       >
-        <Link to="/dashboard" className="flex items-center gap-2">
+        {/* Link del logo según el rol */}
+        <Link 
+          to={userRole === "administrador" ? "/dashboard" : "/dashboard/emp"} 
+          className="flex items-center gap-2"
+        >
           {isExpanded || isHovered || isMobileOpen ? (
             <>
               <img
