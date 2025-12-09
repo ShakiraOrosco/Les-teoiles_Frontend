@@ -12,7 +12,7 @@ export const useAuth = () => {
 
         if (!username || !password) {
             toast.error("Rellena todos los campos.");
-            return;
+            throw new Error("Campos vacíos"); // RE-LANZAR ERROR
         }
 
         try {
@@ -37,20 +37,24 @@ export const useAuth = () => {
                 toast.success("Inicio de sesión realizado correctamente.");
                 setTimeout(() => navigate("/dashboard/emp"), 100);
             }
-             else {
+            else {
                 toast.error("Acceso denegado", {
                     description: "No tienes permisos para acceder al sistema.",
                     duration: 4000,
                 });
                 setTimeout(() => navigate("/"), 500);
+                throw new Error("Acceso denegado"); // RE-LANZAR ERROR
             }
 
         } catch (error: any) {
             if (error.response?.status === 401 || error.response?.status === 400) {
                 toast.error("Credenciales inválidas, intenta de nuevo.");
-            } else {
+            } else if (error.message !== "Acceso denegado") {
                 toast.error("Error inesperado, intenta de nuevo más tarde.");
             }
+            
+            // ⭐ ESTO ES CRUCIAL: RE-LANZAR EL ERROR para que el componente lo detecte
+            throw error;
         }
     };
 
