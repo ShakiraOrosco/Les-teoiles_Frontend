@@ -368,6 +368,17 @@ export default function PoolLoginPage() {
         >
           {bloqueado ? `Bloqueado (${formatTiempo(tiempoRestante)})` : 'Ingresar'}
         </Button>
+
+                {/* Olvidaste contraseña 
+        <div className="text-center">
+          <button 
+            type="button"
+            className="text-sm text-cyan-600 dark:text-cyan-400 hover:text-cyan-700 dark:hover:text-cyan-300 transition font-medium hover:underline"
+          >
+            ¿Olvidaste tu contraseña?
+          </button>
+          
+        </div>*/}
       </form>
 
       <div className="px-8 py-6 bg-gray-50 dark:bg-gray-900/50 border-t border-gray-200 dark:border-gray-700">
